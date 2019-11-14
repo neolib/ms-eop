@@ -50,7 +50,7 @@ namespace EOPWork
 
             void WalkNode_(XElement node)
             {
-                var list = SearchIPRange_(node);
+                var list = SearchIPTags_(node);
                 if (list.Count > 0)
                 {
                     WriteLine($"<{node.Name}");
@@ -64,7 +64,7 @@ namespace EOPWork
                 }
             }
 
-            List<XAttribute> SearchIPRange_(XElement element)
+            List<XAttribute> SearchIPTags_(XElement element)
             {
                 var list = new List<XAttribute>();
                 foreach (var attr in element.Attributes())

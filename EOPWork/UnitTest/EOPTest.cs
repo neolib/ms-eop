@@ -13,7 +13,7 @@ namespace EOPWork
     public class EOPTest
     {
         [TestMethod]
-        public void ExtractIPAttrNames()
+        public void Test()
         {
             
         }
