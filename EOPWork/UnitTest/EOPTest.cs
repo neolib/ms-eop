@@ -15,7 +15,13 @@ namespace EOPWork
         [TestMethod]
         public void Test()
         {
-            
+            var xd = new XDocument();
+            //xd.Root.Name = "root";
+            xd.Add(new XElement("root"));
+            xd.Root.Add(new XElement("item1"));
+            xd.Root.Add(new XElement("item2"));
+            xd.Root.Add(new XElement("item3"));
+            WriteLine(xd.ToString());
         }
     }
 }

@@ -14,6 +14,10 @@ namespace EOPWork
     class FindIPTags : IApplet
     {
         Regex ipv4Regex = new Regex(@"^\d+\.\d+\.\d+\.\d+\/\d+");
+        /*
+         * I'm not confident about this regular expression, so ValidateValue_ function is not used.
+         * But so far the simple checks in ValidateName_ works.
+         */
         Regex ipv6Regex = new Regex(@"^(([\da-z]+)?:){7}([\da-z]+)?");
         List<string> tagNames = new List<string>();
 
@@ -21,42 +25,44 @@ namespace EOPWork
         {
             var dir = args[0];
             Process(dir);
-
-            WriteLine("==============================");
-            tagNames.Sort();
-            tagNames.ForEach((name_) => WriteLine($"{name_}"));
             return 0;
         }
 
-        void AddTagName(string name)
-        {
-            if (!tagNames.Contains(name)) tagNames.Add(name);
-        }
 
         void Process(string dir)
         {
-            WriteLine($"Target dir: {dir}");
+            WriteLine($"<!-- Target dir: {dir} -->");
+            WriteLine("<result>");
+
             foreach (var filename in Directory.GetFiles(dir, "*.xml"))
             {
                 ProcessFile(filename);
             }
+
+            WriteLine("  <!-- Tag List -->");
+            WriteLine("  <tags>");
+            tagNames.Sort();
+            tagNames.ForEach((name_) => WriteLine($"    <tag name=\"{name_}\" />"));
+            WriteLine("  </tags>");
+            WriteLine("</result>");
         }
 
         public void ProcessFile(string filename)
         {
-            WriteLine($"**{filename}");
+            WriteLine($"  <file path=\"{filename}\">");
             var xd = XDocument.Load(filename);
             WalkNode_(xd.Root);
+            WriteLine("  </file>");
 
             void WalkNode_(XElement node)
             {
                 var list = SearchIPTags_(node);
                 if (list.Count > 0)
                 {
-                    WriteLine($"<{node.Name}");
+                    WriteLine($"    <{node.Name} path=\"{GetNodePath(node)}\"");
                     foreach (var attr in list)
-                        WriteLine($"    {attr.Name}=\"{attr.Value}\"");
-                    WriteLine(">");
+                        WriteLine($"      {attr.Name}=\"{attr.Value}\"");
+                    WriteLine("    />");
                 }
                 foreach (var child in node.Nodes())
                 {
@@ -97,6 +103,27 @@ namespace EOPWork
                     }
                 }
                 return false;
+            }
+
+            void AddTagName(string name)
+            {
+                if (!tagNames.Contains(name)) tagNames.Add(name);
+            }
+
+            string GetNodePath(XElement node)
+            {
+                var sb = new StringBuilder();
+                var list = new List<string>();
+                for (var currrent = node.Parent; currrent != null; currrent = currrent.Parent)
+                {
+                    list.Add(currrent.Name.LocalName);
+                }
+                for (int i = list.Count - 1; i >= 0; i--)
+                {
+                    sb.Append(list[i]);
+                    sb.Append('.');
+                }
+                return sb.ToString();
             }
 
             bool ValidateValue_(XAttribute attr)
