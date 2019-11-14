@@ -28,7 +28,6 @@ namespace EOPWork
             return 0;
         }
 
-
         void Process(string dir)
         {
             WriteLine($"<!-- Target dir: {dir} -->");
@@ -59,7 +58,7 @@ namespace EOPWork
                 var list = SearchIPTags_(node);
                 if (list.Count > 0)
                 {
-                    WriteLine($"    <{node.Name} path=\"{GetNodePath(node)}\"");
+                    WriteLine($"    <{node.Name} path=\"{GetNodePath_(node)}\"");
                     foreach (var attr in list)
                         WriteLine($"      {attr.Name}=\"{attr.Value}\"");
                     WriteLine("    />");
@@ -82,7 +81,7 @@ namespace EOPWork
                             )
                         {
                             list.Add(attr);
-                            AddTagName(attr.Name.LocalName);
+                            AddTagName_(attr.Name.LocalName);
                         }
                     }
                 }
@@ -105,12 +104,12 @@ namespace EOPWork
                 return false;
             }
 
-            void AddTagName(string name)
+            void AddTagName_(string name)
             {
                 if (!tagNames.Contains(name)) tagNames.Add(name);
             }
 
-            string GetNodePath(XElement node)
+            string GetNodePath_(XElement node)
             {
                 var sb = new StringBuilder();
                 var list = new List<string>();
