@@ -17,6 +17,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
     using Microsoft.Office.Datacenter.AssemblyLine.Framework.Validation;
     using Microsoft.Office.Datacenter.CentralAdmin.Interop;
     using Microsoft.Office.Datacenter.CentralAdmin.Workflow.Framework;
+    using Microsoft.Office.Datacenter.Networking.DeviceDriver.Firewall.Fortinet.Serialization;
     using Microsoft.Office.Datacenter.Networking.KustoFactory;
     using Microsoft.Office.Datacenter.Networking.VstsClient;
     using Microsoft.Office.Datacenter.Networking.Workflows.Shared;
@@ -34,8 +35,10 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         internal struct Result
         {
+            internal string EnvName;
             internal string IPString;
             internal string ConfigTagName;
+            internal string Reason;
 
             /// <summary>
             /// For string.Join method.
@@ -43,7 +46,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
             /// <returns>IP string.</returns>
             public override string ToString()
             {
-                return this.IPString;
+                return $"{IPString} Reason: {Reason}";
             }
         }
 
@@ -56,61 +59,59 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
         /// </remarks>
         private class IPTagFinder
         {
-            private readonly StringBuilder sb = new StringBuilder();
+            private XDocument result;
 
             /// <summary>
             /// Finds all tags that contain valid IP strings.
             /// </summary>
-            /// <param name="xml">XML text.</param>
-            /// <returns>XML string</returns>
+            /// <param name="xml">F5Automation config XML.</param>
+            /// <returns>An XDocument object.</returns>
             /// <remarks>
-            /// A valid XML document that has the following structure:
+            /// The returned XDocument has the following structure:
             ///     <result>
             ///         <TAG ATTRIBUTE="IP_STRING" />
             ///     </result>
             /// </remarks>
-            internal string Find(string xml)
+            internal XDocument Find(string xml)
             {
-                sb.Clear();
                 var xd = XDocument.Parse(xml);
-                sb.AppendLine("<result>");
-                WalkElement(xd.Root);
-                sb.AppendLine("</result>");
-                return sb.ToString();
+                result = new XDocument();
+                result.Add(new XElement("result"));
+                WalkNode(xd.Root);
+                return result;
             }
 
             /// <summary>
             /// Recursively walks an XElement.
             /// </summary>
             /// <param name="node">The XElement to walk.</param>
-            private void WalkElement(XElement node)
+            private void WalkNode(XElement node)
             {
-                var list = ExamineElement(node);
+                var list = ExamineNode(node);
                 if (list.Count > 0)
                 {
-                    sb.AppendFormat($"<{node.Name}");
+                    var ipNode = new XElement(node.Name);
+                    result.Root.Add(ipNode);
                     foreach (var attr in list)
                     {
-                        sb.AppendFormat($"{attr.Name}=\"{attr.Value}\"");
+                        ipNode.Add(new XAttribute(attr.Name, attr.Value));
                     }
-                    sb.AppendFormat("/>");
-                    sb.AppendLine();
                 }
-                foreach (var elem in node.Elements())
+                foreach (var child in node.Elements())
                 {
-                    WalkElement(elem);
+                    WalkNode(child);
                 }
             }
                 
             /// <summary>
             /// Examines an XElement for possible IP attribute values.
             /// </summary>
-            /// <param name="element">The XElement object.</param>
+            /// <param name="node">The XElement object.</param>
             /// <returns>A list of XAttribute that contain IP strings.</returns>
-            private List<XAttribute> ExamineElement(XElement element)
+            private List<XAttribute> ExamineNode(XElement node)
             {
                 var list = new List<XAttribute>();
-                foreach (var attr in element.Attributes())
+                foreach (var attr in node.Attributes())
                 {
                     if (ValidateName(attr))
                     {
@@ -174,13 +175,13 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         #region Overrides
 
-        private ValidationResultList output;
+        private ValidationResultList resultList;
 
         protected override Continuation DoWork(IWorkflowRuntime runtime)
         {
             cachedRuntime = runtime;
-            Process();
-            OpenWorkitemIfNecessary();
+            DoWork();
+            OpenWorkItem();
             return Continuation.Default;
         }
 
@@ -188,49 +189,38 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         #region Methods
 
-        private void Process()
+        private void DoWork()
         {
             var finder = new IPTagFinder();
             var asmF5 = typeof(FakedF5Class).Assembly;
             foreach (var rcName in asmF5.GetManifestResourceNames())
             {
-                var rcXml = LoadResourceText(asmF5, rcName);
-                var xd = XDocument.Load(finder.Find(rcXml));
-                this.output = new ValidationResultList();
+                if (!rcName.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase))
+                { continue; }
 
-                foreach (var elem in xd.Elements())
+                var rcXml = LoadResourceText(asmF5, rcName);
+                var ipXDoc = finder.Find(rcXml);
+                var envName = Path.GetFileNameWithoutExtension(rcName);
+                resultList = new ValidationResultList();
+
+                foreach (var node in ipXDoc.Root.Elements())
                 {
-                    foreach (var attr in elem.Attributes())
+                    foreach (var attr in node.Attributes())
                     {
-                        if (attr.Name == "path") { continue; }
                         if (attr.Value.IndexOfAny(FieldSeprators) >= 0)
                         {
                             var a = attr.Value.Split(FieldSeprators, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var ipString in a)
                             {
-                                ValidateIP(elem.Name.LocalName, ipString);
+                                ValidateIPOnKusto(envName, node.Name.LocalName, ipString);
                             }
                         }
                         else
                         {
-                            ValidateIP(elem.Name.LocalName, attr.Value);
+                            ValidateIPOnKusto(envName, node.Name.LocalName, attr.Value);
                         }
                     }
                 }
-            }
-        }
-
-        void ValidateIP(string tagName, string ipString)
-        {
-            if (!ValidateIPOnKusto(ipString))
-            {
-                this.output.Add(new Result
-                {
-                    IPString = ipString,
-                    ConfigTagName = tagName
-                });
-
-                cachedRuntime.Logger.LogInformation($"This IP range is not covered: {ipString}");
             }
         }
 
@@ -268,41 +258,82 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
         /// <summary>
         /// Queries against Kusto to verify if an IP string is in use. 
         /// </summary>
+        /// <param name="envName">Environment name.</param>
+        /// <param name="tagName">Source XML tag name.</param>
         /// <param name="ipString">IP string to verify.</param>
         /// <returns>Boolean value.</returns>
-        public bool ValidateIPOnKusto(string ipString)
+        public bool ValidateIPOnKusto(string envName, string tagName, string ipString)
         {
-            if (this.kustoClient == null)
+            if (kustoClient == null)
             {
-                this.kustoClient =
+                kustoClient =
                     cachedRuntime.HostServices.GetService(typeof(ICslQueryProvider)) as ICslQueryProvider ??
                     NetworkingKustoClientFactory.GetCslQueryProvider(
                         kustoDatabase: IpamDatabaseName,
                         kustoServer: IpamKustoServerEndpoint);
             }
-            if (this.queryTemplate == null)
+            if (queryTemplate == null)
             {
-                using (var sr = new StreamReader(this.GetType().Assembly.GetManifestResourceStream(QueryFileName)))
-                {
-                    this.queryTemplate = sr.ReadToEnd();
-                }
+                queryTemplate = LoadResourceText(GetType().Assembly, QueryFileName);
             }
 
-            var query = this.queryTemplate.Replace("{IPString}", ipString);
+            var query = queryTemplate.Replace("{IPString}", ipString);
             var requestProperties = KustoClientExtensions
                 .GetClientRequestPropertiesForApplication(cachedRuntime, "IPConfigValidatorWorkflow");
-            var queryResult = this.kustoClient.ExecuteQueryAsync(query, requestProperties).Result;
-            return queryResult.RecordsAffected > 0;
+            var queryResult = kustoClient.ExecuteQueryAsync(query, requestProperties).Result;
+            if (queryResult.Read())
+            {
+                var title = queryResult["Title"] as string;
+                if (string.IsNullOrEmpty(title))
+                {
+                    resultList.Add(new Result
+                    {
+                        EnvName = envName,
+                        IPString = ipString,
+                        ConfigTagName = tagName,
+                        Reason = "Empty title"
+                    });
+                    cachedRuntime.Logger.LogInformation($"IP range {ipString} has no title.");
+                    return false;
+                }
+                else if (!title.Contains(envName))
+                {
+                    resultList.Add(new Result
+                    {
+                        EnvName = envName,
+                        IPString = ipString,
+                        ConfigTagName = tagName,
+                        Reason = "Title has no environment name"
+                    });
+                    cachedRuntime.Logger.LogInformation($"Title of IP range {ipString} does not have environment name \"{envName}\"");
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                resultList.Add(new Result
+                {
+                    EnvName = envName,
+                    IPString = ipString,
+                    ConfigTagName = tagName,
+                    Reason = "Not found in Kusto"
+                });
+                cachedRuntime.Logger.LogInformation($"IP range {ipString} not found in Kusto.");
+                return false;
+            }
         }
 
         #endregion
 
-        private void OpenWorkitemIfNecessary()
+        private void OpenWorkItem()
         {
-            if (this.output.Any())
+            if (resultList.Any())
             {
-                var vstsClient =
-                    cachedRuntime.HostServices.GetService(typeof(IVstsClient)) as IVstsClient ??
+                var vstsClient = cachedRuntime.HostServices.GetService(typeof(IVstsClient)) as IVstsClient ??
                     CommonHelperMethods.GetExchangeVstsClient(cachedRuntime, Constants.MaxWorkItemsPerQueryFromVsts);
 
                 var timeProvider = cachedRuntime.HostServices.GetService(typeof(ITimeProvider)) as ITimeProvider ?? new TimeProvider();
@@ -319,7 +350,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
                 if (activeWorkItem == null)
                 {
-                    if (!this.WhatIf)
+                    if (!WhatIf)
                     {
                         WorkItem newWorkItem = vstsClient.CreateWorkItem(
                                 title: IpamWorkitemTitle,
@@ -327,11 +358,13 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
                                 tags: IpamRangeWorkitemsTag,
                                 priority: WorkItemPriority.Priority3,
                                 projectGuid: VstsRecipient.ExoNetworkAutomationEmailRecipient.ProjectGuid,
-                                reproSteps: string.Join($"<br/>", this.output));
+                                reproSteps: string.Join("<br/>", resultList));
 
                         cachedRuntime.Logger.LogInformation(
-                            newWorkItem != null ? $"A workitem {newWorkItem.Id} with invalid IP ranges in XML configs was created." 
-                                : "Failed to create a workitem with invalid IP ranges in XML configs.");
+                            newWorkItem != null ? 
+                                $"A workitem {newWorkItem.Id} with invalid IP ranges in XML configs was created."
+                                :
+                                "Failed to create a workitem with invalid IP ranges in XML configs.");
                     }
                     else
                     {

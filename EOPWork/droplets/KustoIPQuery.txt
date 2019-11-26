@@ -1,18 +1,8 @@
-﻿Allocations_Default
-| extend AsnAddress = extract("(?i)[^y]AsnAddress=(.*?);",1,Tags)
-| extend DataCenter = extract("(?i)[^y]DataCenter=(.*?);",1,Tags)
-| extend DeploymentService = extract("(?i)[^y]DeploymentService=(.*?);",1,Tags)
-| extend AvailabilityZone = extract("(?i)[^y]AvailabilityZone=(.*?);",1,Tags)
+﻿| extend DataCenter = extract("(?i)[^y]DataCenter=(.*?);",1,Tags)
 | extend PhysicalNetwork = extract("(?i)[^y]PhysicalNetwork=(.*?);",1,Tags)
-| extend DeviceHostName = extract("(?i)[^y]DeviceHostName=(.*?);",1,Tags)
 | extend InterfaceName = extract("(?i)[^y]InterfaceName=(.*?);",1,Tags)
-| extend IpmAddressSpaceId = extract("(?i)[^y]IpmAddressSpaceId=(.*?);",1,Tags)
-| extend IpmEntityId = extract("(?i)[^y]IpmEntityId=(.*?);",1,Tags)
-| extend IpScope = extract("(?i)[^y]IpScope=(.*?);",1,Tags)
-| extend BlockBoundary = extract("(?i)[^y]BlockBoundary=(.*?);",1,Tags)
 | extend Cloud = extract("(?i)[^y]Cloud=(.*?);",1,Tags)
 | extend PropertyGroup = extract("(?i)[^y]PropertyGroup=(.*?);",1,Tags)
-| extend LegacyPropertyGroup = extract("(?i)LegacyPropertyGroup=(.*?);",1,Tags)
 | extend Region = extract("(?i)[^y]Region=(.*?);",1,Tags)
 | extend Title = extract("(?i)[^y]Title=(.*?);",1,Tags)
 | extend Description = extract("(?i)[^y]Description=(.*?);",1,Tags)
@@ -25,8 +15,6 @@
 | where  (NetworkType == "PRIVATE" or NetworkType == "SQUAT" or NetworkType == "PUBLIC")
 | where  (Prefix2 !has "/128" and Prefix2 !has "/127" and Prefix2 !has "/126" and Prefix2 !has "/31" and Prefix2 !has "/32")
 | where  (Prefix1 == {IPString})
-| project Prefix, Prefix1, Prefix2, Region, PropertyGroup, LegacyPropertyGroup, 
-| Title, Description, AllocationType, NetworkType, RangeType, AsnAddress, DataCenter, 
-| DeploymentService, AvailabilityZone, PhysicalNetwork, DeviceHostName, InterfaceName, 
-| IpmAddressSpaceId, IpmEntityId, IpScope, BlockBoundary, Cloud, DumpTime ,Tags
+| project Prefix, Prefix1, Prefix2, Region, Title, Description, AllocationType, 
+| NetworkType, RangeType, DataCenter, PhysicalNetwork, InterfaceName, Cloud
 | order by Prefix
