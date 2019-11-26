@@ -8,6 +8,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 {
     using System;
     using System.Collections.Generic;
+    using System.Data;
     using System.IO;
     using System.Linq;
     using System.Reflection;
@@ -17,6 +18,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
     using Microsoft.Office.Datacenter.AssemblyLine.Framework.Validation;
     using Microsoft.Office.Datacenter.CentralAdmin.Interop;
     using Microsoft.Office.Datacenter.CentralAdmin.Workflow.Framework;
+    using Microsoft.Office.Datacenter.DropBox.Workflows;
     using Microsoft.Office.Datacenter.Networking.DeviceDriver.Firewall.Fortinet.Serialization;
     using Microsoft.Office.Datacenter.Networking.KustoFactory;
     using Microsoft.Office.Datacenter.Networking.VstsClient;
@@ -29,16 +31,16 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
     [DataContract]
     [ProxyScript("Invoke-IPConfigValidatorWorkflow.ps1", Roles = new[] { typeof(NetworkingChangeAccessScriptsRole) })]
-    public sealed class IPConfigValidatorWorkflow : Workflow
+    public sealed class IPConfigValidatorWorkflow : Workflow<ValidationResultList>
     {
         #region Inner Classes
 
-        internal struct Result
+        public struct Result
         {
-            internal string EnvName;
-            internal string IPString;
-            internal string ConfigTagName;
-            internal string Reason;
+            public string EnvName;
+            public string IPString;
+            public string ConfigTagName;
+            public string Reason;
 
             /// <summary>
             /// For string.Join method.
@@ -102,7 +104,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
                     WalkNode(child);
                 }
             }
-                
+
             /// <summary>
             /// Examines an XElement for possible IP attribute values.
             /// </summary>
@@ -177,11 +179,13 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         private ValidationResultList resultList;
 
+        public override ValidationResultList Output => resultList;
+
         protected override Continuation DoWork(IWorkflowRuntime runtime)
         {
             cachedRuntime = runtime;
             DoWork();
-            OpenWorkItem();
+            OpenWorkItemIfNecessary();
             return Continuation.Default;
         }
 
@@ -248,6 +252,15 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         private const string IpamRangeWorkitemsTag = "IpamRange";
 
+        private const string ProdDataKustoTableName = "Allocations_Default";
+
+        private const string GallatinDataKustoTableName = "Allocations_Galacake";
+
+        private static readonly string[] KustoDataTableNames = new[]
+            {
+                ProdDataKustoTableName, GallatinDataKustoTableName
+            };
+
         private const string IpamWorkitemTitle = "Some XML Config IP ranges are not present in IPAM.";        
         
         private const string QueryFileName = "KustoIPQuery.txt";
@@ -262,7 +275,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
         /// <param name="tagName">Source XML tag name.</param>
         /// <param name="ipString">IP string to verify.</param>
         /// <returns>Boolean value.</returns>
-        public bool ValidateIPOnKusto(string envName, string tagName, string ipString)
+        private bool ValidateIPOnKusto(string envName, string tagName, string ipString)
         {
             if (kustoClient == null)
             {
@@ -278,6 +291,20 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
             }
 
             var query = queryTemplate.Replace("{IPString}", ipString);
+            foreach (var tableName in KustoDataTableNames)
+            {
+                if (!ValidateKustoQuery(tableName + query, envName, tagName, ipString))
+                {
+                    // If validation result is false, we've the final result, and
+                    // there is no need to do further validation.
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool ValidateKustoQuery(string query, string envName, string tagName, string ipString)
+        {
             var requestProperties = KustoClientExtensions
                 .GetClientRequestPropertiesForApplication(cachedRuntime, "IPConfigValidatorWorkflow");
             var queryResult = kustoClient.ExecuteQueryAsync(query, requestProperties).Result;
@@ -308,10 +335,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
                     cachedRuntime.Logger.LogInformation($"Title of IP range {ipString} does not have environment name \"{envName}\"");
                     return false;
                 }
-                else
-                {
-                    return true;
-                }
+                return true;
             }
             else
             {
@@ -329,7 +353,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         #endregion
 
-        private void OpenWorkItem()
+        private void OpenWorkItemIfNecessary()
         {
             if (resultList.Any())
             {
