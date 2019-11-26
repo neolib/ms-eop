@@ -11,12 +11,12 @@ using static System.Console;
 
 namespace EOPWork
 {
-    class FindIPTags : IApplet
+    class IPTagFinder : IApplet
     {
         Regex ipv4Regex = new Regex(@"^\d+\.\d+\.\d+\.\d+\/\d+");
         /*
          * I'm not confident about this regular expression, so ValidateValue_ function is not used.
-         * But so far the simple checks in ValidateName_ works.
+         * But so far the simple checks in ValidateName_ work and catch all IP strings.
          */
         Regex ipv6Regex = new Regex(@"^(([\da-z]+)?:){7}([\da-z]+)?");
         List<string> tagNames = new List<string>();

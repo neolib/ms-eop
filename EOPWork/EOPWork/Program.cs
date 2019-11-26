@@ -8,7 +8,8 @@ namespace EOPWork
     {
         static void Main(string[] args)
         {
-            new FindIPTags().Run(args);
+            //new IPTagFinder().Run(args);
+            new Sandbox().Run(args);
 
             if (!Console.IsOutputRedirected)
             {
