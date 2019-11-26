@@ -163,8 +163,13 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         #region Workflow Parameters
 
-        [DataMember(IsRequired = false)]
+        /// <summary>
+        /// The full path of the assembly file where XML config files resides as embedded resources.
+        /// </summary>
+        [DataMember(IsRequired = true)]
+        public string XmlConfigAssemblyPath { get; set; }
 
+        [DataMember(IsRequired = false)]
         public bool WhatIf { get; set; }
 
         #endregion
@@ -196,13 +201,13 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
         private void DoWork()
         {
             var finder = new IPTagFinder();
-            var asmF5 = typeof(FakedF5Class).Assembly;
-            foreach (var rcName in asmF5.GetManifestResourceNames())
+            var asm = Assembly.LoadFrom(XmlConfigAssemblyPath);
+            foreach (var rcName in asm.GetManifestResourceNames())
             {
                 if (!rcName.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase))
                 { continue; }
 
-                var rcXml = LoadResourceText(asmF5, rcName);
+                var rcXml = LoadResourceText(asm, rcName);
                 var ipXDoc = finder.Find(rcXml);
                 var envName = Path.GetFileNameWithoutExtension(rcName);
                 resultList = new ValidationResultList();
@@ -405,9 +410,5 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
                 cachedRuntime.Logger.LogInformation("No missing subnets were found, no workitem was created.");
             }
         }
-    }
-
-    class FakedF5Class
-    { 
     }
 }

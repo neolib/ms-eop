@@ -15,6 +15,6 @@
 | where  (NetworkType == "PRIVATE" or NetworkType == "SQUAT" or NetworkType == "PUBLIC")
 | where  (Prefix2 !has "/128" and Prefix2 !has "/127" and Prefix2 !has "/126" and Prefix2 !has "/31" and Prefix2 !has "/32")
 | where  (Prefix1 == {IPString})
-| project Prefix, Prefix1, Prefix2, Region, Title, Description, AllocationType, 
+| project Id, Prefix, Prefix1, Prefix2, Region, Title, Description, AllocationType, 
 | NetworkType, RangeType, DataCenter, PhysicalNetwork, InterfaceName, Cloud
 | order by Prefix
