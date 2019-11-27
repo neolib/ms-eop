@@ -11,6 +11,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
     using System.Data;
     using System.IO;
     using System.Linq;
+    using System.Net.Mail;
     using System.Reflection;
     using System.Runtime.Serialization;
     using System.Text;
@@ -18,21 +19,17 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
     using Microsoft.Office.Datacenter.AssemblyLine.Framework.Validation;
     using Microsoft.Office.Datacenter.CentralAdmin.Interop;
     using Microsoft.Office.Datacenter.CentralAdmin.Workflow.Framework;
-    using Microsoft.Office.Datacenter.DropBox.Workflows;
-    using Microsoft.Office.Datacenter.Networking.DeviceDriver.Firewall.Fortinet.Serialization;
     using Microsoft.Office.Datacenter.Networking.KustoFactory;
     using Microsoft.Office.Datacenter.Networking.VstsClient;
     using Microsoft.Office.Datacenter.Networking.Workflows.Shared;
+    using Microsoft.Office.Datacenter.Networking.Workflows.Shared.Email;
     using Microsoft.Office.Datacenter.Networking.Workflows.Shared.Extensions;
     using Microsoft.Office.Datacenter.Networking.Workflows.Shared.ProxyRoles;
-    using Microsoft.Office.Datacenter.Networking.Workflows.Shared.TimeProvider;
-    using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
-    using Microsoft.Win32;
-    using ValidationResultList = System.Collections.Generic.List<IPConfigValidatorWorkflow.Result>;
+    using ValidationRecordList = System.Collections.Generic.List<IPConfigValidatorWorkflow.ValidationRecord>;
 
     [DataContract]
     [ProxyScript("Invoke-IPConfigValidatorWorkflow.ps1", Roles = new[] { typeof(NetworkingChangeAccessScriptsRole) })]
-    public sealed class IPConfigValidatorWorkflow : Workflow<ValidationResultList>
+    public sealed class IPConfigValidatorWorkflow : Workflow<ValidationRecordList>
     {
         #region Inner Classes
 
@@ -45,7 +42,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
             InvalidTitle,   // No environment name in title
         }
 
-        public struct Result
+        public struct ValidationRecord
         {
             public string EnvName;
             public string IPString;
@@ -74,6 +71,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
             ///     <result>
             ///         <TAG ATTRIBUTE="IP_STRING" />
             ///     </result>
+            /// where capitalized words are placeholders.
             /// </remarks>
             internal XDocument Find(string xml)
             {
@@ -164,14 +162,11 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         #region Workflow Parameters
 
-        /// <summary>
-        /// The full path of the assembly file where XML config files resides as embedded resources.
-        /// </summary>
-        [DataMember(IsRequired = true)]
-        public string XmlConfigAssemblyPath { get; set; }
+        [DataMember(IsRequired = false)]
+        public string NotificationRecipientEmail { get; set; } = "v-chunly@microsoft.com";
 
         [DataMember(IsRequired = false)]
-        public bool WhatIf { get; set; }
+        public bool SendNotfication { get; set; } = true;
 
         #endregion
 
@@ -183,14 +178,15 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         #region Overrides
 
-        private ValidationResultList resultList;
+        private ValidationRecordList resultList;
 
-        public override ValidationResultList Output => resultList;
+        public override ValidationRecordList Output => resultList;
 
         protected override Continuation DoWork(IWorkflowRuntime runtime)
         {
             cachedRuntime = runtime;
             DoWork();
+            SendEmailNotification();
             return Continuation.Default;
         }
 
@@ -201,7 +197,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
         private void DoWork()
         {
             var finder = new IPTagFinder();
-            var asm = Assembly.LoadFrom(XmlConfigAssemblyPath);
+            var asm = typeof(F5Fake).Assembly;
             foreach (var rcName in asm.GetManifestResourceNames())
             {
                 if (!rcName.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase))
@@ -210,7 +206,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
                 var rcXml = LoadResourceText(asm, rcName);
                 var ipXDoc = finder.Find(rcXml);
                 var envName = Path.GetFileNameWithoutExtension(rcName);
-                resultList = new ValidationResultList();
+                resultList = new ValidationRecordList();
 
                 foreach (var node in ipXDoc.Root.Elements())
                 {
@@ -316,7 +312,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
                 if (validationStatus == ValidationStatus.NoMatch) { continue; } 
             }
 
-            resultList.Add(new Result
+            resultList.Add(new ValidationRecord
             {
                 EnvName = envName,
                 IPString = ipString,
@@ -373,5 +369,72 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
         }
 
         #endregion
+
+        #region Notification
+
+        private void SendEmailNotification()
+        {
+            if (SendNotfication)
+            {
+                string subject;
+                string body;
+
+                if (Output.Any())
+                {
+                    subject = IpamWorkitemTitle;
+                    body = BuildEmailBody();
+                }
+                else
+                {
+                    subject = "XML Config IP ranges validation: success";
+                    body = "No invalid IP ranges found.";
+                }
+
+                var client = cachedRuntime.HostServices
+                            .GetService(typeof(IEmailClient)) as IEmailClient ?? new EmailClient();
+                try
+                {
+                    client.SendMail(
+                        workflowRuntime: cachedRuntime,
+                        toAddresses: new MailAddressCollection { NotificationRecipientEmail },
+                        subject: subject,
+                        htmlContent: body);
+                    /* ccAddresses: new MailAddressCollection { Constants.AutomationNotificationEmailAddress }); */
+                }
+                catch (Exception exception)
+                {
+                    cachedRuntime.Logger.LogWarning(
+                        "Failed to send email notification. Subject: {0}, Body: {1}. Exception: {2}",
+                        subject,
+                        body,
+                        exception.Message);
+                }
+            }
+        }
+
+        private string BuildEmailBody()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("<table>");
+            sb.AppendLine("<tr><th>IP</th><th>Enviroment</th><th>Status</th></tr>");
+            foreach (var record in Output)
+            {
+                sb.AppendLine("<tr>");
+                sb.AppendFormat(
+                    "<td>{0}</td><td>{1}</td><td>{2}</td>",
+                    record.IPString,
+                    record.EnvName,
+                    record.Status);
+                sb.AppendLine("</tr>");
+            }
+            sb.AppendLine("</table>");
+            return sb.ToString();
+        }
+
+        #endregion
+    }
+
+    class F5Fake
+    {
     }
 }
