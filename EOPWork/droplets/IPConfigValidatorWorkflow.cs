@@ -27,6 +27,7 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
     using Microsoft.Office.Datacenter.Networking.Workflows.Shared.ProxyRoles;
     using Microsoft.Office.Datacenter.Networking.Workflows.Shared.TimeProvider;
     using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
+    using Microsoft.Win32;
     using ValidationResultList = System.Collections.Generic.List<IPConfigValidatorWorkflow.Result>;
 
     [DataContract]
@@ -35,26 +36,26 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
     {
         #region Inner Classes
 
+        public enum ValidationStatus
+        {
+            Unknown,
+            Success,
+            NoMatch,        // No matching record found in Kusto
+            EmptyTitle,
+            InvalidTitle,   // No environment name in title
+        }
+
         public struct Result
         {
             public string EnvName;
             public string IPString;
             public string ConfigTagName;
-            public string Reason;
-
-            /// <summary>
-            /// For string.Join method.
-            /// </summary>
-            /// <returns>IP string.</returns>
-            public override string ToString()
-            {
-                return $"{IPString} Reason: {Reason}";
-            }
+            public ValidationStatus Status;
         }
 
         /// <summary>
         /// A helper class that isolates the work of finding all tags that may
-        /// contain valid IPv4/IPv6 srings.
+        /// contain valid IPv4/IPv6 strings.
         /// </summary>
         /// <remarks>
         /// An instance of this class can be reused.
@@ -190,7 +191,6 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
         {
             cachedRuntime = runtime;
             DoWork();
-            OpenWorkItemIfNecessary();
             return Continuation.Default;
         }
 
@@ -251,6 +251,8 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
 
         #region Kusto Query
 
+        #region Constatants
+
         private const string IpamDatabaseName = "IpamReport";
 
         private const string IpamKustoServerEndpoint = "https://ipam.kusto.windows.net";
@@ -270,14 +272,20 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
         
         private const string QueryFileName = "KustoIPQuery.txt";
 
+        #endregion
+
+        #region Cached Variables
+
         private string queryTemplate;
         private ICslQueryProvider kustoClient;
+
+        #endregion
 
         /// <summary>
         /// Queries against Kusto to verify if an IP string is in use. 
         /// </summary>
         /// <param name="envName">Environment name.</param>
-        /// <param name="tagName">Source XML tag name.</param>
+        /// <param name="tagName">Source XML element tag name.</param>
         /// <param name="ipString">IP string to verify.</param>
         /// <returns>Boolean value.</returns>
         private bool ValidateIPOnKusto(string envName, string tagName, string ipString)
@@ -296,19 +304,51 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
             }
 
             var query = queryTemplate.Replace("{IPString}", ipString);
+            ValidationStatus validationStatus = ValidationStatus.Unknown;
             foreach (var tableName in KustoDataTableNames)
             {
-                if (!ValidateKustoQuery(tableName + query, envName, tagName, ipString))
-                {
-                    // If validation result is false, we've the final result, and
-                    // there is no need to do further validation.
-                    return false;
-                }
+                validationStatus = ValidateKustoQuery(tableName + query, envName);
+
+                // If found, then all good.
+                if (validationStatus == ValidationStatus.Success) { return true; }
+                
+                // If no match, continue on next Kusto table...
+                if (validationStatus == ValidationStatus.NoMatch) { continue; } 
             }
-            return true;
+
+            resultList.Add(new Result
+            {
+                EnvName = envName,
+                IPString = ipString,
+                ConfigTagName = tagName,
+                Status = validationStatus
+            });
+            if (validationStatus == ValidationStatus.NoMatch)
+            {
+                cachedRuntime.Logger.LogInformation($"IP range {ipString} not found in Kusto.");
+            }
+            else if (validationStatus == ValidationStatus.EmptyTitle)
+            {
+                cachedRuntime.Logger.LogInformation($"IP range {ipString} has no title.");
+            }
+            else if (validationStatus == ValidationStatus.InvalidTitle)
+            {
+                cachedRuntime.Logger.LogInformation($"Title of IP range {ipString} does not have environment name \"{envName}\"");
+            }
+            else
+            {
+                cachedRuntime.Logger.LogInformation($"Internal logic error: \"{validationStatus}\" not handled");
+            }
+            return false;
         }
 
-        private bool ValidateKustoQuery(string query, string envName, string tagName, string ipString)
+        /// <summary>
+        /// Validates an IP string against Kusto via a prepared query.
+        /// </summary>
+        /// <param name="query">Prepared Kusto query.</param>
+        /// <param name="envName">Environment name.</param>
+        /// <returns>A ValidationStatus value.</returns>
+        private ValidationStatus ValidateKustoQuery(string query, string envName)
         {
             var requestProperties = KustoClientExtensions
                 .GetClientRequestPropertiesForApplication(cachedRuntime, "IPConfigValidatorWorkflow");
@@ -318,97 +358,20 @@ namespace Microsoft.Office.Datacenter.Networking.Workflows.Monitors.IpamRanges
                 var title = queryResult["Title"] as string;
                 if (string.IsNullOrEmpty(title))
                 {
-                    resultList.Add(new Result
-                    {
-                        EnvName = envName,
-                        IPString = ipString,
-                        ConfigTagName = tagName,
-                        Reason = "Empty title"
-                    });
-                    cachedRuntime.Logger.LogInformation($"IP range {ipString} has no title.");
-                    return false;
+                    return ValidationStatus.EmptyTitle;
                 }
                 else if (!title.Contains(envName))
                 {
-                    resultList.Add(new Result
-                    {
-                        EnvName = envName,
-                        IPString = ipString,
-                        ConfigTagName = tagName,
-                        Reason = "Title has no environment name"
-                    });
-                    cachedRuntime.Logger.LogInformation($"Title of IP range {ipString} does not have environment name \"{envName}\"");
-                    return false;
+                    return ValidationStatus.InvalidTitle;
                 }
-                return true;
+                return ValidationStatus.Success;
             }
             else
             {
-                resultList.Add(new Result
-                {
-                    EnvName = envName,
-                    IPString = ipString,
-                    ConfigTagName = tagName,
-                    Reason = "Not found in Kusto"
-                });
-                cachedRuntime.Logger.LogInformation($"IP range {ipString} not found in Kusto.");
-                return false;
+                return ValidationStatus.NoMatch;
             }
         }
 
         #endregion
-
-        private void OpenWorkItemIfNecessary()
-        {
-            if (resultList.Any())
-            {
-                var vstsClient = cachedRuntime.HostServices.GetService(typeof(IVstsClient)) as IVstsClient ??
-                    CommonHelperMethods.GetExchangeVstsClient(cachedRuntime, Constants.MaxWorkItemsPerQueryFromVsts);
-
-                var timeProvider = cachedRuntime.HostServices.GetService(typeof(ITimeProvider)) as ITimeProvider ?? new TimeProvider();
-                DateTime utcNow = timeProvider.GetUtcNow();
-
-                var activeWorkItems =
-                    vstsClient.GetAllUnclosedWorkItems(
-                        VstsRecipient.ExoNetworkAutomationEmailRecipient.AreaPath,
-                        IpamRangeWorkitemsTag,
-                        utcNow.AddDays(-14)).ToList();
-
-                var activeWorkItem = activeWorkItems.FirstOrDefault(
-                    w => w.Fields[VstsWorkItemFieldNames.TagsFieldName].ToString().Equals(IpamRangeWorkitemsTag));
-
-                if (activeWorkItem == null)
-                {
-                    if (!WhatIf)
-                    {
-                        WorkItem newWorkItem = vstsClient.CreateWorkItem(
-                                title: IpamWorkitemTitle,
-                                areaPath: VstsRecipient.ExoNetworkAutomationEmailRecipient.AreaPath,
-                                tags: IpamRangeWorkitemsTag,
-                                priority: WorkItemPriority.Priority3,
-                                projectGuid: VstsRecipient.ExoNetworkAutomationEmailRecipient.ProjectGuid,
-                                reproSteps: string.Join("<br/>", resultList));
-
-                        cachedRuntime.Logger.LogInformation(
-                            newWorkItem != null ? 
-                                $"A workitem {newWorkItem.Id} with invalid IP ranges in XML configs was created."
-                                :
-                                "Failed to create a workitem with invalid IP ranges in XML configs.");
-                    }
-                    else
-                    {
-                        cachedRuntime.Logger.LogInformation("WhatIf is true, did not attempt to create a ticket.");
-                    }
-                }
-                else
-                {
-                    cachedRuntime.Logger.LogInformation($"Active workitem for not covered IPAM ranges already exists with ID {activeWorkItem.Id}");
-                }
-            }
-            else
-            {
-                cachedRuntime.Logger.LogInformation("No missing subnets were found, no workitem was created.");
-            }
-        }
     }
 }
