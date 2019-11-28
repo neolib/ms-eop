@@ -71,7 +71,10 @@ namespace EOPWork
 
             WriteLine(string.Join(Environment.NewLine, list));
         }
+
     }
+
+    #region Help Classes
 
     internal struct Item
     {
@@ -83,4 +86,7 @@ namespace EOPWork
             return $"{name} of {tag}";
         }
     }
+
+    #endregion
+
 }
