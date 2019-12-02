@@ -18,6 +18,7 @@ namespace FindInvalidIP
         Success,
         NoMatch,        // No matching record found in Kusto
         EmptyTitle,
+        EmptyRegion,
         InvalidTitle,   // No environment name in title
     }
 
@@ -102,9 +103,18 @@ namespace FindInvalidIP
                 if (queryResult?.Count == 1)
                 {
                     var parent = queryResult.Single();
-                    var title = parent.Tags["Title"];
-                    if (string.IsNullOrWhiteSpace(title)) return ValidationStatus.EmptyTitle;
-                    else if (!title.Contains(envName)) return ValidationStatus.InvalidTitle;
+
+                    if (isPrefix)
+                    {
+                        var region = parent.Tags["Region"];
+                        if (string.IsNullOrWhiteSpace(region)) return ValidationStatus.EmptyRegion;
+                    }
+                    else
+                    {
+                        var title = parent.Tags["Title"];
+                        if (string.IsNullOrWhiteSpace(title)) return ValidationStatus.EmptyTitle;
+                        else if (!title.Contains(envName)) return ValidationStatus.InvalidTitle;
+                    }
                     return ValidationStatus.Success;
                 }
                 return ValidationStatus.NoMatch;

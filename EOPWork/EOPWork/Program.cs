@@ -9,7 +9,7 @@ namespace EOPWork
     {
         static void Main(string[] args)
         {
-            new IPTagFinder().Run(args);
+            new IpTagFinder().Run(args);
             //new Sandbox().Run(args);
 
             if (!Console.IsOutputRedirected)

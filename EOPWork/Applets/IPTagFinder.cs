@@ -10,7 +10,7 @@ using static System.Console;
 
 namespace EOPWork.Applets
 {
-    public class IPTagFinder : IApplet
+    public class IpTagFinder : IApplet
     {
         public const string IPv4Pattern = @"(?:\d+\.\d+\.\d+\.\d+)";
         public const string IPv4RangePattern = @"(?:\d+\.\d+\.\d+\.\d+/\d+)";
@@ -132,7 +132,7 @@ namespace EOPWork.Applets
             {
                 var s = attr.Value;
 
-                // Skip these special IP ranges and they also make Regex very slow!
+                // Skip these special IP ranges
                 if (s.StartsWith("0.0.0.0")) return false;
                 if (s.StartsWith("255.255.255.255")) return false;
                 if (s.StartsWith("ffff:ffff:")) return false;
