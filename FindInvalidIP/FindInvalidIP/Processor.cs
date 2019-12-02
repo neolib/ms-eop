@@ -12,10 +12,18 @@ using static System.Console;
 
 namespace FindInvalidIP
 {
+    enum ValidationStatus
+    {
+        Unknown,
+        Success,
+        NoMatch,        // No matching record found in Kusto
+        EmptyTitle,
+        InvalidTitle,   // No environment name in title
+    }
+
     class Processor
     {
         internal IpamClient IpamClient { get; set; }
-        internal string AddresSpaceId { get; set; }
 
         private List<string> processedList = new List<string>();
 
@@ -31,6 +39,7 @@ namespace FindInvalidIP
             var sep = new[] { ',', ' ' };
             var xd = XDocument.Load(resultFile);
             var fileNodes = xd.Root.Elements("file");
+            WriteLine("Envionment,IP Range,Status");
             foreach (var fileNode in fileNodes)
             {
                 var envName = Path.GetFileNameWithoutExtension(fileNode.Attribute("path").Value);
@@ -45,36 +54,47 @@ namespace FindInvalidIP
                             var a = attr.Value.Split(sep, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var prefix in a)
                             {
-                                if (!await FindIP(envName, prefix))
+                                var result = await FindIP(envName, prefix);
+                                if (result != ValidationStatus.Success)
                                 {
-                                    WriteLine($"{envName},{prefix},{node.Name}");
+                                    WriteLine($"{envName},{prefix},{result}");
                                 }
                             }
                         }
-                        else if (!await FindIP(envName, attr.Value))
+                        else
                         {
-                            WriteLine($"{envName},{attr.Value},{node.Name}");
+                            var result = await FindIP(envName, attr.Value);
+                            if (result != ValidationStatus.Success)
+                            {
+                                WriteLine($"{envName},{attr.Value},{result}");
+                            }
                         }
                     }
                 }
             }
         }
 
-        async Task<bool> FindIP(string envName, string prefix)
+        async Task<ValidationStatus> FindIP(string envName, string ipString)
         {
-            if (processedList.Contains(prefix)) return true;
+            if (processedList.Contains(ipString)) return ValidationStatus.Success;
+
+            var prefix = ipString;
+            var isPrefix = ipString.Contains('/');
+            if (!isPrefix)
+            {
+                if (ipString.Contains(':')) prefix = ipString + "/128";
+                else prefix = ipString + "/32";
+            }
 
             var result = await FindInAddressSpace_(SpecialAddressSpaces.DefaultAddressSpaceId);
-            if (result == null)
+            if (result == ValidationStatus.NoMatch)
             {
                 // If not found, then continue query against GalaCake...
-
-                result = await FindInAddressSpace_(SpecialAddressSpaces.GalaCakeAddressSpaceId);
-                return result.GetValueOrDefault();
+                return await FindInAddressSpace_(SpecialAddressSpaces.GalaCakeAddressSpaceId);
             }
-            else return result.Value;
+            return result;
 
-            async Task<bool?> FindInAddressSpace_(string addressSpaceId_)
+            async Task<ValidationStatus> FindInAddressSpace_(string addressSpaceId_)
             {
                 var queryModel = AllocationQueryModel.Create(addressSpaceId_, prefix);
                 var queryResult = await this.IpamClient.QueryAllocationsAsync(queryModel);
@@ -83,9 +103,11 @@ namespace FindInvalidIP
                 {
                     var parent = queryResult.Single();
                     var title = parent.Tags["Title"];
-                    return title != null && title.Contains(envName);
+                    if (string.IsNullOrWhiteSpace(title)) return ValidationStatus.EmptyTitle;
+                    else if (!title.Contains(envName)) return ValidationStatus.InvalidTitle;
+                    return ValidationStatus.Success;
                 }
-                return null;
+                return ValidationStatus.NoMatch;
             }
         }
 

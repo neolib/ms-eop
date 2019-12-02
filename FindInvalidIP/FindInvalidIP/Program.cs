@@ -19,7 +19,6 @@ namespace FindInvalidIP
             new Processor
             {
                 IpamClient = new IpamClient(ipamClientSettings),
-                AddresSpaceId = ipamClientSettings.InitialAddressSpaceId
             }.Process(resultFile).Wait();
 
             WriteLine("Hit ENTER to exit...");
