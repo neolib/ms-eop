@@ -14,7 +14,7 @@ namespace EOPWork.Applets
     {
         public static Regex ipv4Regex = new Regex(@"^(?:\d+\.\d+\.\d+\.\d+/\d+)(?:\s*(?:,|\s)\s*(?:\d+\.\d+\.\d+\.\d+/\d+))*$");
         public static Regex ipv6Regex = new Regex(@"^(?:[\da-fA-F]+:)(?:[\da-fA-F]+|:)+/\d+(?:\s*(?:,|\s)\s*(?:[\da-fA-F]+:)(?:[\da-fA-F]+|:)+/\d+)*$");
-        List<string> tagNames = new List<string>();
+        List<XAttribute> tagNames = new List<XAttribute>();
 
         public int Run(string[] args)
         {
@@ -35,8 +35,7 @@ namespace EOPWork.Applets
 
             WriteLine("  <!-- Tag List -->");
             WriteLine("  <tags>");
-            tagNames.Sort();
-            tagNames.ForEach((name_) => WriteLine($"    <tag name=\"{name_}\" />"));
+            tagNames.ForEach((attr_) => WriteLine($"    <tag name=\"{attr_.Parent.Name}\" attr=\"{attr_.Name}\" />"));
             WriteLine("  </tags>");
             WriteLine("</result>");
         }
@@ -72,32 +71,20 @@ namespace EOPWork.Applets
                     if (ValidateValue_(attr))
                     {
                         list.Add(attr);
-                        AddTagName_(attr.Name.LocalName);
+                        AddTagName_(attr);
                     }
                 }
                 return list;
             }
 
-            bool ValidateName_(XAttribute attr)
+            void AddTagName_(XAttribute attr)
             {
-                return true;
-                var name = attr.Name.LocalName;
-                if (name.Contains("_IPV4") || name.Contains("_IPV6") || 
-                    name.EndsWith("_IP") || name.Contains("_IP_"))
+                if (!tagNames.Any((attr_) => 
+                    attr.Parent.Name == attr_.Parent.Name && attr.Name == attr_.Name)
+                    )
                 {
-                    if (!attr.Value.Contains("-") && 
-                        (attr.Value.Contains(".") || attr.Value.Contains(":"))
-                        )
-                    {
-                        return true;
-                    }
+                    tagNames.Add(attr);
                 }
-                return false;
-            }
-
-            void AddTagName_(string name)
-            {
-                if (!tagNames.Contains(name)) tagNames.Add(name);
             }
 
             string GetNodePath_(XElement node)
