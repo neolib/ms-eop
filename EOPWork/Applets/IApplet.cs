@@ -1,5 +1,4 @@
-﻿
-namespace EOPWork
+﻿namespace EOPWork.Applets
 {
     public interface IApplet
     {

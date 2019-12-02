@@ -3,12 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 
 namespace EOPWork
 {
     using static System.Console;
+    using Applets;
 
     [TestClass]
     public class EOPTest
@@ -72,6 +74,30 @@ namespace EOPWork
             WriteLine(string.Join(Environment.NewLine, list));
         }
 
+        [TestMethod]
+        public void TestIPv4Regex()
+        { 
+            Assert.IsTrue(IPTagFinder.ipv4Regex.IsMatch("1.2.3.4/22"));
+            Assert.IsTrue(IPTagFinder.ipv4Regex.IsMatch("1.2.3.4/22"));
+            Assert.IsTrue(IPTagFinder.ipv4Regex.IsMatch("1.2.3.4/22,1.2.3.4/22"));
+            Assert.IsTrue(IPTagFinder.ipv4Regex.IsMatch("1.2.3.4/22 1.2.3.4/22"));
+            Assert.IsTrue(IPTagFinder.ipv4Regex.IsMatch("1.2.3.4/22 \t1.2.3.4/22"));
+            Assert.IsTrue(IPTagFinder.ipv4Regex.IsMatch("1.2.3.4/22, \t1.2.3.4/22"));
+            Assert.IsTrue(IPTagFinder.ipv4Regex.IsMatch("1.2.3.4/22, \t1.2.3.4/22"));
+            Assert.IsFalse(IPTagFinder.ipv4Regex.IsMatch("1.2.3.4/22 1.2.3.4/22 abc"));
+        }
+
+        [TestMethod]
+        public void TestIPv6RegEx()
+        {
+            Assert.IsTrue(IPTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::/64"));
+            Assert.IsTrue(IPTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::/64,2a01:111:e400:3a55::/64"));
+            Assert.IsTrue(IPTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::/64 2a01:111:e400:3a55::/64"));
+            Assert.IsTrue(IPTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::/64 \t2a01:111:e400:3a55::/64"));
+            Assert.IsTrue(IPTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::/64, \t2a01:111:e400:3a55::/64"));
+            Assert.IsTrue(IPTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::/64, \t2a01:111:e400:3a55::/64"));
+            Assert.IsFalse(IPTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::/64 2a01:111:e400:3a55::/64 abc"));
+        }
     }
 
     #region Help Classes

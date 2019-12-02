@@ -4,21 +4,16 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 using static System.Console;
 
 
-namespace EOPWork
+namespace EOPWork.Applets
 {
-    class IPTagFinder : IApplet
+    public class IPTagFinder : IApplet
     {
-        Regex ipv4Regex = new Regex(@"^\d+\.\d+\.\d+\.\d+\/\d+");
-        /*
-         * I'm not confident about this regular expression, so ValidateValue_ function is not used.
-         * But so far the simple checks in ValidateName_ work and catch all IP strings.
-         */
-        Regex ipv6Regex = new Regex(@"^(([\da-z]+)?:){7}([\da-z]+)?");
+        public static Regex ipv4Regex = new Regex(@"^(?:\d+\.\d+\.\d+\.\d+/\d+)(?:\s*(?:,|\s)\s*(?:\d+\.\d+\.\d+\.\d+/\d+))*$");
+        public static Regex ipv6Regex = new Regex(@"^(?:[\da-fA-F]+:)(?:[\da-fA-F]+|:)+/\d+(?:\s*(?:,|\s)\s*(?:[\da-fA-F]+:)(?:[\da-fA-F]+|:)+/\d+)*$");
         List<string> tagNames = new List<string>();
 
         public int Run(string[] args)
@@ -48,7 +43,7 @@ namespace EOPWork
 
         public void ProcessFile(string filename)
         {
-            WriteLine($"  <file path=\"{filename}\">");
+            WriteLine($"  <file path=\"{Path.GetFileName(filename)}\">");
             var xd = XDocument.Load(filename);
             WalkNode_(xd.Root);
             WriteLine("  </file>");
@@ -63,26 +58,21 @@ namespace EOPWork
                         WriteLine($"      {attr.Name}=\"{attr.Value}\"");
                     WriteLine("    />");
                 }
-                foreach (var child in node.Nodes())
+                foreach (var child in node.Elements())
                 {
-                    if (child is XElement elem) WalkNode_(elem);
+                    WalkNode_(child);
                 }
             }
 
-            List<XAttribute> SearchIPTags_(XElement element)
+            List<XAttribute> SearchIPTags_(XElement node)
             {
                 var list = new List<XAttribute>();
-                foreach (var attr in element.Attributes())
+                foreach (var attr in node.Attributes())
                 {
-                    if (ValidateName_(attr))
+                    if (ValidateValue_(attr))
                     {
-                        if (!attr.Value.StartsWith("0.0.0.0") &&
-                            attr.Value != "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"
-                            )
-                        {
-                            list.Add(attr);
-                            AddTagName_(attr.Name.LocalName);
-                        }
+                        list.Add(attr);
+                        AddTagName_(attr.Name.LocalName);
                     }
                 }
                 return list;
@@ -90,6 +80,7 @@ namespace EOPWork
 
             bool ValidateName_(XAttribute attr)
             {
+                return true;
                 var name = attr.Name.LocalName;
                 if (name.Contains("_IPV4") || name.Contains("_IPV6") || 
                     name.EndsWith("_IP") || name.Contains("_IP_"))
@@ -127,6 +118,11 @@ namespace EOPWork
 
             bool ValidateValue_(XAttribute attr)
             {
+                //WriteLine($"***<{attr.Parent.Name} {attr.Name}=\"{attr.Value}\"");
+                
+                // Skip these special IP ranges and they also make Regex very slow!
+                if (attr.Value.StartsWith("0.0.0.0")) return false;
+                if (attr.Value.StartsWith("ffff:ffff:")) return false;
                 if (ipv4Regex.IsMatch(attr.Value)) return true;
                 if (ipv6Regex.IsMatch(attr.Value)) return true;
                 return false;

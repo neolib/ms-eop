@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace EOPWork
+﻿namespace EOPWork
 {
-    class Sandbox : IApplet
+    class Sandbox : Applets.IApplet
     {
         public int Run(string[] args)
         {
-
             return 0;
         }
 

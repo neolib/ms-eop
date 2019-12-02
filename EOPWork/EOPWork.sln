@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest", "UnitTest\UnitTe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EOPWork", "EOPWork\EOPWork.csproj", "{AAFFD7F6-B8C0-4B2A-AFFB-7619A28668F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Applets", "Applets\Applets.csproj", "{AA05B379-F43B-4F73-998D-D8468EC8DECB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{AAFFD7F6-B8C0-4B2A-AFFB-7619A28668F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AAFFD7F6-B8C0-4B2A-AFFB-7619A28668F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AAFFD7F6-B8C0-4B2A-AFFB-7619A28668F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA05B379-F43B-4F73-998D-D8468EC8DECB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA05B379-F43B-4F73-998D-D8468EC8DECB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA05B379-F43B-4F73-998D-D8468EC8DECB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA05B379-F43B-4F73-998D-D8468EC8DECB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
