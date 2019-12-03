@@ -11,9 +11,9 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using static System.Console;
 
-namespace FindInvalidIP
+namespace F5IPConfigValidator
 {
-    enum ValidationStatus
+    public enum ValidationStatus
     {
         Unknown,
         Success,
@@ -25,11 +25,51 @@ namespace FindInvalidIP
         InvalidTitle,       // No environment/DC name in title
     }
 
+    public class ValidationResult
+    {
+        public ValidationStatus Status;
+        public string Summary;
+
+        public ValidationResult(ValidationStatus status, string summary = null)
+        {
+            this.Status = status;
+            this.Summary = summary;
+        }
+    }
+
     class Processor
     {
         internal IpamClient IpamClient { get; set; }
-
         private List<string> ipHotList = new List<string>();
+        private Dictionary<string, string> eopToAzureDcLookupTable;
+        private Dictionary<string, string> azureToEopDcLookupTable;
+
+        private void LoadDcNames()
+        {
+            var myType = this.GetType();
+            var rcName = myType.Namespace + ".Files.DCNAMES.xml";
+            using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
+            {
+                var dcNameTable = XDocument.Load(rcs);
+
+                eopToAzureDcLookupTable = new Dictionary<string, string>();
+                azureToEopDcLookupTable = new Dictionary<string, string>();
+                foreach (var node in dcNameTable.Root.Elements())
+                {
+                    var eopName = node.Attribute("EOPNAME").Value;
+                    var azureName = node.Attribute("AZURENAME").Value;
+                    eopToAzureDcLookupTable[eopName] = azureName;
+                    azureToEopDcLookupTable[azureName] = eopName;
+                }
+            }
+        }
+
+        private string GetEopDcName(string azureName)
+        {
+            if (azureToEopDcLookupTable.TryGetValue(azureName.ToUpper(), out var name))
+            { return name; }
+            return null;
+        }
 
         /// <summary>
         /// Processes input XML file and checks against IPAM for invalid IP addresses.
@@ -41,13 +81,14 @@ namespace FindInvalidIP
         internal async Task Process(string resultFile)
         {
             // CSV header row
-            WriteLine("Envionment,IP Range,Status");
+            WriteLine("Envionment,IP Range,Status,Summary");
  
             var sep = new[] { ',', ' ' };
             var xd = XDocument.Load(resultFile);
             //var debug = false;
             var tasks = new List<Task>();
 
+            LoadDcNames();
             // Process non-configuration nodes first because
             // configuration nodes may have duplicate IP strings.
             var envNodes = xd.Root.XPathSelectElements("//file[not(starts-with(@path, '_'))]");
@@ -118,9 +159,9 @@ namespace FindInvalidIP
                     }
 
                     var result = await FindIP(forestName, eopDcName, ipString_);
-                    if (result != ValidationStatus.Success)
+                    if (result.Status != ValidationStatus.Success)
                     {
-                        WriteLine($"{envName},{ipString_},{result}");
+                        WriteLine($"{envName},{ipString_},{result.Status},{result.Summary.ToCsvValue()}");
                     }
                 }
             }
@@ -140,18 +181,18 @@ namespace FindInvalidIP
             SpecialAddressSpaces.RXAddressSpaceId
             };
 
-        async Task<ValidationStatus> FindIP(string forestName, string eopDcName, string ipString)
+        async Task<ValidationResult> FindIP(string forestName, string eopDcName, string ipString)
         {
             var isPrefix = ipString.Contains('/');
             foreach (var addressSpaceId in addressSpaceIds)
             {
                 var result = await FindInAddressSpace_(SpecialAddressSpaces.DefaultAddressSpaceId);
-                if (result == ValidationStatus.NoMatch) { continue; }
+                if (result.Status == ValidationStatus.NoMatch) { continue; }
                 return result;
             }
-            return ValidationStatus.NoMatch;
+            return new ValidationResult(ValidationStatus.NoMatch, "No matched record found");
 
-            async Task<ValidationStatus> FindInAddressSpace_(string addressSpaceId_)
+            async Task<ValidationResult> FindInAddressSpace_(string addressSpaceId_)
             {
                 var queryModel = AllocationQueryModel.Create(addressSpaceId_, ipString);
                 queryModel.ReturnParentWhenNotFound = !isPrefix;
@@ -170,28 +211,42 @@ namespace FindInvalidIP
                         var title = parent.Tags["Title"];
                         if (string.IsNullOrWhiteSpace(title))
                         {
-                            return ValidationStatus.EmptyTitle;
+                            return new ValidationResult(
+                                ValidationStatus.EmptyTitle,
+                                "Title should be empty");
                         }
 
                         var dcName = parent.Tags["Datacenter"];
                         if (string.IsNullOrWhiteSpace(dcName))
                         {
-                            return ValidationStatus.EmptyDatacenter;
-                        }
-                        if (!title.ContainsText(dcName))
-                        {
-                            return ValidationStatus.InvalidTitle;
+                            return new ValidationResult(
+                                ValidationStatus.EmptyDatacenter, 
+                                "Datacenter tag should not be empty");
                         }
 
-                        var mappeEopDcName = GetEopDcName(dcName);
-                        if (string.IsNullOrWhiteSpace(mappeEopDcName))
+                        if (!dcName.IsSameTextAs(eopDcName))
                         {
-                            return ValidationStatus.NoneEopDcName;
+                            var mappeEopDcName = GetEopDcName(dcName);
+                            if (string.IsNullOrWhiteSpace(mappeEopDcName))
+                            {
+                                return new ValidationResult(
+                                    ValidationStatus.NoneEopDcName,
+                                    $"Datacenter {dcName} does not have an EOP name");
+                            }
+                            if (!string.IsNullOrWhiteSpace(eopDcName) &&
+                                !eopDcName.IsSameTextAs(mappeEopDcName))
+                            {
+                                return new ValidationResult(
+                                    ValidationStatus.MismatchedDcName,
+                                    $"Datacenter {dcName} has an EOP name {mappeEopDcName} which is not matched in config file ({eopDcName})");
+                            }
                         }
-                        if (!string.IsNullOrWhiteSpace(eopDcName) && 
-                            !eopDcName.IsSameTextAs(mappeEopDcName))
+
+                        if (!title.ContainsText(dcName) && !title.ContainsText(eopDcName))
                         {
-                            return ValidationStatus.MismatchedDcName;
+                            return new ValidationResult(
+                                ValidationStatus.InvalidTitle,
+                                $"Title ({title}) contains no datacenter name {dcName} or EOP name {eopDcName}");
                         }
 
                         if (!string.IsNullOrWhiteSpace(forestName) &&
@@ -201,35 +256,10 @@ namespace FindInvalidIP
                             //return ValidationStatus.InvalidTitle;
                         }
                     }
-                    return ValidationStatus.Success;
+                    return new ValidationResult(ValidationStatus.Success);
                 }
-                return ValidationStatus.NoMatch;
+                return new ValidationResult(ValidationStatus.NoMatch);
             }
         }
-
-        private XDocument dcNameTable;
-        private XDocument DcNameTable
-        {
-            get
-            {
-                if (dcNameTable == null)
-                {
-                    var myType = this.GetType();
-                    var rcName = myType.Namespace + ".Files.DCNAMES.xml";
-                    using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
-                    {
-                        dcNameTable = XDocument.Load(rcs);
-                    }
-                }
-                return dcNameTable;
-            }
-        }
-
-        private string GetEopDcName(string azureName)
-        {
-            var node = this.DcNameTable.XPathSelectElement($"//DCNAME[@AZURENAME='{azureName}']");
-            return node?.Attribute("EOPNAME").Value;
-        }
-
     }
 }

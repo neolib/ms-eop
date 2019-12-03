@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FindInvalidIP
+namespace F5IPConfigValidator
 {
     public static class ExtensionMethods
     {
@@ -19,6 +19,12 @@ namespace FindInvalidIP
             if (self == null) return false;
             if (text == null) return false;
             return string.Compare(self, text, true) == 0;
+        }
+
+        public static string ToCsvValue(this string self)
+        {
+            var s = self?.Replace("\"", "\"\"");
+            return $"\"{s}\"";
         }
     }
 }

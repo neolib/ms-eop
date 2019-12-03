@@ -4,7 +4,7 @@ using System;
 using System.Configuration;
 
 
-namespace FindInvalidIP
+namespace F5IPConfigValidator
 {
     using static System.Console;
 
