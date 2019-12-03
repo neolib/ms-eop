@@ -80,10 +80,12 @@ namespace EOPWork
             Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4"));
             Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4"));
             Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4,1.2.3.4"));
+            Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4 ,1.2.3.4"));
+            Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4 , 1.2.3.4"));
+            Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4, \t1.2.3.4"));
+            Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4 \t, \t1.2.3.4"));
             Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4 1.2.3.4"));
-            Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4 \t1.2.3.4"));
-            Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4, \t1.2.3.4"));
-            Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4, \t1.2.3.4"));
+            Assert.IsTrue(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4 \t 1.2.3.4"));
             Assert.IsFalse(IpTagFinder.ipv4Regex.IsMatch("1.2.3.4 1.2.3.4 abc"));
         }
 
@@ -93,34 +95,38 @@ namespace EOPWork
             Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22"));
             Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22"));
             Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22,1.2.3.4/22"));
+            Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22 ,1.2.3.4/22"));
+            Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22 , 1.2.3.4/22"));
+            Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22, \t1.2.3.4/22"));
+            Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22 \t, \t1.2.3.4/22"));
             Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22 1.2.3.4/22"));
-            Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22 \t1.2.3.4/22"));
-            Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22, \t1.2.3.4/22"));
-            Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22, \t1.2.3.4/22"));
+            Assert.IsTrue(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22 \t 1.2.3.4/22"));
             Assert.IsFalse(IpTagFinder.ipv4RangeRegex.IsMatch("1.2.3.4/22 1.2.3.4/22 abc"));
         }
 
         [TestMethod]
         public void TestIPv6RegEx()
         {
+            Assert.IsTrue(IpTagFinder.ipv6Regex.IsMatch("2a01:111:f400:fc18:0:0:0:16"));
             Assert.IsTrue(IpTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::::"));
             Assert.IsTrue(IpTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::,2a01:111:e400:3a55::"));
             Assert.IsTrue(IpTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55:: 2a01:111:e400:3a55::"));
             Assert.IsTrue(IpTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55:: \t2a01:111:e400:3a55::"));
             Assert.IsTrue(IpTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::, \t2a01:111:e400:3a55::"));
-            Assert.IsTrue(IpTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55::, \t2a01:111:e400:3a55::"));
+            Assert.IsTrue(IpTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55:: , \t2a01:111:e400:3a55::"));
             Assert.IsFalse(IpTagFinder.ipv6Regex.IsMatch("2a01:111:e400:3a55:: 2a01:111:e400:3a55:: abc"));
         }
 
         [TestMethod]
         public void TestIPv6RangeRegEx()
         {
+            Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:f400:fc18:0:0:0:16/64"));
             Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64"));
             Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64,2a01:111:e400:3a55::/64"));
             Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64 2a01:111:e400:3a55::/64"));
             Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64 \t2a01:111:e400:3a55::/64"));
             Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64, \t2a01:111:e400:3a55::/64"));
-            Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64, \t2a01:111:e400:3a55::/64"));
+            Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64 , \t2a01:111:e400:3a55::/64"));
             Assert.IsFalse(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64 2a01:111:e400:3a55::/64 abc"));
         }
     }
