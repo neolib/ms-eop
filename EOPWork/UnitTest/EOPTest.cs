@@ -132,7 +132,7 @@ namespace EOPWork.UnitTest
         }
 
         [TestMethod]
-        public void TestXDocumentXPath()
+        public void TestXDocumentXPathAttribute()
         {
             var myType = this.GetType();
             var rcName = myType.Namespace + ".Files.env.xml";
@@ -141,6 +141,20 @@ namespace EOPWork.UnitTest
                 var xd = XDocument.Load(rcs);
                 var name = "am5_eur03_01";
                 var node = xd.XPathSelectElement($"//add[@key='{name}']");
+                WriteLine(node.Attribute("value").Value);
+            }
+        }
+
+        [TestMethod]
+        public void TestXDocumentXPathStartsWith()
+        {
+            var myType = this.GetType();
+            var rcName = myType.Namespace + ".Files.env.xml";
+            using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
+            {
+                var xd = XDocument.Load(rcs);
+                var name = "am5";   // starts-with is case-sensitive
+                var node = xd.XPathSelectElement($"//add[starts-with(@key, '{name}')]");
                 WriteLine(node.Attribute("value").Value);
             }
         }
