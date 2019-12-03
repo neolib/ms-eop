@@ -8,8 +8,8 @@
     <ProjectGuid>{1747C63E-3BE1-408F-9FE0-32EC4CC8503A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EOPWork</RootNamespace>
-    <AssemblyName>EOPWork</AssemblyName>
+    <RootNamespace>EOPWork.UnitTest</RootNamespace>
+    <AssemblyName>EOPWork.UnitTest</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -55,9 +55,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="env.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="Files\env.xml" />
     <EmbeddedResource Include="Files\test.txt">
       <CustomToolNamespace>aa</CustomToolNamespace>
     </EmbeddedResource>

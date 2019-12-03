@@ -5,9 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using System.Xml.XPath;
 
 
-namespace EOPWork
+namespace EOPWork.UnitTest
 {
     using static System.Console;
     using Applets;
@@ -128,6 +129,20 @@ namespace EOPWork
             Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64, \t2a01:111:e400:3a55::/64"));
             Assert.IsTrue(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64 , \t2a01:111:e400:3a55::/64"));
             Assert.IsFalse(IpTagFinder.ipv6RangeRegex.IsMatch("2a01:111:e400:3a55::/64 2a01:111:e400:3a55::/64 abc"));
+        }
+
+        [TestMethod]
+        public void TestXDocumentXPath()
+        {
+            var myType = this.GetType();
+            var rcName = myType.Namespace + ".Files.env.xml";
+            using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
+            {
+                var xd = XDocument.Load(rcs);
+                var name = "am5_eur03_01";
+                var node = xd.XPathSelectElement($"//add[@key='{name}']");
+                WriteLine(node.Attribute("value").Value);
+            }
         }
     }
 
