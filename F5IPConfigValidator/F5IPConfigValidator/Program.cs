@@ -14,8 +14,6 @@ namespace FindInvalidIP
         {
             var resultFile = args[0];
             var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
-
-            WriteLine($"Using AS {ipamClientSettings.InitialAddressSpaceId}");
             new Processor
             {
                 IpamClient = new IpamClient(ipamClientSettings),

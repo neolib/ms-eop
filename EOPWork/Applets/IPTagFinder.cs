@@ -60,7 +60,7 @@ namespace EOPWork.Applets
 
         public void ProcessFile(string filename)
         {
-            WriteLine($"  <file path=\"{Path.GetFileName(filename)}\">");
+            WriteLine($"  <file name=\"{Path.GetFileName(filename)}\">");
             var xd = XDocument.Load(filename);
             WalkNode_(xd.Root);
             WriteLine("  </file>");
