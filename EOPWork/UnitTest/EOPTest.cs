@@ -12,6 +12,7 @@ namespace EOPWork.UnitTest
 {
     using static System.Console;
     using Applets;
+    using System.Threading.Tasks;
 
     [TestClass]
     public class EOPTest
@@ -158,6 +159,34 @@ namespace EOPWork.UnitTest
                 WriteLine(node.Attribute("value").Value);
             }
         }
+
+        [TestMethod]
+        public void TestTaskWaitAll()
+        {
+            var r = new Random();
+            StartWork_().Wait();
+
+            async Task StartWork_()
+            {
+                WriteLine("Starting 10 workers...");
+                var tasks = new List<Task>();
+                for (int i = 1; i < 10; i++)
+                {
+                    tasks.Add(DoWork_($"Worker_{i}"));
+                }
+                Task.WaitAll(tasks.ToArray());
+                WriteLine("All workers are done!");
+            }
+
+            async Task DoWork_(string name_)
+            {
+                var delay = r.Next(100, 2000);
+                WriteLine($"Worker {name_} will complete in {delay} ms...");
+                await Task.Delay(delay);
+                WriteLine($"Worker {name_} completed");
+            }
+        }
+
     }
 
     #region Help Classes
