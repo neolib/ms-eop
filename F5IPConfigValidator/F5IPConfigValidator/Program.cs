@@ -19,7 +19,7 @@ namespace F5IPConfigValidator
                 IpamClient = new IpamClient(ipamClientSettings),
             }.Process(resultFile).Wait();
 
-            WriteLine("Hit ENTER to exit...");
+            Error.WriteLine("Hit ENTER to exit...");
             Console.ReadLine();
         }
 

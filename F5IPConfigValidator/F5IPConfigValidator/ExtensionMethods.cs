@@ -10,7 +10,7 @@ namespace F5IPConfigValidator
     {
         public static bool ContainsText(this string self, string text)
         {
-            if (text == null) return false;
+            if (string.IsNullOrEmpty(text)) return false;
             return self?.IndexOf(text, StringComparison.CurrentCultureIgnoreCase) >= 0;
         }
 

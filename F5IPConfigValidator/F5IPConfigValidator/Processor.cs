@@ -82,10 +82,10 @@ namespace F5IPConfigValidator
         {
             // CSV header row
             WriteLine("Envionment,IP Range,Status,Summary");
- 
+
+            //var debug = false;
             var sep = new[] { ',', ' ' };
             var xd = XDocument.Load(resultFile);
-            //var debug = false;
             var tasks = new List<Task>();
 
             LoadDcNames();
@@ -107,11 +107,21 @@ namespace F5IPConfigValidator
             async Task ProcessFileNode_(XElement fileNode_)
             {
                 var configName = fileNode_.Attribute("name").Value;
+                Error.WriteLine(configName);
+
                 var envName = ExtractEnvironmentName_(configName);
-                var isConfigEnv = envName.StartsWith("_");
+                /*
+                 * Special configuration filenames start with an underscore.
+                 * Real environment filenames do not.
+                 */
+                var isEnvName = !envName.StartsWith("_");
                 string forestName = null;
                 string eopDcName = null;
-                if (!isConfigEnv)
+                if (isEnvName)
+                {
+                    // Nothing to do here.
+                }
+                else
                 {
                     var index = envName.LastIndexOf('-');
                     if (index > 0)
@@ -134,17 +144,17 @@ namespace F5IPConfigValidator
                             var a = attr.Value.Split(sep, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var ipString in a)
                             {
-                                await ProcessIP_(ipString);
+                                await ProcessIpString_(ipString);
                             }
                         }
                         else
                         {
-                            await ProcessIP_(attr.Value);
+                            await ProcessIpString_(attr.Value);
                         }
                     }
                 }
 
-                async Task ProcessIP_(string ipString_)
+                async Task ProcessIpString_(string ipString_)
                 {
                     lock (ipHotList)
                     {
@@ -158,19 +168,26 @@ namespace F5IPConfigValidator
                         }
                     }
 
-                    var result = await FindIP(forestName, eopDcName, ipString_);
-                    if (result.Status != ValidationStatus.Success)
+                    try
                     {
-                        WriteLine($"{envName},{ipString_},{result.Status},{result.Summary.ToCsvValue()}");
+                        var result = await ValidateIpString(forestName, eopDcName, ipString_);
+                        if (result.Status != ValidationStatus.Success)
+                        {
+                            WriteLine($"{envName},{ipString_},{result.Status},{result.Summary.ToCsvValue()}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Error.WriteLine($"\r\n!!!{envName} {ipString_}:\r\n{ex}");
                     }
                 }
             }
 
-            string ExtractEnvironmentName_(string filename)
+            string ExtractEnvironmentName_(string filename_)
             {
-                var index = filename.LastIndexOf('.');
-                if (index > 0) return filename.Substring(0, index);
-                return filename;
+                var index = filename_.LastIndexOf('.');
+                if (index > 0) return filename_.Substring(0, index);
+                return filename_;
             }
         }
 
@@ -181,8 +198,9 @@ namespace F5IPConfigValidator
             SpecialAddressSpaces.RXAddressSpaceId
             };
 
-        async Task<ValidationResult> FindIP(string forestName, string eopDcName, string ipString)
+        async Task<ValidationResult> ValidateIpString(string forestName, string eopDcName, string ipString)
         {
+            var isEnvName = forestName != null;
             var isPrefix = ipString.Contains('/');
             foreach (var addressSpaceId in addressSpaceIds)
             {
@@ -200,65 +218,61 @@ namespace F5IPConfigValidator
 
                 var queryResult = await this.IpamClient.QueryAllocationsAsync(queryModel);
                 var parent = queryResult.FirstOrDefault();
-                if (parent != null)
+                if (parent == null) return new ValidationResult(ValidationStatus.NoMatch);
+
+                // No need to validate tags of an IP range prefix.
+                if (isPrefix) return new ValidationResult(ValidationStatus.Success);
+
+                parent.Tags.TryGetValue("Title", out var title);
+                if (string.IsNullOrWhiteSpace(title))
                 {
-                    if (isPrefix)
-                    {
-                        // No need to validate tags of an IP range prefix.
-                    }
-                    else
-                    {
-                        var title = parent.Tags["Title"];
-                        if (string.IsNullOrWhiteSpace(title))
-                        {
-                            return new ValidationResult(
-                                ValidationStatus.EmptyTitle,
-                                "Title should be empty");
-                        }
-
-                        var dcName = parent.Tags["Datacenter"];
-                        if (string.IsNullOrWhiteSpace(dcName))
-                        {
-                            return new ValidationResult(
-                                ValidationStatus.EmptyDatacenter, 
-                                "Datacenter tag should not be empty");
-                        }
-
-                        if (!dcName.IsSameTextAs(eopDcName))
-                        {
-                            var mappeEopDcName = GetEopDcName(dcName);
-                            if (string.IsNullOrWhiteSpace(mappeEopDcName))
-                            {
-                                return new ValidationResult(
-                                    ValidationStatus.NoneEopDcName,
-                                    $"Datacenter {dcName} does not have an EOP name");
-                            }
-                            if (!string.IsNullOrWhiteSpace(eopDcName) &&
-                                !eopDcName.IsSameTextAs(mappeEopDcName))
-                            {
-                                return new ValidationResult(
-                                    ValidationStatus.MismatchedDcName,
-                                    $"Datacenter {dcName} has an EOP name {mappeEopDcName} which is not matched in config file ({eopDcName})");
-                            }
-                        }
-
-                        if (!title.ContainsText(dcName) && !title.ContainsText(eopDcName))
-                        {
-                            return new ValidationResult(
-                                ValidationStatus.InvalidTitle,
-                                $"Title ({title}) contains no datacenter name {dcName} or EOP name {eopDcName}");
-                        }
-
-                        if (!string.IsNullOrWhiteSpace(forestName) &&
-                            !title.ContainsText(forestName)
-                            )
-                        {
-                            //return ValidationStatus.InvalidTitle;
-                        }
-                    }
-                    return new ValidationResult(ValidationStatus.Success);
+                    return new ValidationResult(
+                        ValidationStatus.EmptyTitle,
+                        "Title should be empty");
                 }
-                return new ValidationResult(ValidationStatus.NoMatch);
+
+                parent.Tags.TryGetValue("Datacenter", out var dcName);
+                if (string.IsNullOrWhiteSpace(dcName))
+                {
+                    return new ValidationResult(
+                        ValidationStatus.EmptyDatacenter,
+                        "Datacenter tag should not be empty");
+                }
+
+                if (isEnvName)
+                {
+                    if (!dcName.IsSameTextAs(eopDcName))
+                    {
+                        var mappeEopDcName = GetEopDcName(dcName);
+                        if (string.IsNullOrWhiteSpace(mappeEopDcName))
+                        {
+                            return new ValidationResult(
+                                ValidationStatus.NoneEopDcName,
+                                $"Datacenter {dcName} does not have an EOP name");
+                        }
+                        if (!eopDcName.IsSameTextAs(mappeEopDcName))
+                        {
+                            return new ValidationResult(
+                                ValidationStatus.MismatchedDcName,
+                                $"Datacenter {dcName} has an EOP name {mappeEopDcName} which is not matched in config file ({eopDcName})");
+                        }
+                    }
+
+                    if (!title.ContainsText(dcName) && !title.ContainsText(eopDcName))
+                    {
+                        return new ValidationResult(
+                            ValidationStatus.InvalidTitle,
+                            $"Title ({title}) contains no datacenter name {dcName} or EOP name {eopDcName}");
+                    }
+
+                    if (!title.ContainsText(forestName))
+                    {
+                        return new ValidationResult(
+                            ValidationStatus.InvalidTitle,
+                            $"Title ({title}) contains no forest name {forestName}");
+                    }
+                }
+                return new ValidationResult(ValidationStatus.Success);
             }
         }
     }
