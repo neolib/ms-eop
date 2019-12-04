@@ -35,12 +35,15 @@ namespace F5IPConfigValidator
             this.Status = status;
             this.Summary = summary;
         }
+
+        public static ValidationResult Success => new ValidationResult(ValidationStatus.Success);
     }
 
     class Processor
     {
         internal IpamClient IpamClient { get; set; }
         private List<string> ipHotList = new List<string>();
+        private List<string> prefixIdList = new List<string>();
         private Dictionary<string, string> eopToAzureDcLookupTable;
         private Dictionary<string, string> azureToEopDcLookupTable;
 
@@ -89,16 +92,26 @@ namespace F5IPConfigValidator
             var tasks = new List<Task>();
 
             LoadDcNames();
+            var envNodes = xd.Root.XPathSelectElements("//file[not(starts-with(@name, '_'))]");
+            var configNodes = xd.Root.XPathSelectElements("//file[starts-with(@name, '_')]");
+
+            if (!envNodes.Any())
+            {
+                throw new Exception("No environment nodes!");
+            }
+            if (!configNodes.Any())
+            {
+                throw new Exception("No _config nodes!");
+            }
+
             // Process non-configuration nodes first because
             // configuration nodes may have duplicate IP strings.
-            var envNodes = xd.Root.XPathSelectElements("//file[not(starts-with(@path, '_'))]");
             foreach (var fileNode in envNodes)
             {
                 tasks.Add(ProcessFileNode_(fileNode));
             }
             Task.WaitAll(tasks.ToArray());
 
-            var configNodes = xd.Root.XPathSelectElements("//file[starts-with(@path, '_')]");
             foreach (var fileNode in configNodes)
             {
                 await ProcessFileNode_(fileNode);
@@ -152,6 +165,11 @@ namespace F5IPConfigValidator
 
                 async Task ProcessIpString_(string ipString_)
                 {
+                    // aA valid IPv6 string must have at least 5 groups.
+                    if (ipString_.Contains(':') && 
+                        ipString_.Last() != ':'
+                        && ipString_.Count((c) => c == ':') <= 4) return;
+
                     lock (ipHotList)
                     {
                         if (ipHotList.Contains(ipString_))
@@ -217,15 +235,23 @@ namespace F5IPConfigValidator
                 var parent = queryResult.FirstOrDefault();
                 if (parent == null) return new ValidationResult(ValidationStatus.NoMatch);
 
+                // Skip this top prefix!
+                if (parent.Prefix.StartsWith("0.0.0.0")) return ValidationResult.Success;
+                lock (prefixIdList)
+                {
+                    if (prefixIdList.Contains(parent.Id)) return ValidationResult.Success;
+                    prefixIdList.Add(parent.Id);
+                }
+
                 // No need to validate tags of an IP range prefix.
-                if (isPrefix) return new ValidationResult(ValidationStatus.Success);
+                if (isPrefix) return ValidationResult.Success;
 
                 parent.Tags.TryGetValue("Title", out var title);
                 if (string.IsNullOrWhiteSpace(title))
                 {
                     return new ValidationResult(
                         ValidationStatus.EmptyTitle,
-                        "Title should be empty");
+                        $"{parent.Prefix}: Title should not be empty");
                 }
 
                 parent.Tags.TryGetValue("Datacenter", out var dcName);
@@ -233,7 +259,7 @@ namespace F5IPConfigValidator
                 {
                     return new ValidationResult(
                         ValidationStatus.EmptyDatacenter,
-                        "Datacenter tag should not be empty");
+                        $"{parent.Prefix}: Datacenter tag should not be empty");
                 }
 
                 if (isEnvName)
@@ -245,13 +271,13 @@ namespace F5IPConfigValidator
                         {
                             return new ValidationResult(
                                 ValidationStatus.NoneEopDcName,
-                                $"Datacenter {dcName} does not have an EOP name");
+                                $"{parent.Prefix}: Datacenter {dcName} does not have an EOP name");
                         }
                         if (!eopDcName.IsSameTextAs(mappeEopDcName))
                         {
                             return new ValidationResult(
                                 ValidationStatus.MismatchedDcName,
-                                $"Datacenter {dcName} has an EOP name {mappeEopDcName} which is not matched in config file ({eopDcName})");
+                                $"{parent.Prefix}: Datacenter {dcName} has an EOP name {mappeEopDcName} which is not matched in config file ({eopDcName})");
                         }
                     }
 
@@ -259,17 +285,17 @@ namespace F5IPConfigValidator
                     {
                         return new ValidationResult(
                             ValidationStatus.InvalidTitle,
-                            $"Title ({title}) contains no datacenter name {dcName} or EOP name {eopDcName}");
+                            $"{parent.Prefix}: Title ({title}) contains no datacenter name {dcName} or EOP name {eopDcName}");
                     }
 
-                    if (!title.ContainsText(forestName))
+                    if (!forestName.ContainsText("gtm-") && !title.ContainsText(forestName))
                     {
                         return new ValidationResult(
                             ValidationStatus.InvalidTitle,
-                            $"Title ({title}) contains no forest name {forestName}");
+                            $"{parent.Prefix}: Title ({title}) contains no forest name {forestName}");
                     }
                 }
-                return new ValidationResult(ValidationStatus.Success);
+                return ValidationResult.Success;
             }
         }
     }
