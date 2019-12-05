@@ -3,16 +3,16 @@ using Microsoft.Azure.Ipam.Contracts;
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using static System.Console;
 
 namespace F5IPConfigValidator
 {
+    using static System.Console;
+    using StringMap = Dictionary<string, string>;
+
     public enum ValidationStatus
     {
         Unknown,
@@ -27,6 +27,9 @@ namespace F5IPConfigValidator
 
     public class ValidationResult
     {
+        public string IpamDcName;
+        public string MappedEopDcName;
+        public string Title;
         public ValidationStatus Status;
         public string Summary;
 
@@ -36,6 +39,7 @@ namespace F5IPConfigValidator
             this.Summary = summary;
         }
 
+        public static ValidationResult NoMatch => new ValidationResult(ValidationStatus.NoMatch);
         public static ValidationResult Success => new ValidationResult(ValidationStatus.Success);
     }
 
@@ -44,9 +48,8 @@ namespace F5IPConfigValidator
         internal IpamClient IpamClient { get; set; }
         private List<string> ipHotList = new List<string>();
         private List<string> prefixIdList = new List<string>();
-        private Dictionary<string, string> eopToAzureDcLookupTable;
-        private Dictionary<string, string> azureToEopDcLookupTable;
-
+        private StringMap eopToAzureDcNameMap;
+        
         private void LoadDcNames()
         {
             var myType = this.GetType();
@@ -55,21 +58,19 @@ namespace F5IPConfigValidator
             {
                 var dcNameTable = XDocument.Load(rcs);
 
-                eopToAzureDcLookupTable = new Dictionary<string, string>();
-                azureToEopDcLookupTable = new Dictionary<string, string>();
+                eopToAzureDcNameMap = new StringMap();
                 foreach (var node in dcNameTable.Root.Elements())
                 {
                     var eopName = node.Attribute("EOPNAME").Value;
                     var azureName = node.Attribute("AZURENAME").Value;
-                    eopToAzureDcLookupTable[eopName] = azureName;
-                    azureToEopDcLookupTable[azureName] = eopName;
+                    eopToAzureDcNameMap[eopName] = azureName;
                 }
             }
         }
 
-        private string GetEopDcName(string azureName)
+        private string GetAzureDcName(string eopName)
         {
-            if (azureToEopDcLookupTable.TryGetValue(azureName.ToUpper(), out var name))
+            if (eopToAzureDcNameMap.TryGetValue(eopName.ToUpper(), out var name))
             { return name; }
             return null;
         }
@@ -84,7 +85,7 @@ namespace F5IPConfigValidator
         internal async Task Process(string resultFile)
         {
             // CSV header row
-            WriteLine("Envionment,IP Range,Status,Summary");
+            WriteLine("Envionment,IP/Prefix,Status,Datacenter,Title,Summary");
 
             //var debug = false;
             var sep = new[] { ',', ' ' };
@@ -165,10 +166,10 @@ namespace F5IPConfigValidator
 
                 async Task ProcessIpString_(string ipString_)
                 {
-                    // aA valid IPv6 string must have at least 5 groups.
+                    // A valid IPv6 string must have at least 5 groups.
                     if (ipString_.Contains(':') && 
-                        ipString_.Last() != ':'
-                        && ipString_.Count((c) => c == ':') <= 4) return;
+                        !ipString_.EndsWith("::") &&
+                        ipString_.Count((c) => c == ':') <= 4) return;
 
                     lock (ipHotList)
                     {
@@ -233,10 +234,10 @@ namespace F5IPConfigValidator
 
                 var queryResult = await this.IpamClient.QueryAllocationsAsync(queryModel);
                 var parent = queryResult.FirstOrDefault();
-                if (parent == null) return new ValidationResult(ValidationStatus.NoMatch);
+                if (parent == null) return ValidationResult.NoMatch;
 
                 // Skip this top prefix!
-                if (parent.Prefix.StartsWith("0.0.0.0")) return ValidationResult.Success;
+                //if (parent.Prefix.StartsWith("0.0.0.0")) return ValidationResult.Success;
                 lock (prefixIdList)
                 {
                     if (prefixIdList.Contains(parent.Id)) return ValidationResult.Success;
@@ -254,8 +255,8 @@ namespace F5IPConfigValidator
                         $"{parent.Prefix}: Title should not be empty");
                 }
 
-                parent.Tags.TryGetValue("Datacenter", out var dcName);
-                if (string.IsNullOrWhiteSpace(dcName))
+                parent.Tags.TryGetValue("Datacenter", out var ipamDcName);
+                if (string.IsNullOrWhiteSpace(ipamDcName))
                 {
                     return new ValidationResult(
                         ValidationStatus.EmptyDatacenter,
@@ -264,35 +265,35 @@ namespace F5IPConfigValidator
 
                 if (isEnvName)
                 {
-                    if (!dcName.IsSameTextAs(eopDcName))
+                    if (!ipamDcName.IsSameTextAs(eopDcName))
                     {
-                        var mappeEopDcName = GetEopDcName(dcName);
-                        if (string.IsNullOrWhiteSpace(mappeEopDcName))
+                        var azureDcName = GetAzureDcName(eopDcName);
+                        if (string.IsNullOrWhiteSpace(azureDcName))
                         {
                             return new ValidationResult(
                                 ValidationStatus.NoneEopDcName,
-                                $"{parent.Prefix}: Datacenter {dcName} does not have an EOP name");
+                                $"{parent.Prefix}: EOP name {eopDcName} in config does not have an Azure name");
                         }
-                        if (!eopDcName.IsSameTextAs(mappeEopDcName))
+                        if (!azureDcName.IsSameTextAs(ipamDcName))
                         {
                             return new ValidationResult(
                                 ValidationStatus.MismatchedDcName,
-                                $"{parent.Prefix}: Datacenter {dcName} has an EOP name {mappeEopDcName} which is not matched in config file ({eopDcName})");
+                                $"{parent.Prefix}: Datacenter {ipamDcName} does not match EOP name {eopDcName} in config or mapped Azure name {azureDcName}");
                         }
                     }
 
-                    if (!title.ContainsText(dcName) && !title.ContainsText(eopDcName))
+                    if (!title.ContainsText(ipamDcName) && !title.ContainsText(eopDcName))
                     {
                         return new ValidationResult(
                             ValidationStatus.InvalidTitle,
-                            $"{parent.Prefix}: Title ({title}) contains no datacenter name {dcName} or EOP name {eopDcName}");
+                            $"{parent.Prefix}: Title ({title}) contains no datacenter name {ipamDcName} or EOP name {eopDcName}");
                     }
 
                     if (!forestName.ContainsText("gtm-") && !title.ContainsText(forestName))
                     {
                         return new ValidationResult(
                             ValidationStatus.InvalidTitle,
-                            $"{parent.Prefix}: Title ({title}) contains no forest name {forestName}");
+                            $"{parent.Prefix}: Title ({title}) contains no forest name ({forestName})");
                     }
                 }
                 return ValidationResult.Success;
