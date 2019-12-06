@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <DCNAMES>
   <DCNAME EOPNAME="AM1" AZURENAME="AM1" />
   <DCNAME EOPNAME="AMS" AZURENAME="AM1" />
@@ -189,4 +189,8 @@
   <DCNAME EOPNAME="YTB" AZURENAME="YTO21" />
   <DCNAME EOPNAME="ZR0" AZURENAME="ZRH20" />
   <DCNAME EOPNAME="ZRA" AZURENAME="ZRH20" />
+  <!-- Below are new mappings -->
+  <DCNAME EOPNAME="SN5" AZURENAME="SN5-FX" />
+  <DCNAME EOPNAME="PH2" AZURENAME="PHX20-FX" />
+  <DCNAME EOPNAME="CY1" AZURENAME="CYS01-FX" />
 </DCNAMES>
