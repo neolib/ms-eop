@@ -4,6 +4,7 @@ using Microsoft.Azure.Ipam.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -90,22 +91,16 @@ namespace F5IPConfigValidator
             WriteLine("Envionment,IP Query,Prefix,Datacenter,Region,Status,Summary,Title");
 
             //var debug = false;
-            var sep = new[] { ',', ' ' };
+            var ipStringSeparators = new[] { ',', ' ' };
             var xd = XDocument.Load(resultFile);
-            var tasks = new List<Task>();
-
+            
             LoadDcNames();
             var envNodes = xd.Root.XPathSelectElements("//file[not(starts-with(@name, '_'))]");
-            var configNodes = xd.Root.XPathSelectElements("//file[starts-with(@name, '_')]");
-
+            
             if (!envNodes.Any())
             {
                 throw new Exception("No environment nodes!");
-            }
-            if (!configNodes.Any())
-            {
-                throw new Exception("No _config nodes!");
-            }
+            }            
 
             // Validate EOP to Azure name mapping.
             foreach (var fileNode in envNodes)
@@ -126,40 +121,31 @@ namespace F5IPConfigValidator
                 }
             }
 
-            // Process non-configuration nodes first because
-            // configuration nodes may have duplicate IP strings.
+            var tasks = new List<Task>();
             foreach (var fileNode in envNodes)
             {
                 tasks.Add(ProcessFileNode_(fileNode));
             }
             Task.WaitAll(tasks.ToArray());
 
-            foreach (var fileNode in configNodes)
-            {
-                await ProcessFileNode_(fileNode);
-            }
-            
             async Task ProcessFileNode_(XElement fileNode_)
             {
                 var configName = fileNode_.Attribute("name").Value;
                 Error.WriteLine(configName);
 
                 var envName = ExtractEnvironmentName_(configName);
-                /*
-                 * Special configuration filenames start with an underscore.
-                 * Real environment filenames do not.
-                 * */
-                var isEnvName = !envName.StartsWith("_");
                 string forestName = null;
                 string eopDcName = null;
-                if (isEnvName)
+                var index = envName.LastIndexOf('-');
+                if (index > 0)
                 {
-                    var index = envName.LastIndexOf('-');
-                    if (index > 0)
-                    {
-                        forestName = envName.Substring(0, index);
-                        eopDcName = envName.Substring(index + 1);
-                    }
+                    forestName = envName.Substring(0, index);
+                    eopDcName = envName.Substring(index + 1);
+                }
+                else
+                {
+                    Error.WriteLine($"***Config name {configName} has no hyphen.");
+                    return;
                 }
 
                 foreach (var node in fileNode_.Elements())
@@ -170,9 +156,9 @@ namespace F5IPConfigValidator
                         //if (debug) continue;
                         //else debug = true;
 
-                        if (attr.Value.IndexOfAny(sep) > 0)
+                        if (attr.Value.IndexOfAny(ipStringSeparators) > 0)
                         {
-                            var a = attr.Value.Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                            var a = attr.Value.Split(ipStringSeparators, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var ipString in a)
                             {
                                 await ProcessIpString_(ipString);
@@ -236,7 +222,6 @@ namespace F5IPConfigValidator
 
         async Task<ValidationRecord> ValidateIpString(string forestName, string eopDcName, string ipString)
         {
-            var isEnvName = forestName != null;
             var isPrefixString = ipString.Contains('/');
 
             foreach (var addressSpaceId in addressSpaceIds)
@@ -332,89 +317,90 @@ namespace F5IPConfigValidator
                     };
                 }
 
-                if (isEnvName)
+                var azureDcName = GetAzureDcName(eopDcName);
+                var hasAzureDcName = !string.IsNullOrEmpty(azureDcName);
+
+                if (!(ipamDcName.IsSameTextAs(eopDcName) ||
+                    (hasAzureDcName && ipamDcName.IsSameTextAs(azureDcName))
+                    ))
                 {
-                    if (ipamDcName.IsSameTextAs(eopDcName))
+                    return new ValidationRecord(
+                        ValidationStatus.MismatchedDcName,
+                        hasAzureDcName ?
+                        $"Datacenter {ipamDcName} does not match EOP name {eopDcName} or mapped Azure name {azureDcName}"
+                        :
+                        $"Datacenter {ipamDcName} does not match EOP name {eopDcName}"
+                        )
                     {
-                        if (!title.ContainsText(ipamDcName))
-                        {
-                            return new ValidationRecord(
-                                ValidationStatus.InvalidTitle,
-                                $"Title does not contain datacenter name {ipamDcName}")
-                            {
-                                Prefix = prefix,
-                                Datacenter = ipamDcName,
-                                Region = region,
-                                Title = title,
-                            };
-                        }
-                    }
-                    else
-                    {
-                        /*
-                         * If datacenter name is not same as EOP name,
-                         * then let's compare it with mapped Azure name.
-                         * */
+                        Prefix = prefix,
+                        Datacenter = ipamDcName,
+                        Region = region,
+                        Title = title,
+                    };
+                }
 
-                        var azureDcName = GetAzureDcName(eopDcName);
-                        if (azureDcName.IsSameTextAs(eopDcName))
+                var dcNameMap = new StringMap();
+
+                dcNameMap["datacenter"] = ipamDcName;
+                if (!ipamDcName.IsSameTextAs(eopDcName))
+                {
+                    dcNameMap["EOP"] = eopDcName;
+                }
+                if (hasAzureDcName && 
+                    !azureDcName.IsSameTextAs(ipamDcName) &&
+                    !azureDcName.IsSameTextAs(eopDcName)
+                    )
+                {
+                    dcNameMap["mapped Azure"] = azureDcName;
+                }
+
+                var containsDcName = false;
+                foreach (var entry in dcNameMap)
+                {
+                    if (title.ContainsText(entry.Value))
+                    {
+                        containsDcName = true;
+                        break;
+                    }
+                }
+
+                if (!containsDcName)
+                {
+                    // It's a little tricky to get a useful description...
+                    var summaryBuilder = new StringBuilder();
+                    summaryBuilder.AppendFormat("Title does not contain datacenter name {0}", ipamDcName);
+                    foreach (var entry in dcNameMap)
+                    {
+                        if (entry.Key != "datacenter")
                         {
-                            return new ValidationRecord(
-                                ValidationStatus.MismatchedDcName,
-                                $"Datacenter {ipamDcName} does not match EOP name {eopDcName}")
-                            {
-                                Prefix = prefix,
-                                Datacenter = ipamDcName,
-                                Region = region,
-                                Title = title,
-                            };
-                        }
-                        else
-                        {
-                            if (azureDcName.IsSameTextAs(ipamDcName))
-                            {
-                                if (!title.ContainsText(ipamDcName) && !title.ContainsText(eopDcName))
-                                {
-                                    return new ValidationRecord(
-                                        ValidationStatus.InvalidTitle,
-                                        $"Title does not contain datacenter name {ipamDcName} or EOP name {eopDcName}")
-                                    {
-                                        Prefix = prefix,
-                                        Datacenter = ipamDcName,
-                                        Region = region,
-                                        Title = title,
-                                    };
-                                }
-                            }
-                            else
-                            {
-                                return new ValidationRecord(
-                                    ValidationStatus.MismatchedDcName,
-                                    $"Datacenter {ipamDcName} does not match EOP name {eopDcName} in config or mapped Azure name {azureDcName}")
-                                {
-                                    Prefix = prefix,
-                                    Datacenter = ipamDcName,
-                                    Region = region,
-                                    Title = title,
-                                };
-                            }
+                            summaryBuilder.AppendFormat(" or {0} name {1}", entry.Key, entry.Value);
                         }
                     }
 
-                    if (!(forestName.ContainsText("gtm-") || forestName.IsSameTextAs("gtm")))
+                    return new ValidationRecord(
+                        ValidationStatus.InvalidTitle,
+                        summaryBuilder.ToString())
                     {
-                        if (!title.ContainsText(forestName))
+                        Prefix = prefix,
+                        Datacenter = ipamDcName,
+                        Region = region,
+                        Title = title,
+                    };
+                }                
+
+                if (!(forestName.ContainsText("gtm-") || forestName.IsSameTextAs("gtm")))
+                {
+                    if (!title.ContainsText(forestName))
+                    {
+                        return new ValidationRecord(
+                            ValidationStatus.InvalidTitle,
+                            $"Title does not contain forest name ({forestName})")
                         {
-                            return new ValidationRecord(
-                                ValidationStatus.InvalidTitle,
-                                $"Title does not contain forest name ({forestName})")
-                            {
-                                Prefix = prefix,
-                                Datacenter = ipamDcName,
-                                Region = region,
-                                Title = title,
-                            };
-                        }
+                            Prefix = prefix,
+                            Datacenter = ipamDcName,
+                            Region = region,
+                            Title = title,
+                        };
                     }
                 }
                 return ValidationRecord.Success;
