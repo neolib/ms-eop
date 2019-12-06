@@ -19,7 +19,7 @@ namespace F5IPConfigValidator
         Success,
         NoMatch,            // No matching record found in Kusto
         Obsolete,           // Should be removed in config
-        NoAzureDcName,      // EOP datacenter name has no Azure name
+        NoMappingDcName,    // EOP datacenter name has no mapping Azure name
         EmptyTitle,
         EmptyDatacenter,
         MismatchedDcName,   // Azure name does not match EOP name
@@ -32,8 +32,8 @@ namespace F5IPConfigValidator
         public string Datacenter;
         public string Region;
         public string Title;
-        public ValidationStatus Status;
         public string Summary;
+        public ValidationStatus Status;
 
         public ValidationRecord(ValidationStatus status, string summary = null)
         {
@@ -87,7 +87,7 @@ namespace F5IPConfigValidator
         internal async Task Process(string resultFile)
         {
             // CSV header row
-            WriteLine("Envionment,IP,Prefix,Datacenter,Status,Summary,Region,Title");
+            WriteLine("Envionment,IP Query,Prefix,Datacenter,Region,Status,Summary,Title");
 
             //var debug = false;
             var sep = new[] { ',', ' ' };
@@ -121,7 +121,7 @@ namespace F5IPConfigValidator
                     if (azureName == null)
                     {
                         var summary = $"EOP datacenter name {eopDcName} has no Azure name";
-                        WriteLine($"{envName},\"N/A\",,,{ValidationStatus.NoAzureDcName},{summary}");
+                        WriteLine($"{envName},\"N/A\",,,,{ValidationStatus.NoMappingDcName},{summary}");
                     }
                 }
             }
@@ -209,7 +209,7 @@ namespace F5IPConfigValidator
                         var result = await ValidateIpString(forestName, eopDcName, ipString_);
                         if (result.Status != ValidationStatus.Success)
                         {
-                            WriteLine($"{envName},{ipString_},{result.Prefix},{result.Datacenter},{result.Status},{result.Summary.ToCsvValue()},{result.Region.ToCsvValue()},{result.Title.ToCsvValue()}");
+                            WriteLine($"{envName},{ipString_},{result.Prefix},{result.Datacenter},{result.Region.ToCsvValue()},{result.Status},{result.Summary.ToCsvValue()},{result.Title.ToCsvValue()}");
                         }
                     }
                     catch (Exception ex)
@@ -334,19 +334,13 @@ namespace F5IPConfigValidator
 
                 if (isEnvName)
                 {
-                    if (!ipamDcName.IsSameTextAs(eopDcName))
+                    if (ipamDcName.IsSameTextAs(eopDcName))
                     {
-                        /*
-                         * If datacenter name is not same as EOP name,
-                         * then let's compare it with mapped Azure name.
-                         * */
-
-                        var azureDcName = GetAzureDcName(eopDcName);                        
-                        if (!azureDcName.IsSameTextAs(ipamDcName))
+                        if (!title.ContainsText(ipamDcName))
                         {
                             return new ValidationRecord(
-                                ValidationStatus.MismatchedDcName,
-                                $"Datacenter {ipamDcName} does not match EOP name {eopDcName} in config or mapped Azure name {azureDcName}")
+                                ValidationStatus.InvalidTitle,
+                                $"Title does not contain datacenter name {ipamDcName}")
                             {
                                 Prefix = prefix,
                                 Datacenter = ipamDcName,
@@ -355,33 +349,72 @@ namespace F5IPConfigValidator
                             };
                         }
                     }
-
-                    if (!title.ContainsText(ipamDcName) && !title.ContainsText(eopDcName))
+                    else
                     {
-                        return new ValidationRecord(
-                            ValidationStatus.InvalidTitle,
-                            $"Title should contain datacenter name {ipamDcName} or EOP name {eopDcName}")
-                        {
-                            Prefix = prefix,
-                            Datacenter = ipamDcName,
-                            Region = region,
-                            Title = title,
-                        };
+                        /*
+                         * If datacenter name is not same as EOP name,
+                         * then let's compare it with mapped Azure name.
+                         * */
 
+                        var azureDcName = GetAzureDcName(eopDcName);
+                        if (azureDcName.IsSameTextAs(eopDcName))
+                        {
+                            return new ValidationRecord(
+                                ValidationStatus.MismatchedDcName,
+                                $"Datacenter {ipamDcName} does not match EOP name {eopDcName}")
+                            {
+                                Prefix = prefix,
+                                Datacenter = ipamDcName,
+                                Region = region,
+                                Title = title,
+                            };
+                        }
+                        else
+                        {
+                            if (azureDcName.IsSameTextAs(ipamDcName))
+                            {
+                                if (!title.ContainsText(ipamDcName) && !title.ContainsText(eopDcName))
+                                {
+                                    return new ValidationRecord(
+                                        ValidationStatus.InvalidTitle,
+                                        $"Title does not contain datacenter name {ipamDcName} or EOP name {eopDcName}")
+                                    {
+                                        Prefix = prefix,
+                                        Datacenter = ipamDcName,
+                                        Region = region,
+                                        Title = title,
+                                    };
+                                }
+                            }
+                            else
+                            {
+                                return new ValidationRecord(
+                                    ValidationStatus.MismatchedDcName,
+                                    $"Datacenter {ipamDcName} does not match EOP name {eopDcName} in config or mapped Azure name {azureDcName}")
+                                {
+                                    Prefix = prefix,
+                                    Datacenter = ipamDcName,
+                                    Region = region,
+                                    Title = title,
+                                };
+                            }
+                        }
                     }
 
-                    if (!forestName.ContainsText("gtm-") && !title.ContainsText(forestName))
+                    if (!(forestName.ContainsText("gtm-") || forestName.IsSameTextAs("gtm")))
                     {
-                        return new ValidationRecord(
-                            ValidationStatus.InvalidTitle,
-                            "Title should contain forest name ({forestName})")
+                        if (!title.ContainsText(forestName))
                         {
-                            Prefix = prefix,
-                            Datacenter = ipamDcName,
-                            Region = region,
-                            Title = title,
-                        };
-
+                            return new ValidationRecord(
+                                ValidationStatus.InvalidTitle,
+                                $"Title does not contain forest name ({forestName})")
+                            {
+                                Prefix = prefix,
+                                Datacenter = ipamDcName,
+                                Region = region,
+                                Title = title,
+                            };
+                        }
                     }
                 }
                 return ValidationRecord.Success;
