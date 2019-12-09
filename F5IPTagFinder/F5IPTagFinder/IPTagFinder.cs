@@ -8,9 +8,9 @@ using System.Xml.Linq;
 using static System.Console;
 
 
-namespace EOPWork.Applets
+namespace F5Automation
 {
-    public class IpTagFinder : IApplet
+    public class IPTagFinder
     {
         public const string IPv4Pattern = @"(?:\d+\.\d+\.\d+\.\d+)";
         public const string IPv4RangePattern = @"(?:\d+\.\d+\.\d+\.\d+/\d+)";

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29503.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest", "UnitTest\UnitTest.csproj", "{1747C63E-3BE1-408F-9FE0-32EC4CC8503A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTests", "UnitTests\UnitTests.csproj", "{1747C63E-3BE1-408F-9FE0-32EC4CC8503A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EOPWork", "EOPWork\EOPWork.csproj", "{AAFFD7F6-B8C0-4B2A-AFFB-7619A28668F6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testbed", "Testbed\Testbed.csproj", "{AAFFD7F6-B8C0-4B2A-AFFB-7619A28668F6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Applets", "Applets\Applets.csproj", "{AA05B379-F43B-4F73-998D-D8468EC8DECB}"
 EndProject

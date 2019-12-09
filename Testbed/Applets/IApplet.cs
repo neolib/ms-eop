@@ -1,4 +1,4 @@
-﻿namespace EOPWork.Applets
+﻿namespace Testbed.Applets
 {
     public interface IApplet
     {
