@@ -62,7 +62,7 @@ namespace F5IPConfigValidator
                 var dcNameTable = XDocument.Load(rcs);
 
                 eopToAzureDcNameMap = new StringMap();
-                foreach (var node in dcNameTable.Root.Elements())
+                foreach (var node in dcNameTable.Root.Element("EOPTOAZURE").Elements())
                 {
                     var eopName = node.Attribute("EOPNAME").Value;
                     var azureName = node.Attribute("AZURENAME").Value;
@@ -320,7 +320,8 @@ namespace F5IPConfigValidator
                 var azureDcName = GetAzureDcName(eopDcName);
                 var hasAzureDcName = !string.IsNullOrEmpty(azureDcName);
 
-                if (!(ipamDcName.IsSameTextAs(eopDcName) ||
+                if (!(
+                    ipamDcName.IsSameTextAs(eopDcName) ||
                     (hasAzureDcName && ipamDcName.IsSameTextAs(azureDcName))
                     ))
                 {
@@ -339,6 +340,11 @@ namespace F5IPConfigValidator
                     };
                 }
 
+                /*
+                 * Build a map that contains possible 3 names:
+                 * IPAM, EOP, Azure.
+                 * */
+
                 var dcNameMap = new StringMap();
 
                 dcNameMap["datacenter"] = ipamDcName;
@@ -354,6 +360,7 @@ namespace F5IPConfigValidator
                     dcNameMap["mapped Azure"] = azureDcName;
                 }
 
+                // Check if title contains datacenter name.
                 var containsDcName = false;
                 foreach (var entry in dcNameMap)
                 {
