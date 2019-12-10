@@ -17,6 +17,13 @@ namespace F5IPConfigValidator
             return string.Compare(self, text, true) == 0;
         }
 
+        public static bool EndsWithText(this string self, string text)
+        {
+            if (self == null) return false;
+            if (text == null) return false;
+            return self.EndsWith(text, StringComparison.CurrentCultureIgnoreCase);
+        }
+
         public static string ToCsvValue(this string self)
         {
             var s = self?.Replace("\"", "\"\"");
