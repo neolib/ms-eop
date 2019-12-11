@@ -54,6 +54,8 @@ namespace F5IPConfigValidator
         private List<string> ipHotList = new List<string>();
         private List<string> prefixIdList = new List<string>();
         private StringMap datacenterNameMap = new StringMap();
+        private StringMap forestAliasMap = new StringMap();
+        private StringMap suffixNameMap = new StringMap();
         private StringMap forestNameMap = new StringMap();
 
         private StringMap addressSpaceIds = new StringMap {
@@ -63,26 +65,59 @@ namespace F5IPConfigValidator
             { "RX", SpecialAddressSpaces.RXAddressSpaceId },
             };
 
+        private void LoadForestMap()
+        {
+            var myType = this.GetType();
+            var rcName = myType.Namespace + ".Files._environments.xml";
+            using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
+            {
+                var envDoc = XDocument.Load(rcs);
+
+                foreach (var node in envDoc.Root.Elements("object"))
+                {
+                    var envName = node.Attribute("environment-name").Value;
+                    if (!envName.StartsWith("_"))
+                    {
+                        var forestName = node.Attribute("forest-name").Value;
+                        forestNameMap[envName.ToUpper()] = forestName;
+                    }
+                }
+            }
+        }
+
         private void LoadNameMap()
         {
             var myType = this.GetType();
             var rcName = myType.Namespace + ".Files.NameMap.xml";
             using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
             {
-                var dcNameTable = XDocument.Load(rcs);
+                var mapDoc = XDocument.Load(rcs);
 
-                foreach (var node in dcNameTable.Root.Element("DCNames").Elements())
+                foreach (var node in mapDoc.Root.Element("DCNames").Elements())
                 {
                     var eopName = node.Attribute("EOPName").Value;
                     var azureName = node.Attribute("AzureName").Value;
                     datacenterNameMap[eopName] = azureName;
                 }
 
-                foreach (var node in dcNameTable.Root.Element("ForestNames").Elements())
+                foreach (var node in mapDoc.Root.Element("ForestAliases").Elements())
                 {
-                    var eopName = node.Attribute("EOPName").Value;
-                    var azureName = node.Attribute("AzureName").Value;
-                    forestNameMap[eopName] = azureName;
+                    var alias = node.Attribute("Name").Value;
+                    var forestNames = node.Attribute("ForestNames").Value;
+                    foreach (var forestName in forestNames.SplitWithoutEmpty(','))
+                    {
+                        forestAliasMap[forestName] = alias;
+                    }
+                }
+
+                foreach (var node in mapDoc.Root.Element("DCSuffixes").Elements())
+                {
+                    var suffix = node.Attribute("Text").Value;
+                    var forestNames = node.Attribute("ForestNames").Value;
+                    foreach (var forestName in forestNames.SplitWithoutEmpty(','))
+                    {
+                        suffixNameMap[forestName] = suffix;
+                    }
                 }
             }
         }
@@ -94,9 +129,23 @@ namespace F5IPConfigValidator
             return null;
         }
 
-        private string GetAzureForestName(string eopName)
+        private string GetForestAlias(string forestName)
         {
-            if (forestNameMap.TryGetValue(eopName.ToUpper(), out var name))
+            if (forestAliasMap.TryGetValue(forestName.ToUpper(), out var alias))
+            { return alias; }
+            return null;
+        }
+
+        private string GetDcSuffix(string forestName)
+        {
+            if (suffixNameMap.TryGetValue(forestName.ToUpper(), out var suffix))
+            { return suffix; }
+            return null;
+        }
+
+        private string GetForestName(string envName)
+        {
+            if (forestNameMap.TryGetValue(envName.ToUpper(), out var name))
             { return name; }
             return null;
         }
@@ -116,7 +165,8 @@ namespace F5IPConfigValidator
             //var debug = false;
             var ipStringSeparators = new[] { ',', ' ' };
             var xd = XDocument.Load(resultFile);
-            
+
+            LoadForestMap();
             LoadNameMap();
             var envNodes = xd.Root.XPathSelectElements("//file[not(starts-with(@name, '_'))]");
             
@@ -157,17 +207,21 @@ namespace F5IPConfigValidator
                 Error.WriteLine(configName);
 
                 var envName = ExtractEnvironmentName_(configName);
-                string forestName = null;
-                string eopDcName = null;
-                var index = envName.LastIndexOf('-');
-                if (index > 0)
+                var eopDcName = ExtractDcName_(envName);
+                var forestName = GetForestName(envName);
+                if (forestName == null)
                 {
-                    forestName = envName.Substring(0, index);
-                    eopDcName = envName.Substring(index + 1);
+                    Error.WriteLine($"***Config name {configName} has no mapped forest name.");
+                    forestName = ExtractForestName_(envName);
+                    if (forestName == null)
+                    {
+                        Error.WriteLine($"***Config name {configName} has no forest name.");
+                        return;
+                    }
                 }
-                else
+                if (eopDcName == null)
                 {
-                    Error.WriteLine($"***Config name {configName} has no hyphen.");
+                    Error.WriteLine($"***Config name {configName} has no datacenter name.");
                     return;
                 }
 
@@ -181,7 +235,7 @@ namespace F5IPConfigValidator
 
                         if (attr.Value.IndexOfAny(ipStringSeparators) > 0)
                         {
-                            var a = attr.Value.Split(ipStringSeparators, StringSplitOptions.RemoveEmptyEntries);
+                            var a = attr.Value.SplitWithoutEmpty(ipStringSeparators);
                             foreach (var ipString in a)
                             {
                                 await ProcessIpString_(ipString);
@@ -197,9 +251,9 @@ namespace F5IPConfigValidator
                 async Task ProcessIpString_(string ipString_)
                 {
                     // A valid IPv6 string must have at least 5 groups.
-                    if (ipString_.Contains(':') && 
+                    if (ipString_.Contains(':') &&
                         !ipString_.EndsWith("::") &&
-                        ipString_.Count((c) => c == ':') <= 4) return;
+                        ipString_.Count((c) => c == ':') <= 4) { return; }
 
                     lock (ipHotList)
                     {
@@ -238,6 +292,20 @@ namespace F5IPConfigValidator
                 if (index > 0) return filename_.Substring(0, index);
                 return filename_;
             }
+
+            string ExtractForestName_(string envName)
+            {
+                var index = envName.LastIndexOf('-');
+                if (index > 0) return envName.Substring(0, index);
+                return null;
+            }
+
+            string ExtractDcName_(string envName)
+            {
+                var index = envName.LastIndexOf('-');
+                if (index > 0) return envName.Substring(index + 1);
+                return null;
+            }
         }
 
         async Task<ValidationRecord> ValidateIpString(
@@ -264,7 +332,7 @@ namespace F5IPConfigValidator
             parent.Tags.TryGetValue("Title", out var title);
             parent.Tags.TryGetValue("Datacenter", out var ipamDcName);
             parent.Tags.TryGetValue("Region", out var region);
-            
+
             if (int.TryParse(
                 prefix.Substring(prefix.LastIndexOf('/') + 1),
                 out var prefixNumber))
@@ -283,7 +351,7 @@ namespace F5IPConfigValidator
                     if (prefixNumber < 23)
                     {
                         return ValidationRecord.Success;
-                    } 
+                    }
                 }
             }
 
@@ -312,7 +380,7 @@ namespace F5IPConfigValidator
                     Title = title,
                 };
             }
-                
+
             if (string.IsNullOrWhiteSpace(ipamDcName))
             {
                 return new ValidationRecord(
@@ -327,24 +395,27 @@ namespace F5IPConfigValidator
             }
 
             var azureDcName = GetAzureDcName(eopDcName);
-            var hasAzureDcName = !string.IsNullOrEmpty(azureDcName);
-            var normalizedDcName = ipamDcName.EndsWithText("-FX") 
+            var suffix = GetDcSuffix(forestName);
+            string normalizedDcName = ipamDcName.EndsWithText(suffix)
                 ?
-                ipamDcName.Substring(0, ipamDcName.Length - 3)
+                ipamDcName.Substring(0, ipamDcName.Length - suffix.Length)
                 :
-                ipamDcName;
+                null;
 
             if (!(
                 ipamDcName.IsSameTextAs(eopDcName) ||
-                (hasAzureDcName && azureDcName.IsSameTextAs(normalizedDcName))
+                ipamDcName.IsSameTextAs(azureDcName) ||
+                normalizedDcName.IsSameTextAs(eopDcName) ||
+                normalizedDcName.IsSameTextAs(azureDcName)
                 ))
             {
                 return new ValidationRecord(
                     ValidationStatus.MismatchedDcName,
-                    hasAzureDcName ?
-                    $"Datacenter {ipamDcName} does not match EOP name {eopDcName} or mapped Azure name {azureDcName}"
-                    :
+                    azureDcName == null
+                    ?
                     $"Datacenter {ipamDcName} does not match EOP name {eopDcName}"
+                    :
+                    $"Datacenter {ipamDcName} does not match EOP name {eopDcName} or mapped Azure name {azureDcName}"
                     )
                 {
                     Prefix = prefix,
@@ -363,21 +434,18 @@ namespace F5IPConfigValidator
 
             var dcNameMap = new StringMap();
 
-            dcNameMap["datacenter"] = normalizedDcName;
-            if (!ReferenceEquals(normalizedDcName, ipamDcName))
-            {
-                dcNameMap["normalized"] = normalizedDcName;
-            }
-            if (!ipamDcName.IsSameTextAs(eopDcName))
+            dcNameMap["datacenter"] = ipamDcName;            
+            if (StringMapContainsValueText(dcNameMap, eopDcName) == false)
             {
                 dcNameMap["EOP"] = eopDcName;
             }
-            if (hasAzureDcName && 
-                !azureDcName.IsSameTextAs(ipamDcName) &&
-                !azureDcName.IsSameTextAs(eopDcName)
-                )
+            if (StringMapContainsValueText(dcNameMap, azureDcName) == false)
             {
                 dcNameMap["mapped Azure"] = azureDcName;
+            }
+            if (StringMapContainsValueText(dcNameMap, normalizedDcName) == false)
+            {
+                dcNameMap["normalized"] = normalizedDcName;
             }
 
             // Check if title contains datacenter name.
@@ -413,16 +481,13 @@ namespace F5IPConfigValidator
                     Region = region,
                     Title = title,
                 };
-            }                
+            }
 
-            if (!(forestName.ContainsText("gtm-") || forestName.IsSameTextAs("gtm")))
+            if (!(forestName.StartsWithText("gtm-") || forestName.IsSameTextAs("gtm")))
             {
-                var azureForestName = GetAzureForestName(forestName);
+                var azureForestName = GetForestAlias(forestName);
 
-                if (!(
-                    title.ContainsText(forestName) ||
-                    (azureForestName != null && title.ContainsText(azureForestName))
-                    ))
+                if (!(title.ContainsText(forestName) || title.ContainsText(azureForestName)))
                 {
                     return new ValidationRecord(
                         ValidationStatus.InvalidTitle,
@@ -430,7 +495,7 @@ namespace F5IPConfigValidator
                         ?
                         $"Title does not contain forest name ({forestName})"
                         :
-                        $"Title does not contain forest name ({forestName}) or Azure name ({azureForestName})"
+                        $"Title does not contain forest name ({forestName} or alias {azureForestName})"
                         )
                     {
                         Prefix = prefix,
@@ -441,6 +506,23 @@ namespace F5IPConfigValidator
                 }
             }
             return ValidationRecord.Success;
+        }
+
+        /// <summary>
+        /// Checks if a string already exists in values collection of a StringMap.
+        /// </summary>
+        /// <param name="map">A StringMap instance.</param>
+        /// <param name="text">String to search for.</param>
+        /// <returns>Tri-state boolean value.</returns>
+        /// <remarks>
+        /// You should compare the return value with true or false using
+        /// the equality operator (==). Null return value means the search
+        /// text is not valid.
+        /// </remarks>
+        bool? StringMapContainsValueText(StringMap map, string text)
+        {
+            if (string.IsNullOrEmpty(text)) { return null; }
+            return map.Values.Any((name_) => name_.IsSameTextAs(text));
         }
     }
 }

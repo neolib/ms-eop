@@ -63,5 +63,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Files\NameMap.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Files\_environments.xml" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

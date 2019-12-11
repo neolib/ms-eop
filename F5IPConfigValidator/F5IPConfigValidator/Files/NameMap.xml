@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<map>
+<Map>
+  <!-- All names must be in uppercase! -->
+  
   <DCNames>
     <DCName EOPName="AM1" AzureName="AM1" />
     <DCName EOPName="AMS" AzureName="AM1" />
@@ -194,11 +196,12 @@
     <DCName EOPName="ZR0" AzureName="ZRH20" />
     <DCName EOPName="ZRA" AzureName="ZRH20" />
   </DCNames>
-  <ForestNames>
-    <ForestName EOPName="NA" AzureName="FSPROD" />
-    <ForestName EOPName="APAC" AzureName="FSPROD" />
-    <ForestName EOPName="APC01" AzureName="FSPROD" />
-    <ForestName EOPName="APC02" AzureName="FSPROD" />
-    <ForestName EOPName="EMEA" AzureName="FSPROD" />
-  </ForestNames>
-</map>
+  <ForestAliases>
+    <!-- Turn it on when needed
+    <ForestAlias Name="FSPROD" ForestNames="NA,EMEA,APAC,APC01,APC02" />
+    -->
+  </ForestAliases>
+  <DCSuffixes>
+    <DCSuffix Text="-FX" ForestNames="GLS07,SIT01,SIT02,USG01,USG02" />
+  </DCSuffixes>
+</Map>

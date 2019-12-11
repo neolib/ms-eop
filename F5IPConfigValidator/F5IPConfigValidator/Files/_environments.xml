@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<objects>
+
+  <!--
+  =======================================================================================================================================================================
+  Configuration environments
+  =======================================================================================================================================================================
+  -->
+  <object environment-name="_configs_commands" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_global_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_global_upgrade" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_gtm_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_gtm_monitor" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_gtm_new_forest" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_gtm_upgrade" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_gtm_upgrade_v2" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ltm_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_itar_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ltm_cap_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ltm_chn_cap_baremetal" forest-name="configuration" environment-type="configuration" />  
+  <object environment-name="_configs_ltm_golocal_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ltm_hotfix" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ltm_monitor" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ltm_upgrade" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ltm_upgrade_v2" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_sonar_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_sonar_itar_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_sonar_upgrade" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_rx_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ex_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_rx_global_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_ex_global_baremetal" forest-name="configuration" environment-type="configuration" />
+  <object environment-name="_configs_gls_baremetal" forest-name="configuration" environment-type="configuration" />
+
+  
+
+  <!--
+  =======================================================================================================================================================================
+  GTM
+  =======================================================================================================================================================================
+  -->
+  <object environment-name="gtm-am1" forest-name="gtm" environment-type="gtm" tags="health_0" />
+  <object environment-name="gtm-bl2" forest-name="gtm" environment-type="gtm" tags="health_1" />
+  <object environment-name="gtm-bn1" forest-name="gtm" environment-type="gtm" tags="health_2" />
+  <object environment-name="gtm-hk2" forest-name="gtm" environment-type="gtm" tags="health_3" />
+
+  <object environment-name="gtm-fsdf-by1" forest-name="gtm-fsdf" environment-type="gtm" />
+  <object environment-name="gtm-fsdf-sn2" forest-name="gtm-fsdf" environment-type="gtm" />
+
+  <object environment-name="gtm-func-by1" forest-name="gtm-func" environment-type="gtm" />
+  <object environment-name="gtm-func-sn2" forest-name="gtm-func" environment-type="gtm" />
+
+  <object environment-name="gtm-syncgroup01-bl2" forest-name="gtm-syncgroup01" environment-type="gtm" tags="health_0" />
+  <object environment-name="gtm-syncgroup01-by2" forest-name="gtm-syncgroup01" environment-type="gtm" tags="health_1" />
+  <object environment-name="gtm-syncgroup01-db5" forest-name="gtm-syncgroup01" environment-type="gtm" tags="health_2" />
+  <object environment-name="gtm-syncgroup01-hk2" forest-name="gtm-syncgroup01" environment-type="gtm" tags="health_3" />
+
+  <object environment-name="gtm-syncgroup02-am3" forest-name="gtm-syncgroup02" environment-type="gtm" tags="health_5" />
+  <object environment-name="gtm-syncgroup02-co1" forest-name="gtm-syncgroup02" environment-type="gtm" tags="health_6" />
+  <object environment-name="gtm-syncgroup02-sg2" forest-name="gtm-syncgroup02" environment-type="gtm" tags="health_7" />
+  <object environment-name="gtm-syncgroup02-sn1" forest-name="gtm-syncgroup02" environment-type="gtm" tags="health_4" />
+
+  <!--object environment-name="gtm-gls06-fra01" forest-name="gtm-gls06-syncgroup01" environment-type="gtm" tags="health_8" /-->
+  <!--object environment-name="gtm-gls06-lej01" forest-name="gtm-gls06-syncgroup01" environment-type="gtm" tags="health_9" /-->
+  <!--object environment-name="gtm-gls06-fra02" forest-name="gtm-gls06-syncgroup02" environment-type="gtm" tags="health_10" /-->
+  <!--object environment-name="gtm-gls06-lej02" forest-name="gtm-gls06-syncgroup02" environment-type="gtm" tags="health_11" /-->
+  <object environment-name="gtm-gls07-syncgroup01-cy1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls07" full-forest-name="eop-gls07.itar.protection.office365.us" floater-fqdn="cy1gls07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_13" />
+  <object environment-name="gtm-gls07-syncgroup01-sn5" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls07" full-forest-name="eop-gls07.itar.protection.office365.us" floater-fqdn="sn5gls07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_12" />
+  <object environment-name="gtm-gls07-syncgroup01-cy1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls07" full-forest-name="eop-gls07.itar.protection.office365.us" floater-fqdn="cy1gls07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_13" />
+  <object environment-name="gtm-gls07-syncgroup02-sn5" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls07" full-forest-name="eop-gls07.itar.protection.office365.us" floater-fqdn="sn5gls07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_12" />
+  <object environment-name="gtm-gls07-syncgroup02-cy1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls07" full-forest-name="eop-gls07.itar.protection.office365.us" floater-fqdn="cy1gls07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_13" />
+
+  <!--
+  =======================================================================================================================================================================
+  LTM - Func
+  =======================================================================================================================================================================
+  -->
+  <object environment-name="func-by1" forest-name="func" full-forest-name="o365filter-int.com" floater-fqdn="by1ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+  <object environment-name="func-sn2" forest-name="func" full-forest-name="o365filter-int.com" floater-fqdn="sn2ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+
+  <!--
+  =======================================================================================================================================================================
+  LTM - FSDF
+  =======================================================================================================================================================================
+  -->
+  <object environment-name="fsdf-by1" forest-name="fsdf" full-forest-name="ffo.gbl" floater-fqdn="by1ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+  <object environment-name="fsdf-sn2" forest-name="fsdf" full-forest-name="ffo.gbl" floater-fqdn="sn2ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+
+
+  <!--
+  =======================================================================================================================================================================
+  LTM - FSPROD
+  =======================================================================================================================================================================
+  -->
+
+  <!-- na -->
+  <object environment-name="na-bl2" forest-name="na" full-forest-name="protection.gbl" floater-fqdn="bl2ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_0" />
+  <object environment-name="na-bn1a" forest-name="na" full-forest-name="protection.gbl" floater-fqdn="bn1affonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_1" />
+  <object environment-name="na-bn1b" forest-name="na" full-forest-name="protection.gbl" floater-fqdn="bn1bffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_2" />
+  <object environment-name="na-by2" forest-name="na" full-forest-name="protection.gbl" floater-fqdn="by2ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_3" />
+  <object environment-name="na-sn1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="na" full-forest-name="protection.gbl" floater-fqdn="sn1ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_1"/>
+  <object environment-name="na-sn4" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="na" full-forest-name="protection.gbl" floater-fqdn="sn4ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_1"/>
+  
+  <!-- emea -->
+  <object environment-name="emea-am1" forest-name="emea" full-forest-name="protection.gbl" floater-fqdn="am1ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_4" />
+  <object environment-name="emea-db3" forest-name="emea" full-forest-name="protection.gbl" floater-fqdn="db3ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_5" />
+
+  <!-- apac -->
+  <object environment-name="apac-hk1" forest-name="apac" full-forest-name="protection.gbl" floater-fqdn="hk1ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_6" />
+  <object environment-name="apac-ku1" forest-name="apac" full-forest-name="protection.gbl" floater-fqdn="ku1ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_8" />
+
+  <!--
+  =======================================================================================================================================================================
+  LTM - CAP
+  =======================================================================================================================================================================
+  -->
+
+  <!-- nam01 -->
+  <object environment-name="nam01-bn3" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam01" full-forest-name="eop-nam01.prod.protection.outlook.com" floater-fqdn="bn3nam01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_0" />
+  <object environment-name="nam01-by2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam01" full-forest-name="eop-nam01.prod.protection.outlook.com" floater-fqdn="by2nam01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_1" />
+  <object environment-name="nam01-sn1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam01" full-forest-name="eop-nam01.prod.protection.outlook.com" floater-fqdn="sn1nam01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_2" />
+
+  <!-- nam02 -->
+  <object environment-name="nam02-bl2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam02" full-forest-name="eop-nam02.prod.protection.outlook.com" floater-fqdn="bl2nam02ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_3" />
+  <object environment-name="nam02-cy1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam02" full-forest-name="eop-nam02.prod.protection.outlook.com" floater-fqdn="cy1nam02ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_4" />
+  <object environment-name="nam02-sn1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam02" full-forest-name="eop-nam02.prod.protection.outlook.com" floater-fqdn="sn1nam02ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_5" />
+
+  <!-- nam03 -->
+  <object environment-name="nam03-by2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam03" full-forest-name="eop-nam03.prod.protection.outlook.com" floater-fqdn="by2nam03ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_4" />
+  <object environment-name="nam03-co1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam03" full-forest-name="eop-nam03.prod.protection.outlook.com" floater-fqdn="co1nam03ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_5" />
+  <object environment-name="nam03-dm3" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam03" full-forest-name="eop-nam03.prod.protection.outlook.com" floater-fqdn="dm3nam03ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_6" />
+
+  <!-- nam04 -->
+  <object environment-name="nam04-bn3" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam04" full-forest-name="eop-nam04.prod.protection.outlook.com" floater-fqdn="bn3nam04ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_1" />
+  <object environment-name="nam04-co1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam04" full-forest-name="eop-nam04.prod.protection.outlook.com" floater-fqdn="co1nam04ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_3" />
+  <object environment-name="nam04-sn1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam04" full-forest-name="eop-nam04.prod.protection.outlook.com" floater-fqdn="sn1nam04ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_7" />
+
+  <!-- nam05 -->
+  <object environment-name="nam05-by2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam05" full-forest-name="eop-nam05.prod.protection.outlook.com" floater-fqdn="by2nam05ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_9" />
+  <object environment-name="nam05-co1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam05" full-forest-name="eop-nam05.prod.protection.outlook.com" floater-fqdn="co1nam05ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_10" />
+  <object environment-name="nam05-dm3" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam05" full-forest-name="eop-nam05.prod.protection.outlook.com" floater-fqdn="dm3nam05ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_11" />
+
+  <!-- sip / nam06 -->
+  <object environment-name="nam06-bl2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam06" full-forest-name="eop-nam06.prod.protection.outlook.com" floater-fqdn="bl2nam06ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_9" />
+  <object environment-name="nam06-dm3" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="nam06" full-forest-name="eop-nam06.prod.protection.outlook.com" floater-fqdn="dm3nam06ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_10" />
+
+  <!-- nam07 -->
+  <object environment-name="nam07-dm3" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam07" full-forest-name="eop-nam07.prod.protection.outlook.com" floater-fqdn="dm3nam07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_16" />
+  <object environment-name="nam07-sn1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam07" full-forest-name="eop-nam07.prod.protection.outlook.com" floater-fqdn="sn1nam07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_17" />
+  <object environment-name="nam07-bn1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam07" full-forest-name="eop-nam07.prod.protection.outlook.com" floater-fqdn="bn1nam07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_18" />
+ 
+  <!-- nam08 -->
+  <object environment-name="nam08-bn8" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam08" full-forest-name="eop-nam08.prod.protection.outlook.com" floater-fqdn="bn8nam08ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_25" />
+  <object environment-name="nam08-dm6" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam08" full-forest-name="eop-nam08.prod.protection.outlook.com" floater-fqdn="dm6nam08ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_26" />
+  <object environment-name="nam08-mw2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam08" full-forest-name="eop-nam08.prod.protection.outlook.com" floater-fqdn="mw2nam08ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_27" />
+
+  <!-- nam09 -->
+  <object environment-name="nam09-bn8" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam09" full-forest-name="eop-nam09.prod.protection.outlook.com" floater-fqdn="bn8nam09ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_34" />
+  <object environment-name="nam09-by5" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam09" full-forest-name="eop-nam09.prod.protection.outlook.com" floater-fqdn="by5nam09ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_35" />
+  <object environment-name="nam09-dm6" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam09" full-forest-name="eop-nam09.prod.protection.outlook.com" floater-fqdn="by5nam09ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_35" />
+  
+
+  <!-- nam10 -->
+  <object environment-name="nam10-bn7" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam10" full-forest-name="eop-nam10.prod.protection.outlook.com" floater-fqdn="bn7nam10ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_13" />
+  <object environment-name="nam10-mw2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam10" full-forest-name="eop-nam10.prod.protection.outlook.com" floater-fqdn="mw2nam10ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_14" />
+  <object environment-name="nam10-dm6" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam10" full-forest-name="eop-nam10.prod.protection.outlook.com" floater-fqdn="dm6nam10ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_15" />
+  
+  <!-- nam11 -->
+  <object environment-name="nam11-bn8" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam11" full-forest-name="eop-nam11.prod.protection.outlook.com" floater-fqdn="bn8nam11ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_19" />
+  <object environment-name="nam11-dm6" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam11" full-forest-name="eop-nam11.prod.protection.outlook.com" floater-fqdn="dm6nam11ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_20" />
+  <object environment-name="nam11-co1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam11" full-forest-name="eop-nam11.prod.protection.outlook.com" floater-fqdn="co1nam11ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_21" />
+
+  <!-- nam12 -->
+  <object environment-name="nam12-dm6" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam12" full-forest-name="eop-nam12.prod.protection.outlook.com" floater-fqdn="dm6nam12ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_22" />
+  <object environment-name="nam12-mw2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam12" full-forest-name="eop-nam12.prod.protection.outlook.com" floater-fqdn="mw2nam12ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_23" />
+  <object environment-name="nam12-bn8" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="nam12" full-forest-name="eop-nam12.prod.protection.outlook.com" floater-fqdn="bn8nam12ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_24" />  
+  
+  
+  <!-- gcc01 -->
+  <object environment-name="gcc01-cy1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="gcc01" full-forest-name="eop-gcc01.prod.protection.outlook.com" floater-fqdn="cy1gcc01ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+  <object environment-name="gcc01-dm2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="gcc01" full-forest-name="eop-gcc01.prod.protection.outlook.com" floater-fqdn="dm2gcc01ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+
+  <!-- gcc02 -->
+  <object environment-name="gcc02-dm3" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gcc02" full-forest-name="eop-gcc02.prod.protection.outlook.com" floater-fqdn="dm3gcc02ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_11" />
+  <object environment-name="gcc02-bl0" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gcc02" full-forest-name="eop-gcc02.prod.protection.outlook.com" floater-fqdn="bl0gcc02ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_12" />  
+ 
+
+
+  <!-- eur01 -->
+  <object environment-name="eur01-db5" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur01" full-forest-name="eop-eur01.prod.protection.outlook.com" floater-fqdn="db5eur01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_0" />
+  <object environment-name="eur01-he1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur01" full-forest-name="eop-eur01.prod.protection.outlook.com" floater-fqdn="he1eur01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_2" />
+  <object environment-name="eur01-ve1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur01" full-forest-name="eop-eur01.prod.protection.outlook.com" floater-fqdn="ve1eur01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_4" />
+
+  <!-- eur02 -->
+  <object environment-name="eur02-am5" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur02" full-forest-name="eop-eur02.prod.protection.outlook.com" floater-fqdn="am5eur02ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_1" />
+  <object environment-name="eur02-he1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur02" full-forest-name="eop-eur02.prod.protection.outlook.com" floater-fqdn="he1eur02ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_3" />
+  <object environment-name="eur02-ve1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur02" full-forest-name="eop-eur02.prod.protection.outlook.com" floater-fqdn="ve1eur02ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_5" />
+
+  <!-- eur03 -->
+  <object environment-name="eur03-am5" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur03" full-forest-name="eop-eur03.prod.protection.outlook.com" floater-fqdn="am5eur03ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_2" />
+  <object environment-name="eur03-db5" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur03" full-forest-name="eop-eur03.prod.protection.outlook.com" floater-fqdn="db5eur03ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_3" />
+  <object environment-name="eur03-ve1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur03" full-forest-name="eop-eur03.prod.protection.outlook.com" floater-fqdn="ve1eur03ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_6" />
+
+  <!-- eur04 -->
+  <object environment-name="eur04-he1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur04" full-forest-name="eop-eur04.prod.protection.outlook.com" floater-fqdn="he1eur04ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_2" skip-validations="true" />
+  <object environment-name="eur04-db3" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur04" full-forest-name="eop-eur04.prod.protection.outlook.com" floater-fqdn="db3eur04ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_2" skip-validations="true" />
+  <object environment-name="eur04-vi1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="eur04" full-forest-name="eop-eur04.prod.protection.outlook.com" floater-fqdn="vi1eur04ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_2" skip-validations="true" />
+
+  <!-- eur05 -->
+  <object environment-name="eur05-am6" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur05" full-forest-name="eop-eur05.prod.protection.outlook.com" floater-fqdn="am6eur05ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_28" skip-validations="true" />
+  <object environment-name="eur05-vi1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur05" full-forest-name="eop-eur05.prod.protection.outlook.com" floater-fqdn="vi1eur05ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_29" skip-validations="true" />
+  <object environment-name="eur05-db8" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur05" full-forest-name="eop-eur05.prod.protection.outlook.com" floater-fqdn="db8eur05ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_30" skip-validations="true" />
+
+  <!-- eur06 -->
+  <object environment-name="eur06-am7" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur06" full-forest-name="eop-eur06.prod.protection.outlook.com" floater-fqdn="am7eur06ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_31" skip-validations="true" />
+  <object environment-name="eur06-db8" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur06" full-forest-name="eop-eur06.prod.protection.outlook.com" floater-fqdn="db8eur06ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_32" skip-validations="true" />
+  <object environment-name="eur06-vi1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur06" full-forest-name="eop-eur06.prod.protection.outlook.com" floater-fqdn="vi1eur06ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_33" skip-validations="true" />
+  
+  <!-- eur07 -->
+  <object environment-name="eur07-am0" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur07" full-forest-name="eop-eur07.prod.protection.outlook.com" floater-fqdn="am0eur07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_34" skip-validations="true" />
+  <object environment-name="eur07-vi1" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur07" full-forest-name="eop-eur07.prod.protection.outlook.com" floater-fqdn="vi1eur07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_35" skip-validations="true" />
+  <object environment-name="eur07-db5" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="eur07" full-forest-name="eop-eur07.prod.protection.outlook.com" floater-fqdn="vi1eur07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_35" skip-validations="true" />
+
+  <!-- apc01 -->
+  <object environment-name="apc01-hk2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="apc01" full-forest-name="eop-apc01.prod.protection.outlook.com" floater-fqdn="hk2apc01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_0" />
+  <object environment-name="apc01-pu1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="apc01" mgmt-ip-on-cap-vlan="false" full-forest-name="eop-apc01.prod.protection.outlook.com" floater-fqdn="pu1apc01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_1" />
+  <object environment-name="apc01-sg2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="apc01" full-forest-name="eop-apc01.prod.protection.outlook.com" floater-fqdn="sg2apc01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_3" />
+
+  <!-- apc02 -->
+  <object environment-name="apc02-hk2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="apc02" full-forest-name="eop-apc02.prod.protection.outlook.com" floater-fqdn="hk2apc02ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+  <object environment-name="apc02-ku1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="apc02" mgmt-ip-on-cap-vlan="false" full-forest-name="eop-apc02.prod.protection.outlook.com" floater-fqdn="ku1apc02ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+  <object environment-name="apc02-sg2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="apc02" full-forest-name="eop-apc02.prod.protection.outlook.com" floater-fqdn="sg2apc02ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+
+   
+
+  <!--
+  =======================================================================================================================================================================
+  LTM - GOLOCAL
+  =======================================================================================================================================================================
+  -->
+  
+  <!-- jpn01 -->
+  <object environment-name="jpn01-ty1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="jpn01" full-forest-name="eop-jpn01.prod.protection.outlook.com" floater-fqdn="ty1jpn01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_0" />
+  <object environment-name="jpn01-os2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="jpn01" full-forest-name="eop-jpn01.prod.protection.outlook.com" floater-fqdn="os2jpn01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_1" />
+  
+  <!-- aus01 -->
+  <object environment-name="aus01-me1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="aus01" full-forest-name="eop-aus01.prod.protection.outlook.com" floater-fqdn="me1aus01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_2" />
+  <object environment-name="aus01-sy3" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="aus01" full-forest-name="eop-aus01.prod.protection.outlook.com" floater-fqdn="sy3aus01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_3" />
+
+  <!-- ind01 -->
+  <object environment-name="ind01-ma1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="ind01" full-forest-name="eop-ind01.prod.protection.outlook.com" floater-fqdn="ma1ind01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_4" />
+  <object environment-name="ind01-bo1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="ind01" full-forest-name="eop-ind01.prod.protection.outlook.com" floater-fqdn="bo1ind01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_5" />
+
+  <!-- can01 -->
+  <object environment-name="can01-qb1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="can01" full-forest-name="eop-can01.prod.protection.outlook.com" floater-fqdn="qb1can01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_6" />
+  <object environment-name="can01-to1" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="can01" full-forest-name="eop-can01.prod.protection.outlook.com" floater-fqdn="to1can01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_7" />
+
+  <!-- ger01 -->
+  <object environment-name="ger01-fra" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="ger01" full-forest-name="eop-ger01.prod.protection.outlook.de" floater-fqdn="frager01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_6" />
+  <object environment-name="ger01-lej" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="ger01" full-forest-name="eop-ger01.prod.protection.outlook.de" floater-fqdn="lejger01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_7" />
+
+  <!-- gbr01 -->
+  <object environment-name="gbr01-lo2" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="gbr01" full-forest-name="eop-gbr01.prod.protection.outlook.com" floater-fqdn="lo2gbr01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_8" />
+  <object environment-name="gbr01-cwl" validate-ltm-config="true" validate-ltm-config-ipv6="true" forest-name="gbr01" full-forest-name="eop-gbr01.prod.protection.outlook.com" floater-fqdn="cwlgbr01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_9" />
+
+  <!-- kor01 -->
+  <object environment-name="kor01-sl2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="kor01" full-forest-name="eop-kor01.prod.protection.outlook.com" floater-fqdn="sl2kor01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_14" />
+  <object environment-name="kor01-ps2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="kor01" full-forest-name="eop-kor01.prod.protection.outlook.com" floater-fqdn="ps2kor01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_15" />
+
+  <!-- fra01 -->
+  <object environment-name="fra01-mr2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="fra01" full-forest-name="eop-fra01.prod.protection.outlook.com" floater-fqdn="mr2fra01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_16" skip-validations="true" />
+  <object environment-name="fra01-pr2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="fra01" full-forest-name="eop-fra01.prod.protection.outlook.com" floater-fqdn="pr2fra01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_17" skip-validations="true" />
+
+  <!-- sgp01 -->
+  <object environment-name="sgp01-sg2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="sgp01" full-forest-name="eop-sgp01.prod.protection.outlook.com" floater-fqdn="sg2sgp01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_18" skip-validations="true" />
+  <object environment-name="sgp01-sg3" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="sgp01" full-forest-name="eop-sgp01.prod.protection.outlook.com" floater-fqdn="sg3sgp01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_19" skip-validations="true" />  
+
+  <!-- are01 -->
+  <object environment-name="are01-dx2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="are01" full-forest-name="eop-are01.prod.protection.outlook.com" floater-fqdn="dx2are01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_20" skip-validations="true" />
+  <object environment-name="are01-au2" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="are01" full-forest-name="eop-are01.prod.protection.outlook.com" floater-fqdn="au2are01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_21" skip-validations="true" />  
+
+  <!-- zaf01 -->  
+  <object environment-name="zaf01-jn2" validate-global-config="false" validate-ltm-config-ipv6="false" forest-name="zaf01" full-forest-name="eop-zaf01.prod.protection.outlook.com" floater-fqdn="jn2zaf01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_52" skip-validations="true" /> 
+  <object environment-name="zaf01-ct2" validate-global-config="false" validate-ltm-config-ipv6="false" forest-name="zaf01" full-forest-name="eop-zaf01.prod.protection.outlook.com" floater-fqdn="ct2zaf01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_53" skip-validations="true" />  
+
+  <!-- che01 -->  
+  <object environment-name="che01-zr0" validate-global-config="false" validate-ltm-config-ipv6="false" forest-name="che01" full-forest-name="eop-che01.prod.protection.outlook.com" floater-fqdn="zr0che01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_54" skip-validations="true" /> 
+  <object environment-name="che01-gv0" validate-global-config="false" validate-ltm-config-ipv6="false" forest-name="che01" full-forest-name="eop-che01.prod.protection.outlook.com" floater-fqdn="gv0che01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_55" skip-validations="true" /> 
+ 
+  <!-- deu01 -->  
+  <object environment-name="deu01-be0" validate-global-config="false" validate-ltm-config-ipv6="false" forest-name="deu01" full-forest-name="eop-deu01.prod.protection.outlook.com" floater-fqdn="be0deu01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_56" skip-validations="true" /> 
+  <object environment-name="deu01-fr2" validate-global-config="false" validate-ltm-config-ipv6="false" forest-name="deu01" full-forest-name="eop-deu01.prod.protection.outlook.com" floater-fqdn="fr2deu01ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_57" skip-validations="true" /> 
+ 
+ 
+  
+  <!--
+  =======================================================================================================================================================================
+  LTM - ITAR
+  =======================================================================================================================================================================
+  -->
+
+  <object environment-name="usg01-cy1" validate-ltm-config="true" forest-name="usg01" full-forest-name="eop-usg01.itar.protection.office365.us" floater-fqdn="cy1usg01ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+  <object environment-name="usg01-dm2" validate-ltm-config="true" forest-name="usg01" full-forest-name="eop-usg01.itar.protection.office365.us" floater-fqdn="dm2usg01ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+
+  <object environment-name="usg02-cy1" validate-ltm-config="true" forest-name="usg02" environment-type="ltm" />
+  <object environment-name="usg02-bn3" validate-ltm-config="true" forest-name="usg02" environment-type="ltm" />
+
+<!-- gls07 -->
+  <object environment-name="gls07-cy1" validate-ltm-config="false" forest-name="gls07" full-forest-name="eop-gls07.itar.protection.office365.us" floater-fqdn="cy1gls07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_12" skip-validations="true" />
+  <object environment-name="gls07-sn5" validate-ltm-config="false" forest-name="gls07" full-forest-name="eop-gls07.itar.protection.office365.us" floater-fqdn="sn5gls07ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_12" skip-validations="true" />
+
+
+  <object environment-name="sit02-ph2" validate-ltm-config="false" forest-name="sit02" environment-type="ltm" skip-validations="true" />
+  <object environment-name="sit02-sn5" validate-ltm-config="false" forest-name="sit02" environment-type="ltm" skip-validations="true" />
+  <object environment-name="sit01-ph2" validate-ltm-config="false" forest-name="sit01" environment-type="ltm" skip-validations="true" />
+  <object environment-name="sit01-sn5" validate-ltm-config="false" forest-name="sit01" environment-type="ltm" skip-validations="true" />
+
+
+  <!--
+  =======================================================================================================================================================================
+  LTM - Gallatin/CHN
+  =======================================================================================================================================================================
+  -->
+
+  <object environment-name="gallatin-bjb" validate-ltm-config="true" forest-name="gallatin" full-forest-name="ProtectionCN.gbl" floater-fqdn="shaffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+  <object environment-name="gallatin-sha" validate-ltm-config="true" forest-name="gallatin" full-forest-name="ProtectionCN.gbl" floater-fqdn="bjbffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+
+  <object environment-name="gallatin-w15-bjb" validate-ltm-config="false" forest-name="gallatin-w15" full-forest-name="ProtectionCN.gbl" floater-fqdn="bjbgallatin-w15ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+  <object environment-name="gallatin-w15-sha" validate-ltm-config="false" forest-name="gallatin-w15" full-forest-name="ProtectionCN.gbl" floater-fqdn="shagallatin-w15ffonetlob.netc.protection.outlook.com" environment-type="ltm" />
+
+  <object environment-name="chn02-sh0" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="chn02" full-forest-name="ProtectionCN.gbl" floater-fqdn="sh0chn02.netc.protection.outlook.com" environment-type="ltm" skip-validations="true" />
+  <object environment-name="chn02-bjs" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="chn02" full-forest-name="ProtectionCN.gbl" floater-fqdn="bjschn02.netc.protection.outlook.com" environment-type="ltm" skip-validations="true" />  
+
+  <object environment-name="scn01-bjs" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="scn01" full-forest-name="ProtectionCN.gbl" floater-fqdn="bjsscn01.netc.protection.outlook.com" environment-type="ltm" skip-validations="true" />  
+  <object environment-name="scn01-sh0" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="scn01" full-forest-name="ProtectionCN.gbl" floater-fqdn="sh0scn01.netc.protection.outlook.com" environment-type="ltm" skip-validations="true" />  
+
+  
+  <!--
+  =======================================================================================================================================================================
+  LTM - SONAR
+  =======================================================================================================================================================================
+  -->
+
+ 
+  <object environment-name="son01-co1" validate-global-config="true" forest-name="son01" environment-type="global" tags="health_0" />
+  <object environment-name="son01-dm3" validate-global-config="true" forest-name="son01" environment-type="global" tags="health_2" />
+  <object environment-name="son01-sn1" validate-global-config="true" forest-name="son01" environment-type="global" tags="health_4" />
+  <object environment-name="son02-am5" validate-global-config="true" forest-name="son02" environment-type="global" tags="health_1" />
+  <object environment-name="son02-db5" validate-global-config="true" forest-name="son02" environment-type="global" tags="health_3" />
+  <object environment-name="son02-he1" validate-global-config="true" forest-name="son02" environment-type="global" tags="health_5" />
+  <object environment-name="svc01-dm5" validate-global-config="true" forest-name="svc01" environment-type="global" tags="health_14" />
+  <object environment-name="sna01-sn4" validate-global-config="true" forest-name="sna01" environment-type="global" tags="health_15" />
+  <object environment-name="sna01-dm5" validate-global-config="true" forest-name="sna01" environment-type="global" tags="health_16" />
+  <object environment-name="sna01-cy4" validate-global-config="true" forest-name="sna01" environment-type="global" tags="health_17" />
+  <object environment-name="sna02-cy4" validate-global-config="true" forest-name="sna02" environment-type="global" tags="health_18" />
+  <object environment-name="sna02-sn4" validate-global-config="true" forest-name="sna02" environment-type="global" tags="health_19" />
+  <object environment-name="sna02-co1" validate-global-config="true" forest-name="sna02" environment-type="global" tags="health_31" skip-validations="true" />
+  <object environment-name="sna03-sn4" validate-global-config="true" forest-name="sna03" environment-type="global" tags="health_20" />
+  <object environment-name="sna03-cy4" validate-global-config="true" forest-name="sna03" environment-type="global" tags="health_21" />
+  <object environment-name="sna03-mwh" validate-global-config="true" forest-name="sna03" environment-type="global" tags="health_22" />
+  <object environment-name="sna03-dm6" validate-global-config="true" forest-name="sna03" environment-type="global" tags="health_56" skip-validations="true" />
+  
+  <object environment-name="sna05-sn4" validate-global-config="true" forest-name="sna05" environment-type="global" tags="health_38" skip-validations="true" />
+  <object environment-name="sna05-bl0" validate-global-config="true" forest-name="sna05" environment-type="global" tags="health_39" skip-validations="true" />
+  <object environment-name="sna05-dm6" validate-global-config="true" forest-name="sna05" environment-type="global" tags="health_40" skip-validations="true" />  
+
+  <object environment-name="seu01-he1" validate-global-config="true" forest-name="seu01" environment-type="global" tags="health_23" />
+  <object environment-name="seu01-vi1" validate-global-config="true" forest-name="seu01" environment-type="global" tags="health_27" />
+  <object environment-name="seu01-am0" validate-global-config="true" forest-name="seu01" environment-type="global" tags="health_25" />
+  <object environment-name="seu02-he1" validate-global-config="true" forest-name="seu02" environment-type="global" tags="health_24" />
+  <object environment-name="seu02-am0" validate-global-config="true" forest-name="seu02" environment-type="global" tags="health_26" />
+  <object environment-name="seu02-vi1" validate-global-config="true" forest-name="seu02" environment-type="global" tags="health_28" />
+  <object environment-name="seu03-he1" validate-global-config="true" forest-name="seu03" environment-type="global" tags="health_29" skip-validations="true" />
+  <object environment-name="seu03-am0" validate-global-config="true" forest-name="seu03" environment-type="global" tags="health_35" skip-validations="true" />
+  <object environment-name="seu03-pr2" validate-global-config="true" forest-name="seu03" environment-type="global" tags="health_36" skip-validations="true" />
+  <object environment-name="seu04-he1" validate-global-config="true" forest-name="seu04" environment-type="global" tags="health_30" skip-validations="true" />
+  <object environment-name="seu04-pr2" validate-global-config="true" forest-name="seu04" environment-type="global" tags="health_37" skip-validations="true" />
+  <object environment-name="seu04-am0" validate-global-config="true" forest-name="seu04" environment-type="global" tags="health_38" skip-validations="true" />
+
+  <object environment-name="sap01-sg2" validate-global-config="true" forest-name="sap01" environment-type="global" tags="health_10" />
+  <object environment-name="sap01-hk2" validate-global-config="true" forest-name="sap01" environment-type="global" tags="health_13" />
+  <object environment-name="sap01-pu1" validate-global-config="true" forest-name="sap01" environment-type="global" tags="health_11" />
+  <object environment-name="sap01-ps1" validate-global-config="true" forest-name="sap01" environment-type="global" tags="health_12" skip-validations="true" />
+  <object environment-name="sap02-sl2" validate-global-config="true" forest-name="sap02" environment-type="global" tags="health_14" skip-validations="true" />
+
+  <object environment-name="sfr01-pr2" validate-global-config="false" forest-name="sfr01" environment-type="global" tags="health_41" skip-validations="true" />
+  <object environment-name="sfr01-mr2" validate-global-config="false" forest-name="sfr01" environment-type="global" tags="health_57" skip-validations="true" /> 
+
+  <object environment-name="sjp01-tyc" validate-global-config="false" forest-name="sjp01" environment-type="global" tags="health_44" skip-validations="true" /> 
+  <object environment-name="sjp01-osa" validate-global-config="false" forest-name="sjp01" environment-type="global" tags="health_45" skip-validations="true" />  
+
+  <object environment-name="skr01-ps2" validate-global-config="false" forest-name="skr01" environment-type="global" tags="health_42" skip-validations="true" /> 
+  <object environment-name="skr01-sl2" validate-global-config="false" forest-name="skr01" environment-type="global" tags="health_43" skip-validations="true" />
+  
+  <object environment-name="sgc01-co1" validate-global-config="false" forest-name="sgc01" environment-type="global" tags="health_32" skip-validations="true" />
+  <object environment-name="sgc01-cy1" validate-global-config="false" forest-name="sgc01" environment-type="global" tags="health_34" skip-validations="true" />
+
+
+  <!--
+  =======================================================================================================================================================================
+  LTM - GAS/GLS
+  =======================================================================================================================================================================
+  -->
+
+  <object environment-name="gls06-fra" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls06" full-forest-name="eop-gls06.prod.protection.outlook.de" floater-fqdn="fragls06ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_11" />
+  <object environment-name="gls06-lej" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls06" full-forest-name="eop-gls06.prod.protection.outlook.de" floater-fqdn="lejgls06ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_10" />
+  
+  <object environment-name="gls01-am5" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_8" />
+  <object environment-name="gls01-db5" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_9" />
+  <object environment-name="gls01-cy1" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_29" />
+  <object environment-name="gls01-sn4" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_30" />
+  <object environment-name="gls01-dm3" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_31" />
+  <object environment-name="gls01-sg2" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_6" />
+  <object environment-name="gls01-hk2" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_7" />
+  <object environment-name="gls01-am6" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_52" />
+  <object environment-name="gls01-dm6" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_53" />
+  <object environment-name="gls01-cyb" validate-global-config="false" forest-name="gls01" environment-type="global" tags="health_54" />
+  
+
+  <object environment-name="gas01-am5" validate-global-config="false" forest-name="gas01" environment-type="global" tags="health_46" skip-validations="true" /> 
+  <object environment-name="gas01-dm3" validate-global-config="false" forest-name="gas01" environment-type="global" tags="health_47" skip-validations="true" /> 
+  <object environment-name="gas01-hk2" validate-global-config="false" forest-name="gas01" environment-type="global" tags="health_48" skip-validations="true" /> 
+  <object environment-name="gas01-cy1" validate-global-config="false" forest-name="gas01" environment-type="global" tags="health_49" skip-validations="true" /> 
+  <object environment-name="gas01-sg2" validate-global-config="false" forest-name="gas01" environment-type="global" tags="health_50" skip-validations="true" /> 
+  <object environment-name="gas01-sn4" validate-global-config="false" forest-name="gas01" environment-type="global" tags="health_51" skip-validations="true" /> 
+  <object environment-name="gas01-db5" validate-global-config="false" forest-name="gas01" environment-type="global" tags="health_55" skip-validations="true" /> 
+  
+
+   
+  <!--
+  =======================================================================================================================================================================
+  LTM - USSEC
+  =======================================================================================================================================================================
+  -->
+
+  <object environment-name="sec01-sn8" validate-ltm-config="false" forest-name="sec01" full-forest-name="eop-sec01.protection.microsoft.scloud" floater-fqdn="sn8sec01ffonetlob.netc.protection.microsoft.scloud" environment-type="ltm" />
+  <object environment-name="sec01-mnz" validate-ltm-config="false" forest-name="sec01" full-forest-name="eop-sec01.protection.microsoft.scloud" floater-fqdn="mnasec01ffonetlob.netc.protection.microsoft.scloud" environment-type="ltm" />
+
+
+  <!-- gls09 -->
+  <object environment-name="gls09-sn8" validate-ltm-config="false" forest-name="gls09" full-forest-name="eop-gls09.protection.microsoft.scloud" floater-fqdn="sn8gls09ffonetlob.netc.protection.microsoft.scloud" environment-type="ltm" tags="health_12" skip-validations="true" />
+  <object environment-name="gls09-mnz" validate-ltm-config="false" forest-name="gls09" full-forest-name="eop-gls09.protection.microsoft.scloud" floater-fqdn="mnagls09ffonetlob.netc.protection.microsoft.scloud" environment-type="ltm" tags="health_12" skip-validations="true" />
+  
+  <!--gls syngroup -->
+  <object environment-name="gtm-gls09-syncgroup01-mnz" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls09" full-forest-name="eop-gls09.protection.microsoft.scloud" floater-fqdn="mnagls09ffonetlob.netc.protection.microsoft.scloud" environment-type="ltm" tags="health_13" />
+  <object environment-name="gtm-gls09-syncgroup01-sn8" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls09" full-forest-name="eop-gls09.protection.microsoft.scloud" floater-fqdn="sn8gls09ffonetlob.netc.protection.microsoft.scloud" environment-type="ltm" tags="health_12" />
+  <object environment-name="gtm-gls09-syncgroup02-mnz" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls09" full-forest-name="eop-gls09.protection.microsoft.scloud" floater-fqdn="mnagls09ffonetlob.netc.protection.microsoft.scloud" environment-type="ltm" tags="health_13" />
+  <object environment-name="gtm-gls09-syncgroup02-sn8" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls09" full-forest-name="eop-gls09.protection.microsoft.scloud" floater-fqdn="sn8gls09ffonetlob.netc.protection.microsoft.scloud" environment-type="ltm" tags="health_12" />
+  
+  
+
+  <!--
+  
+  =======================================================================================================================================================================
+  LTM - USNAT
+  =======================================================================================================================================================================
+  -->
+
+  <object environment-name="nat01-gz0" validate-ltm-config="false" forest-name="nat01" full-forest-name="eop-nat01.protection.eaglex.ic.gov" floater-fqdn="gz0nat01ffonetlob.netc.protection.eaglex.ic.gov" environment-type="ltm" />
+  <object environment-name="nat01-rz0" validate-ltm-config="false" forest-name="nat01" full-forest-name="eop-nat01.protection.eaglex.ic.gov" floater-fqdn="rz0nat01ffonetlob.netc.protection.eaglex.ic.gov" environment-type="ltm" />
+
+
+  <!-- gls10 -->
+  <object environment-name="gls10-gz0" validate-ltm-config="false" forest-name="gls10" full-forest-name="eop-gls10.protection.eaglex.ic.gov" floater-fqdn="gz0gls10ffonetlob.netc.protection.eaglex.ic.gov" environment-type="ltm" tags="health_12" skip-validations="true" />
+  <object environment-name="gls10-rz0" validate-ltm-config="false" forest-name="gls10" full-forest-name="eop-gls10.protection.eaglex.ic.gov" floater-fqdn="rz0gls10ffonetlob.netc.protection.eaglex.ic.gov" environment-type="ltm" tags="health_12" skip-validations="true" />
+  
+  <!-- gls syncgroup-->
+  <object environment-name="gtm-gls10-syncgroup01-gz0" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls10" full-forest-name="eop-gls10.protection.eaglex.ic.gov" floater-fqdn="gz0gls10ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_13" />
+  <object environment-name="gtm-gls10-syncgroup01-rz0" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls10" full-forest-name="eop-gls10.protection.eaglex.ic.gov" floater-fqdn="rz0gls10ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_12" />
+  <object environment-name="gtm-gls10-syncgroup02-gz0" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls10" full-forest-name="eop-gls10.protection.eaglex.ic.gov" floater-fqdn="gz0gls10ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_13" />
+  <object environment-name="gtm-gls10-syncgroup02-rz0" validate-ltm-config="false" validate-ltm-config-ipv6="false" forest-name="gls10" full-forest-name="eop-gls10.protection.eaglex.ic.gov" floater-fqdn="rz0gls10ffonetlob.netc.protection.outlook.com" environment-type="ltm" tags="health_12" />
+  
+
+
+
+
+  
+
+  
+  
+</objects>

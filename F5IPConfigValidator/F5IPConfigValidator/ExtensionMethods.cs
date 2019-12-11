@@ -4,10 +4,18 @@ namespace F5IPConfigValidator
 {
     public static class ExtensionMethods
     {
+        public static bool StartsWithText(this string self, string text)
+        {
+            if (self == null) return false;
+            if (string.IsNullOrEmpty(text)) return false;
+            return self.StartsWith(text, StringComparison.CurrentCultureIgnoreCase);
+        }
+        
         public static bool ContainsText(this string self, string text)
         {
+            if (self == null) return false;
             if (string.IsNullOrEmpty(text)) return false;
-            return self?.IndexOf(text, StringComparison.CurrentCultureIgnoreCase) >= 0;
+            return self.IndexOf(text, StringComparison.CurrentCultureIgnoreCase) >= 0;
         }
 
         public static bool IsSameTextAs(this string self, string text)
@@ -22,6 +30,16 @@ namespace F5IPConfigValidator
             if (self == null) return false;
             if (text == null) return false;
             return self.EndsWith(text, StringComparison.CurrentCultureIgnoreCase);
+        }
+
+        public static string[] SplitWithoutEmpty(this string self, char c)
+        {
+            return self.Split(new[] { c }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        public static string[] SplitWithoutEmpty(this string self, char[] chars)
+        {
+            return self.Split(chars, StringSplitOptions.RemoveEmptyEntries);
         }
 
         public static string ToCsvValue(this string self)
