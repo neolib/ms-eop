@@ -169,22 +169,20 @@ namespace F5IPConfigValidator
             LoadForestMap();
             LoadNameMap();
             var envNodes = xd.Root.XPathSelectElements("//file[not(starts-with(@name, '_'))]");
-            
+
             if (!envNodes.Any())
             {
                 throw new Exception("No environment nodes!");
-            }            
+            }
 
             // Validate EOP to Azure name mapping.
             foreach (var fileNode in envNodes)
             {
                 var configName = fileNode.Attribute("name").Value;
                 var envName = ExtractEnvironmentName_(configName);
-                var index = envName.LastIndexOf('-');
-                if (index > 0)
+                var eopDcName = ExtractDcName_(envName);
+                if (eopDcName != null)
                 {
-                    var eopDcName = envName.Substring(index + 1);
-
                     var azureName = GetAzureDcName(eopDcName);
                     if (azureName == null)
                     {
@@ -271,7 +269,7 @@ namespace F5IPConfigValidator
                     {
                         try
                         {
-                            var result = await ValidateIpString(forestName, eopDcName, ipString_, entry.Value);
+                            var result = await ValidateIpString(entry.Value, forestName, eopDcName, ipString_);
                             result.AddressSpace = entry.Key;
                             if (result.Status != ValidationStatus.Success)
                             {
@@ -293,26 +291,26 @@ namespace F5IPConfigValidator
                 return filename_;
             }
 
-            string ExtractForestName_(string envName)
+            string ExtractForestName_(string envName_)
             {
-                var index = envName.LastIndexOf('-');
-                if (index > 0) return envName.Substring(0, index);
+                var index = envName_.LastIndexOf('-');
+                if (index > 0) return envName_.Substring(0, index);
                 return null;
             }
 
-            string ExtractDcName_(string envName)
+            string ExtractDcName_(string envName_)
             {
-                var index = envName.LastIndexOf('-');
-                if (index > 0) return envName.Substring(index + 1);
+                var index = envName_.LastIndexOf('-');
+                if (index > 0) return envName_.Substring(index + 1);
                 return null;
             }
         }
 
         async Task<ValidationRecord> ValidateIpString(
+            string addressSpaceId,
             string forestName,
             string eopDcName,
-            string ipString,
-            string addressSpaceId)
+            string ipString)
         {
             var queryModel = AllocationQueryModel.Create(addressSpaceId, ipString);
             queryModel.ReturnParentWhenNotFound = !ipString.Contains('/');
@@ -426,15 +424,15 @@ namespace F5IPConfigValidator
             }
 
             /*
-             * Build a map that contains 3 possible names: IPAM, EOP and Azure.
-             * This will greatly simplify name checking by flattening nested
-             * if-else blocks to a simple loop.
-             * 
+             * Build a map that contains 4 possible names: IPAM, EOP, Azure and
+             * normalized. This will greatly simplify name checking by flattening
+             * nested if-else blocks to a simple loop.
+             *
              * */
 
             var dcNameMap = new StringMap();
 
-            dcNameMap["datacenter"] = ipamDcName;            
+            dcNameMap["datacenter"] = ipamDcName;
             if (StringMapContainsValueText(dcNameMap, eopDcName) == false)
             {
                 dcNameMap["EOP"] = eopDcName;
