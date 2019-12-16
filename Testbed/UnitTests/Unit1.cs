@@ -1,9 +1,10 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
@@ -11,11 +12,9 @@ using System.Xml.XPath;
 namespace Testbed.UnitTests
 {
     using static System.Console;
-    using System.Threading.Tasks;
-    using System.Diagnostics;
 
     [TestClass]
-    public class EOPTest
+    public class Unit1
     {
         [TestMethod]
         public void TestXDocumentCreation()
@@ -25,14 +24,19 @@ namespace Testbed.UnitTests
             xd.Add(new XElement(xns + "root"));
             xd.Root.Add(new XElement(xns + "item1", "text1"));
             xd.Root.Add(new XElement(xns + "item2", "text2"));
-            xd.Root.Add(new XElement(xns + "item3", "text3"));
-            var item1 = xd.Root.Element(xns + "item1");
-            if (item1 != null)
-            {
-                WriteLine("item1's namespace is: \"{0}\", is none: {1}",
-                    item1.Name.Namespace, item1.Name.Namespace == XNamespace.None);
-            }
+            xd.Root.Add(new XElement("item3", "text3"));
             WriteLine(xd.ToString());
+
+            var item1 = xd.Root.Element(xns + "item1");
+            Assert.IsNotNull(item1);
+            WriteLine("item1's namespace is: \"{0}\", is none: {1}",
+                item1.Name.Namespace, item1.Name.Namespace == XNamespace.None);
+            var item2 = xd.Root.Element("item2");
+            Assert.IsNull(item2);
+            var item3 = xd.Root.Element("item3");
+            Assert.IsNotNull(item3);
+            WriteLine("item3's namespace is: \"{0}\", is none: {1}",
+                item3.Name.Namespace, item3.Name.Namespace == XNamespace.None);
         }
 
         [TestMethod]
@@ -68,9 +72,9 @@ namespace Testbed.UnitTests
         {
             var list = new List<Item>
             {
-                new Item { name = "item1", tag = "tag1" },
-                new Item { name = "item2", tag = "tag2" },
-                new Item { name = "item3", tag = "tag3" },
+                new Item("item1", "tag1"),
+                new Item("item2", "tag2"),
+                new Item("item3", "tag3"),
             };
 
             WriteLine(string.Join(Environment.NewLine, list));
@@ -134,15 +138,6 @@ namespace Testbed.UnitTests
             }
         }
 
-        [TestMethod]
-        public void TestStringConcat()
-        {
-            var s = "first," + $"second{DateTime.Now}," +
-                "third part" + "{0}";
-
-            WriteLine(s);
-        }
-
     }
 
     #region Help Classes
@@ -151,6 +146,12 @@ namespace Testbed.UnitTests
     {
         internal string name;
         internal string tag;
+
+        internal Item(string name, string tag)
+        {
+            this.name = name;
+            this.tag = tag;
+        }
 
         public override string ToString()
         {
