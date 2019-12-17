@@ -4,6 +4,8 @@ using System.Net;
 
 namespace Testbed.UnitTests
 {
+    using ExcelDataReader;
+    using System.IO;
     using static Console;
 
     [TestClass]
@@ -22,11 +24,9 @@ namespace Testbed.UnitTests
         }
 
         [TestMethod]
-        public void TestIPv4()
+        public void Test()
         {
-            var ips = "20.128.5.92";
-            var ip = IPAddress.Parse(ips);
-            WriteLine(ip.Address);
+            
         }
     }
 }
