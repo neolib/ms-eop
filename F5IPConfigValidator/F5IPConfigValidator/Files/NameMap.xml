@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Map>
   <!-- All names must be in uppercase! -->
-  
+
   <DCNames>
     <DCName EOPName="AM1" AzureName="AM1" />
     <DCName EOPName="AMS" AzureName="AM1" />
@@ -204,4 +204,9 @@
   <DCSuffixes>
     <DCSuffix Text="-FX" ForestNames="GLS07,SIT01,SIT02,USG01,USG02" />
   </DCSuffixes>
+  <ForestSpaces>
+    <ForestSpace SpaceName="GalaCake" ForestNames="GALLATIN,CHN02,SCN01" />
+    <ForestSpace SpaceName="RX" ForestNames="GLS09,GLS10,NAT01,SEC01" />
+    <ForestSpace SpaceName="EX" ForestNames="" />
+  </ForestSpaces>
 </Map>
