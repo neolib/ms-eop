@@ -25,7 +25,7 @@ namespace F5IPConfigValidator
             var seconds = w.ElapsedMilliseconds / 1000;
             Error.WriteLine($"Total time elapsed: {seconds / 60} minutes {seconds % 60} seconds");
 
-            if (!IsOutputRedirected) ReadLine();
+            ReadLine();
         }
 
     }

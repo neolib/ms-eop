@@ -24,11 +24,12 @@ namespace F5IPConfigValidator
         EmptyTitle,
         EmptyDatacenter,
         MismatchedDcName,   // Azure name does not match EOP name
-        InvalidTitle,       // No environment/DC name in title
+        InvalidTitle,       // No datacenter/forest name in title
     }
 
     public class ValidationRecord
     {
+        public string Id;
         public string AddressSpace;
         public string Prefix;
         public string Environment;  // Forest-DC
@@ -180,7 +181,7 @@ namespace F5IPConfigValidator
         internal async Task Process(string resultFile)
         {
             // CSV header row
-            WriteLine("Address Space,Comment,Environment,Forest,EOP DC,IP Query,Prefix,IPAM DC,Region,Status,Summary,Title");
+            WriteLine("Address Space,Comment,Environment,Forest,EOP DC,IP Query,Prefix,IPAM DC,Region,Status,Summary,Title,Id");
 
             //var debug = false;
             var ipStringSeparators = new[] { ',', ' ' };
@@ -341,7 +342,7 @@ namespace F5IPConfigValidator
 
         private void DumpValidationRecord(ValidationRecord result, string envName, string ipString)
         {
-            WriteLine($"{result.AddressSpace},,{envName},{result.Forest},{result.EopDcName},{ipString},{result.Prefix},{result.IpamDcName},{result.Region.ToCsvValue()},{result.Status},{result.Summary.ToCsvValue()},{result.Title.ToCsvValue()}");
+            WriteLine($"{result.AddressSpace},,{envName},{result.Forest},{result.EopDcName},{ipString},{result.Prefix},{result.IpamDcName},{result.Region.ToCsvValue()},{result.Status},{result.Summary.ToCsvValue()},{result.Title.ToCsvValue()},{result.Id}");
         }
 
         private async Task<ValidationRecord> ValidateIpString(
@@ -377,6 +378,7 @@ namespace F5IPConfigValidator
                     ValidationStatus.WrongAddressSpace,
                     $"Should be in address space {mappedSpaceName}")
                 {
+                    Id = parent.Id,
                     Prefix = prefix,
                     IpamDcName = ipamDcName,
                     Region = region,
@@ -416,6 +418,7 @@ namespace F5IPConfigValidator
                         ValidationStatus.Obsolete,
                         "Should be deleted")
                     {
+                        Id = parent.Id,
                         Prefix = prefix,
                         IpamDcName = ipamDcName,
                         Region = region,
@@ -427,6 +430,7 @@ namespace F5IPConfigValidator
                     ValidationStatus.EmptyTitle,
                     "Title should not be empty")
                 {
+                    Id = parent.Id,
                     Prefix = prefix,
                     IpamDcName = ipamDcName,
                     Region = region,
@@ -440,6 +444,7 @@ namespace F5IPConfigValidator
                     ValidationStatus.EmptyDatacenter,
                     "Datacenter tag should not be empty")
                 {
+                    Id = parent.Id,
                     Prefix = prefix,
                     IpamDcName = ipamDcName,
                     Region = region,
@@ -471,6 +476,7 @@ namespace F5IPConfigValidator
                     $"Datacenter {ipamDcName} does not match EOP name {eopDcName} or mapped Azure name {azureDcName}"
                     )
                 {
+                    Id = parent.Id,
                     Prefix = prefix,
                     IpamDcName = ipamDcName,
                     Region = region,
@@ -529,6 +535,7 @@ namespace F5IPConfigValidator
                     ValidationStatus.InvalidTitle,
                     summaryBuilder.ToString())
                 {
+                    Id = parent.Id,
                     Prefix = prefix,
                     IpamDcName = ipamDcName,
                     Region = region,
@@ -549,6 +556,7 @@ namespace F5IPConfigValidator
                     $"Title does not contain forest name ({forestName} or alias {azureForestName})"
                     )
                 {
+                    Id = parent.Id,
                     Prefix = prefix,
                     IpamDcName = ipamDcName,
                     Region = region,
