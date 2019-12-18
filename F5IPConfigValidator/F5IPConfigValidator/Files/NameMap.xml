@@ -206,7 +206,7 @@
   </DCSuffixes>
   <ForestSpaces>
     <ForestSpace SpaceName="GalaCake" ForestNames="GALLATIN,CHN02,SCN01" />
-    <ForestSpace SpaceName="RX" ForestNames="GLS09,GLS10,NAT01,SEC01" />
+    <!--<ForestSpace SpaceName="RX" ForestNames="GLS09,GLS10,NAT01,SEC01" />-->
     <ForestSpace SpaceName="EX" ForestNames="" />
   </ForestSpaces>
 </Map>

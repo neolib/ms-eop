@@ -10,6 +10,7 @@ namespace F5IPConfigValidator
 {
     using Microsoft.Azure.Ipam.Client;
     using Microsoft.Azure.Ipam.Contracts;
+    using System.Runtime.InteropServices.WindowsRuntime;
     using static System.Console;
     using StringMap = Dictionary<string, string>;
 
@@ -18,6 +19,7 @@ namespace F5IPConfigValidator
         Unknown,
         Success,
         NoMatch,            // No matching record found in Kusto
+        MultipleMatches,
         WrongAddressSpace,  // In wrong addressspace
         Obsolete,           // Should be removed in config
         NoMappingDcName,    // EOP datacenter name has no mapping Azure name
@@ -292,18 +294,21 @@ namespace F5IPConfigValidator
                     {
                         try
                         {
-                            var result = await ValidateIpString(entry.Key, forestName, eopDcName, ipString_);
-                            if (result.Status == ValidationStatus.NoMatch) continue;
+                            var records = await ValidateIpString(entry.Key, forestName, eopDcName, ipString_);
 
-                            hasAnyMatch = true;
-
-                            if (result.Status != ValidationStatus.Success)
+                            foreach (var record in records)
                             {
-                                result.AddressSpace = entry.Key;
-                                result.Environment = envName;
-                                result.Forest = forestName;
-                                result.EopDcName = eopDcName;
-                                DumpValidationRecord(result, envName, ipString_);
+                                if (record.Status == ValidationStatus.NoMatch) continue;
+
+                                hasAnyMatch = true;
+                                if (record.Status != ValidationStatus.Success)
+                                {
+                                    record.AddressSpace = entry.Key;
+                                    record.Environment = envName;
+                                    record.Forest = forestName;
+                                    record.EopDcName = eopDcName;
+                                    DumpValidationRecord(record, envName, ipString_);
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -346,7 +351,7 @@ namespace F5IPConfigValidator
             WriteLine($"{result.AddressSpace},,{envName},{result.Forest},{result.EopDcName},{ipString},{result.Prefix},{result.IpamDcName},{result.Region.ToCsvValue()},{result.Status},{result.Summary.ToCsvValue()},{result.Title.ToCsvValue()},{result.Id}");
         }
 
-        private async Task<ValidationRecord> ValidateIpString(
+        private async Task<List<ValidationRecord>> ValidateIpString(
             string addressSpace,
             string forestName,
             string eopDcName,
@@ -357,69 +362,50 @@ namespace F5IPConfigValidator
             queryModel.MaxResults = 1000;
 
             var queryResult = await this.IpamClient.QueryAllocationsAsync(queryModel);
-            var parent = queryResult.FirstOrDefault();
-            if (parent == null) return ValidationRecord.NoMatch;
-
-            lock (prefixIdList)
+            /*if (queryResult.Count == 0) return ValidationRecord.NoMatch;
+            if (queryResult.Count > 1)
             {
-                if (prefixIdList.Contains(parent.Id)) return ValidationRecord.Success;
-                prefixIdList.Add(parent.Id);
-            }
-
-            var prefix = parent.Prefix;
-            parent.Tags.TryGetValue("Title", out var title);
-            parent.Tags.TryGetValue("Datacenter", out var ipamDcName);
-            parent.Tags.TryGetValue("Region", out var region);
-
-            var mappedSpaceName = GetForestSpaceName(forestName) ?? "Default";
-
-            if (!addressSpace.IsSameTextAs(mappedSpaceName))
-            {
-                return new ValidationRecord(
-                    ValidationStatus.WrongAddressSpace,
-                    $"Should be in address space {mappedSpaceName}")
+                var sb = new StringBuilder();
+                foreach (var allocation in queryResult)
                 {
-                    Id = parent.Id,
-                    Prefix = prefix,
-                    IpamDcName = ipamDcName,
-                    Region = region,
-                    Title = title,
-                };
-            }
-
-            var prefixNumberString = prefix.Substring(prefix.LastIndexOf('/') + 1);
-
-            if (int.TryParse(prefixNumberString, out var prefixNumber))
-            {
-                //
-                // Skip large blocks
-                //
-
-                if (prefix.Contains(':')) // IPv6
-                {
-                    if (prefixNumber < 64)
-                    {
-                        return ValidationRecord.Success;
-                    }
+                    allocation.Tags.TryGetValue("Region", out var allocRegion);
+                    allocation.Tags.TryGetValue("PhysicalNetwork", out var network);
+                    sb.AppendFormat("Prefix: {0}, Region: {1}, Physical Network: {2}",
+                        allocation.Prefix, allocRegion, network);
+                    sb.AppendLine();
                 }
-                else // IPv4
-                {
-                    if (prefixNumber < 23)
-                    {
-                        return ValidationRecord.Success;
-                    }
-                }
-            }
+                return new ValidationRecord(ValidationStatus.MultipleMatches, sb.ToString());
+            }*/
 
-            if (string.IsNullOrWhiteSpace(title))
+            var records = new List<ValidationRecord>();
+            foreach (var allocModel in queryResult)
             {
-                if (prefixNumber == 32)
+                records.Add(Validate_(allocModel));
+            }
+            return records;
+
+            ValidationRecord Validate_(AllocationModel allocModel_)
+            {
+                lock (prefixIdList)
+                {
+                    if (prefixIdList.Contains(allocModel_.Id)) return ValidationRecord.Success;
+                    prefixIdList.Add(allocModel_.Id);
+                }
+
+                var prefix = allocModel_.Prefix;
+                allocModel_.Tags.TryGetValue("Title", out var title);
+                allocModel_.Tags.TryGetValue("Datacenter", out var ipamDcName);
+                allocModel_.Tags.TryGetValue("Region", out var region);
+
+                var mappedSpaceName = GetForestSpaceName(forestName) ?? "Default";
+
+                if (!addressSpace.IsSameTextAs(mappedSpaceName))
                 {
                     return new ValidationRecord(
-                        ValidationStatus.Obsolete,
-                        "Should be deleted")
+                        ValidationStatus.WrongAddressSpace,
+                        $"Should be in address space {mappedSpaceName}")
                     {
-                        Id = parent.Id,
+                        Id = allocModel_.Id,
                         Prefix = prefix,
                         IpamDcName = ipamDcName,
                         Region = region,
@@ -427,145 +413,186 @@ namespace F5IPConfigValidator
                     };
                 }
 
-                return new ValidationRecord(
-                    ValidationStatus.EmptyTitle,
-                    "Title should not be empty")
+                var prefixNumberString = prefix.Substring(prefix.LastIndexOf('/') + 1);
+
+                if (int.TryParse(prefixNumberString, out var prefixNumber))
                 {
-                    Id = parent.Id,
-                    Prefix = prefix,
-                    IpamDcName = ipamDcName,
-                    Region = region,
-                    Title = title,
-                };
-            }
+                    //
+                    // Skip large blocks
+                    //
 
-            if (string.IsNullOrWhiteSpace(ipamDcName))
-            {
-                return new ValidationRecord(
-                    ValidationStatus.EmptyDatacenter,
-                    "Datacenter tag should not be empty")
-                {
-                    Id = parent.Id,
-                    Prefix = prefix,
-                    IpamDcName = ipamDcName,
-                    Region = region,
-                    Title = title,
-                };
-            }
-
-            var azureDcName = GetAzureDcName(eopDcName);
-            var suffix = GetDcSuffix(forestName);
-            string normalizedDcName = ipamDcName.EndsWithText(suffix)
-                ?
-                ipamDcName.Substring(0, ipamDcName.Length - suffix.Length)
-                :
-                null;
-
-            if (!(
-                ipamDcName.IsSameTextAs(eopDcName) ||
-                ipamDcName.IsSameTextAs(azureDcName) ||
-                normalizedDcName.IsSameTextAs(eopDcName) ||
-                normalizedDcName.IsSameTextAs(azureDcName)
-                ))
-            {
-                return new ValidationRecord(
-                    ValidationStatus.MismatchedDcName,
-                    azureDcName == null || azureDcName.IsSameTextAs(eopDcName)
-                    ?
-                    $"Datacenter {ipamDcName} does not match EOP name {eopDcName}"
-                    :
-                    $"Datacenter {ipamDcName} does not match EOP name {eopDcName} or mapped Azure name {azureDcName}"
-                    )
-                {
-                    Id = parent.Id,
-                    Prefix = prefix,
-                    IpamDcName = ipamDcName,
-                    Region = region,
-                    Title = title,
-                };
-            }
-
-            /*
-             * Build a map that contains 4 possible names: IPAM, EOP, Azure and
-             * normalized. This will greatly simplify name checking by flattening
-             * nested if-else blocks to a simple loop.
-             *
-             * */
-
-            var dcNameMap = new StringMap();
-
-            dcNameMap["datacenter"] = ipamDcName;
-            if (StringMapContainsValueText(dcNameMap, eopDcName) == false)
-            {
-                dcNameMap["EOP"] = eopDcName;
-            }
-            if (StringMapContainsValueText(dcNameMap, azureDcName) == false)
-            {
-                dcNameMap["mapped Azure"] = azureDcName;
-            }
-            if (StringMapContainsValueText(dcNameMap, normalizedDcName) == false)
-            {
-                dcNameMap["normalized"] = normalizedDcName;
-            }
-
-            // Check if title contains datacenter name.
-            var containsDcName = false;
-            foreach (var entry in dcNameMap)
-            {
-                if (title.ContainsText(entry.Value))
-                {
-                    containsDcName = true;
-                    break;
-                }
-            }
-
-            if (!containsDcName)
-            {
-                // It's a little tricky to get a useful description...
-                var summaryBuilder = new StringBuilder();
-                summaryBuilder.AppendFormat("Title does not contain datacenter name {0}", ipamDcName);
-                foreach (var entry in dcNameMap)
-                {
-                    if (entry.Key != "datacenter")
+                    if (prefix.Contains(':')) // IPv6
                     {
-                        summaryBuilder.AppendFormat(" or {0} name {1}", entry.Key, entry.Value);
+                        if (prefixNumber < 64)
+                        {
+                            return ValidationRecord.Success;
+                        }
+                    }
+                    else // IPv4
+                    {
+                        if (prefixNumber < 23)
+                        {
+                            return ValidationRecord.Success;
+                        }
                     }
                 }
 
-                return new ValidationRecord(
-                    ValidationStatus.InvalidTitle,
-                    summaryBuilder.ToString())
+                if (string.IsNullOrWhiteSpace(title))
                 {
-                    Id = parent.Id,
-                    Prefix = prefix,
-                    IpamDcName = ipamDcName,
-                    Region = region,
-                    Title = title,
-                };
-            }
+                    if (prefixNumber == 32)
+                    {
+                        return new ValidationRecord(
+                            ValidationStatus.Obsolete,
+                            "Should be deleted")
+                        {
+                            Id = allocModel_.Id,
+                            Prefix = prefix,
+                            IpamDcName = ipamDcName,
+                            Region = region,
+                            Title = title,
+                        };
+                    }
 
-            var azureForestName = GetForestAlias(forestName);
+                    return new ValidationRecord(
+                        ValidationStatus.EmptyTitle,
+                        "Title should not be empty")
+                    {
+                        Id = allocModel_.Id,
+                        Prefix = prefix,
+                        IpamDcName = ipamDcName,
+                        Region = region,
+                        Title = title,
+                    };
+                }
 
-            if (!(title.ContainsText(forestName) || title.ContainsText(azureForestName)))
-            {
-                return new ValidationRecord(
-                    ValidationStatus.InvalidTitle,
-                    azureForestName == null
+                if (string.IsNullOrWhiteSpace(ipamDcName))
+                {
+                    return new ValidationRecord(
+                        ValidationStatus.EmptyDatacenter,
+                        "Datacenter tag should not be empty")
+                    {
+                        Id = allocModel_.Id,
+                        Prefix = prefix,
+                        IpamDcName = ipamDcName,
+                        Region = region,
+                        Title = title,
+                    };
+                }
+
+                var azureDcName = GetAzureDcName(eopDcName);
+                var suffix = GetDcSuffix(forestName);
+                string normalizedDcName = ipamDcName.EndsWithText(suffix)
                     ?
-                    $"Title does not contain forest name ({forestName})"
+                    ipamDcName.Substring(0, ipamDcName.Length - suffix.Length)
                     :
-                    $"Title does not contain forest name ({forestName} or alias {azureForestName})"
-                    )
-                {
-                    Id = parent.Id,
-                    Prefix = prefix,
-                    IpamDcName = ipamDcName,
-                    Region = region,
-                    Title = title,
-                };
-            }
+                    null;
 
-            return ValidationRecord.Success;
+                if (!(
+                    ipamDcName.IsSameTextAs(eopDcName) ||
+                    ipamDcName.IsSameTextAs(azureDcName) ||
+                    normalizedDcName.IsSameTextAs(eopDcName) ||
+                    normalizedDcName.IsSameTextAs(azureDcName)
+                    ))
+                {
+                    return new ValidationRecord(
+                        ValidationStatus.MismatchedDcName,
+                        azureDcName == null || azureDcName.IsSameTextAs(eopDcName)
+                        ?
+                        $"Datacenter {ipamDcName} does not match EOP name {eopDcName}"
+                        :
+                        $"Datacenter {ipamDcName} does not match EOP name {eopDcName} or mapped Azure name {azureDcName}"
+                        )
+                    {
+                        Id = allocModel_.Id,
+                        Prefix = prefix,
+                        IpamDcName = ipamDcName,
+                        Region = region,
+                        Title = title,
+                    };
+                }
+
+                /*
+                 * Build a map that contains 4 possible names: IPAM, EOP, Azure and
+                 * normalized. This will greatly simplify name checking by flattening
+                 * nested if-else blocks to a simple loop.
+                 *
+                 * */
+
+                var dcNameMap = new StringMap();
+
+                dcNameMap["datacenter"] = ipamDcName;
+                if (StringMapContainsValueText(dcNameMap, eopDcName) == false)
+                {
+                    dcNameMap["EOP"] = eopDcName;
+                }
+                if (StringMapContainsValueText(dcNameMap, azureDcName) == false)
+                {
+                    dcNameMap["mapped Azure"] = azureDcName;
+                }
+                if (StringMapContainsValueText(dcNameMap, normalizedDcName) == false)
+                {
+                    dcNameMap["normalized"] = normalizedDcName;
+                }
+
+                // Check if title contains datacenter name.
+                var containsDcName = false;
+                foreach (var entry in dcNameMap)
+                {
+                    if (title.ContainsText(entry.Value))
+                    {
+                        containsDcName = true;
+                        break;
+                    }
+                }
+
+                if (!containsDcName)
+                {
+                    // It's a little tricky to get a useful description...
+                    var summaryBuilder = new StringBuilder();
+                    summaryBuilder.AppendFormat("Title does not contain datacenter name {0}", ipamDcName);
+                    foreach (var entry in dcNameMap)
+                    {
+                        if (entry.Key != "datacenter")
+                        {
+                            summaryBuilder.AppendFormat(" or {0} name {1}", entry.Key, entry.Value);
+                        }
+                    }
+
+                    return new ValidationRecord(
+                        ValidationStatus.InvalidTitle,
+                        summaryBuilder.ToString())
+                    {
+                        Id = allocModel_.Id,
+                        Prefix = prefix,
+                        IpamDcName = ipamDcName,
+                        Region = region,
+                        Title = title,
+                    };
+                }
+
+                var azureForestName = GetForestAlias(forestName);
+
+                if (!(title.ContainsText(forestName) || title.ContainsText(azureForestName)))
+                {
+                    return new ValidationRecord(
+                        ValidationStatus.InvalidTitle,
+                        azureForestName == null
+                        ?
+                        $"Title does not contain forest name ({forestName})"
+                        :
+                        $"Title does not contain forest name ({forestName} or alias {azureForestName})"
+                        )
+                    {
+                        Id = allocModel_.Id,
+                        Prefix = prefix,
+                        IpamDcName = ipamDcName,
+                        Region = region,
+                        Title = title,
+                    };
+                }
+
+                return ValidationRecord.Success;
+            }
         }
 
         /// <summary>
