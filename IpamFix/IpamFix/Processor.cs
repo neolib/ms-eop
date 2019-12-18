@@ -73,11 +73,12 @@ namespace IpamFix
             {
                 if (cacheList == null || cacheList.Length == 0)
                 {
-                    cacheFileWriter.WriteLine($"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameId},{NameTitle},New Title");
+                    cacheFileWriter.WriteLine($"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameTitle},New Title,{NameId}");
                 }
 
-                var titlePattern = new Regex(@"(?<h>EOP:\s+)(?<f>\w+)-(?<dc>\w+)(?<t>\s+-\s+IPv.+)",
-                     RegexOptions.Singleline);
+                var titlePattern = new Regex(
+                    @"(?<h>EOP:\s+)(?<f>\w+)-(?<dc>\w+?)(?<t>(FSPROD)?\s+-\s+IPv.+)",
+                    RegexOptions.Singleline);
                 var list = ReadRecords(resultExcelFile);
 
                 if (list == null) return;
@@ -131,10 +132,17 @@ namespace IpamFix
 
                             if (newTitle != null)
                             {
-                                //UpdatePrefixTitle(record.AddressSpace, record.Prefix, newTitle.ToString()).Wait();
-                                changedCount++;
-                                var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Id},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()}";
-                                cacheFileWriter.WriteLine(logLine);
+                                try
+                                {
+                                    UpdatePrefixTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Wait();
+                                    changedCount++;
+                                    var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
+                                    cacheFileWriter.WriteLine(logLine);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
+                                }
                             }
                         }
                     } // if
@@ -144,15 +152,20 @@ namespace IpamFix
             }
         }
 
-        async Task UpdatePrefixTitle(string addressSpace, string prefixId, string newTitle)
+        async Task UpdatePrefixTitle(string addressSpace, string prefix, string prefixId, string newTitle)
         {
-            var model = new AllocationModel
+            var queryModel = AllocationQueryModel.Create(addressSpaceIdMap[addressSpace], prefix);
+            var queryResult = await IpamClient.QueryAllocationsAsync(queryModel);
+            var allocModel = queryResult.Single();
+            if (allocModel.Id == prefixId)
             {
-                Id = prefixId,
-                AddressSpaceId = addressSpaceIdMap[addressSpace],
-            };
-            model.Tags["Title"] = newTitle;
-            await IpamClient.UpdateAllocationTagsV2Async(model);
+                allocModel.Tags["Title"] = newTitle;
+                await IpamClient.UpdateAllocationTagsV2Async(allocModel);
+            }
+            else
+            {
+                Error.WriteLine($"***{addressSpace},{prefix}: Id mismatch!");
+            }
         }
 
         private List<ValidationRecord> ReadRecords(string excelFileName)
