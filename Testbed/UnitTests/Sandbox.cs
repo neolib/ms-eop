@@ -4,8 +4,6 @@ using System.Net;
 
 namespace Testbed.UnitTests
 {
-    using ExcelDataReader;
-    using System.IO;
     using static Console;
 
     [TestClass]
@@ -26,7 +24,7 @@ namespace Testbed.UnitTests
         [TestMethod]
         public void Test()
         {
-            
+
         }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Testbed.UnitTests
@@ -31,6 +32,35 @@ namespace Testbed.UnitTests
             Assert.AreEqual("test", ExtractEnvironmentName("my.ns.files.test."));
             Assert.AreEqual("test", ExtractEnvironmentName("test.xml"));
             Assert.AreEqual("test", ExtractEnvironmentName("my.ns.files.test.xml"));
+        }
+
+        [TestMethod]
+        public void TestTitlePattern()
+        {
+            var input = "EOP: EUR-DB3FSPROD - IPv4_Anchor - IPV4_HRI";
+            var titlePattern = new Regex(@"(?<h>EOP:\s+)(?<f>\w+)-(?<dc>\w+)(?<t>\s+-\s+IPv.+)",
+                 RegexOptions.Singleline);
+            var match = titlePattern.Match(input);
+            var headGroup = match.Groups["h"];
+            var forestGroup = match.Groups["f"];
+            var dcGroup = match.Groups["dc"];
+            var tailGroup = match.Groups["t"];
+
+            Assert.AreEqual("EUR", forestGroup.Value);
+            Assert.AreEqual("DB3FSPROD", match.Groups["dc"].Value);
+
+            // Use StringBuilder to do replacement
+            var sb = new StringBuilder(input);
+            sb.Replace(forestGroup.Value, "FOREST", forestGroup.Index, forestGroup.Length);
+            Assert.AreEqual(sb.ToString(), "EOP: FOREST-DB3FSPROD - IPv4_Anchor - IPV4_HRI");
+
+            // Use MatchEvaluator to do replacement
+            var replaced = titlePattern.Replace(input, (match_) => $"{headGroup.Value}FOREST-DCNAME{tailGroup.Value}");
+            Assert.AreEqual(replaced, "EOP: FOREST-DCNAME - IPv4_Anchor - IPV4_HRI");
+
+            var bad = "EOP: ITAR USG01 Capacity/MGMT Block";
+            match = titlePattern.Match(bad);
+            Assert.IsFalse(match.Success);
         }
     }
 }

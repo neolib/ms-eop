@@ -5,18 +5,18 @@ namespace Testbed.Applets
     using ExcelDataReader;
     using static System.Console;
 
-    class Sandbox : Applets.IApplet
+    class Sandbox : IApplet
     {
         public int Run(string[] args)
         {
-            TestExcelReader();
+            TestExcelReader(args[0]);
 
             return 0;
         }
 
-        private void TestExcelReader()
+        private void TestExcelReader(string filename)
         {
-            var filename = @"C:\My\dev\v\result.xlsx";
+            WriteLine($"Reading file {filename}");
             using (var stream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
@@ -30,6 +30,7 @@ namespace Testbed.Applets
                             for (int i = 0; i < reader.FieldCount; i++)
                             {
                                 col[i] = reader.GetString(i);
+                                WriteLine($"col#{i}:{col[i]}");
                             }
                         }
                         while (reader.Read())
@@ -37,7 +38,7 @@ namespace Testbed.Applets
                             for (int i = 0; i < reader.FieldCount; i++)
                             {
                                 var s = reader.GetValue(i);
-                                Write($"{col[i]}={s},");
+                                Write($"{s},");
                             }
                             WriteLine();
                         }
