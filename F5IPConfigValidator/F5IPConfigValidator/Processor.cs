@@ -202,13 +202,14 @@ namespace F5IPConfigValidator
                 var configName = fileNode.Attribute("name").Value;
                 var envName = ExtractEnvironmentName_(configName);
                 var eopDcName = ExtractDcName_(envName);
+                var forestName = GetForestName(envName);
                 if (eopDcName != null)
                 {
                     var azureName = GetAzureDcName(eopDcName);
                     if (azureName == null)
                     {
                         var summary = $"EOP datacenter name {eopDcName} has no Azure name";
-                        WriteLine($",,{envName},Static name check,,,,,{ValidationStatus.NoMappingDcName},{summary}");
+                        WriteLine($",,{envName},{forestName},{eopDcName},,,,,{ValidationStatus.NoMappingDcName},{summary}");
                     }
                 }
             }

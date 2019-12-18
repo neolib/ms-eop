@@ -21,12 +21,14 @@ namespace IpamFix
             {
                 IpamClient = new IpamClient(ipamClientSettings),
             }.Process(resultFile, cacheFileName);
+
+            WriteLine();
             w.Stop();
             Error.WriteLine($"Stop time: {DateTime.Now}");
             var seconds = w.ElapsedMilliseconds / 1000;
             Error.WriteLine($"Total time elapsed: {seconds / 60} minutes {seconds % 60} seconds");
 
-            if (!IsOutputRedirected) ReadLine();
+            ReadLine();
         }
     }
 }
