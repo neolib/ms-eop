@@ -204,9 +204,12 @@
   <DCSuffixes>
     <DCSuffix Text="-FX" ForestNames="GLS07,SIT01,SIT02,USG01,USG02" />
   </DCSuffixes>
-  <ForestSpaces>
-    <ForestSpace SpaceName="GalaCake" ForestNames="GALLATIN,CHN02,SCN01" />
-    <!--<ForestSpace SpaceName="RX" ForestNames="GLS09,GLS10,NAT01,SEC01" />-->
-    <ForestSpace SpaceName="EX" ForestNames="" />
-  </ForestSpaces>
+  <EnvironmentSpaces>
+    <EnvironmentSpace SpaceName="GalaCake"
+                      EnvironmentNames="GALLATIN-BJB,GALLATIN-W15-BJB,GALLATIN-SHA,GALLATIN-W15-SHA,SCN01-BJS,SCN01-SH0,CHN02-BJS,CHN02-SH0" />
+    <EnvironmentSpace SpaceName="RX"
+                      EnvironmentNames="GLS09-MNZ,GLS09-SN8,SEC01-MNZ,SEC01-SN8" />
+    <EnvironmentSpace SpaceName="EX"
+                      EnvironmentNames="GLS10-GZ0,GLS10-RZ0,NAT01-GZ0,NAT01-RZ0" />
+  </EnvironmentSpaces>
 </Map>
