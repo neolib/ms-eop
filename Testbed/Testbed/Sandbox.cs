@@ -33,13 +33,17 @@ namespace Testbed.Applets
                                 WriteLine($"col#{i}:{col[i]}");
                             }
                         }
+
+                        var lines = 0;
                         while (reader.Read())
                         {
+                            Write($"{lines}:");
                             for (int i = 0; i < reader.FieldCount; i++)
                             {
                                 var s = reader.GetValue(i);
                                 Write($"{s},");
                             }
+                            lines++;
                             WriteLine();
                         }
                         WriteLine();

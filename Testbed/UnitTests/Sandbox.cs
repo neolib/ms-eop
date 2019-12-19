@@ -1,6 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace Testbed.UnitTests
 {
@@ -24,7 +27,23 @@ namespace Testbed.UnitTests
         [TestMethod]
         public void Test()
         {
+            var file = @"C:\My\dev\v\result.csv";
+            var re = new Regex(@"Prefix: .+/\d+,");
+            var input = File.ReadAllText(file);
 
+            var matchIPv6 = re.Match("Prefix: 260f:d200:3:5880::/64,");
+            Assert.IsTrue(matchIPv6.Success);
+
+            var list = new List<string>();
+            foreach (Match match in re.Matches(input))
+            {
+                if (!list.Contains(match.Value))
+                {
+                    list.Add(match.Value);
+                }
+            }
+            list.Sort();
+            list.ForEach((item_) => WriteLine(item_));
         }
     }
 }

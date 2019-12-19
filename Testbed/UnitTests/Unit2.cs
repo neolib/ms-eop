@@ -38,16 +38,19 @@ namespace Testbed.UnitTests
         public void TestTitlePattern()
         {
             var input = "EOP: EUR-DB3FSPROD - IPv4_Anchor - IPV4_HRI";
-            var titlePattern = new Regex(@"(?<h>EOP:\s+)(?<f>\w+)-(?<dc>\w+)(?<t>\s+-\s+IPv.+)",
+            var titlePattern = new Regex(@"(?<h>EOP:\s+)(?<f>\w+)-(?<d>\w+?)(?<t>(FSPROD)?\s+-\s+IPv.+)",
                  RegexOptions.Singleline);
             var match = titlePattern.Match(input);
+
+            Assert.IsTrue(match.Success);
+
             var headGroup = match.Groups["h"];
             var forestGroup = match.Groups["f"];
-            var dcGroup = match.Groups["dc"];
+            var dcGroup = match.Groups["d"];
             var tailGroup = match.Groups["t"];
 
             Assert.AreEqual("EUR", forestGroup.Value);
-            Assert.AreEqual("DB3FSPROD", match.Groups["dc"].Value);
+            Assert.AreEqual("DB3", dcGroup.Value);
 
             // Use StringBuilder to do replacement
             var sb = new StringBuilder(input);
@@ -56,7 +59,7 @@ namespace Testbed.UnitTests
 
             // Use MatchEvaluator to do replacement
             var replaced = titlePattern.Replace(input, (match_) => $"{headGroup.Value}FOREST-DCNAME{tailGroup.Value}");
-            Assert.AreEqual(replaced, "EOP: FOREST-DCNAME - IPv4_Anchor - IPV4_HRI");
+            Assert.AreEqual(replaced, "EOP: FOREST-DCNAMEFSPROD - IPv4_Anchor - IPV4_HRI");
 
             var bad = "EOP: ITAR USG01 Capacity/MGMT Block";
             match = titlePattern.Match(bad);
