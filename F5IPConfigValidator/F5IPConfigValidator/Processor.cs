@@ -48,8 +48,8 @@ namespace F5IPConfigValidator
             this.Summary = summary;
         }
 
-        public static ValidationRecord NoMatch => new ValidationRecord(ValidationStatus.NoMatch);
-        public static ValidationRecord Success => new ValidationRecord(ValidationStatus.Success);
+        public static readonly ValidationRecord NoMatch = new ValidationRecord(ValidationStatus.NoMatch);
+        public static readonly ValidationRecord Success = new ValidationRecord(ValidationStatus.Success);
     }
 
     class Processor
@@ -295,7 +295,7 @@ namespace F5IPConfigValidator
                         {
                             var addressSpace = entry.Key;
                             var record = await ValidateIpString(addressSpace, forestName, eopDcName, ipString_);
-                            if (record == null || record.Status == ValidationStatus.NoMatch) continue;
+                            if (record.Status == ValidationStatus.NoMatch) continue;
 
                             hasAnyMatch = true;
 
@@ -307,7 +307,9 @@ namespace F5IPConfigValidator
                              * then check if its environment should really be in it.
                              * */
 
-                            if (record.Status != ValidationStatus.MultipleMatches)
+                            if (record.Status != ValidationStatus.MultipleMatches &&
+                                // Is cached success?
+                                record != ValidationRecord.Success)
                             {
                                 var mappedSpaceName = GetEnvSpaceName(envName) ?? "Default";
 
@@ -315,7 +317,7 @@ namespace F5IPConfigValidator
                                 {
                                     var wrongSpaceRecord = new ValidationRecord(
                                         ValidationStatus.WrongAddressSpace,
-                                        $"Should be in address space {mappedSpaceName}***{record.Status} {record.Summary}")
+                                        $"Should be in address space {mappedSpaceName}")
                                     {
                                         AddressSpace = record.AddressSpace,
                                         Environment = record.Environment,
@@ -420,7 +422,7 @@ namespace F5IPConfigValidator
             var parent = queryResult[0];
             lock (prefixIdList)
             {
-                if (prefixIdList.Contains(parent.Id)) return null;
+                if (prefixIdList.Contains(parent.Id)) return ValidationRecord.Success;
                 prefixIdList.Add(parent.Id);
             }
 
