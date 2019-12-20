@@ -28,18 +28,20 @@ namespace Testbed.UnitTests
         public void Test()
         {
             var file = @"C:\My\dev\v\result.csv";
-            var re = new Regex(@"Prefix: .+/\d+,");
+            var re = new Regex(@"Prefix: (.+/\d+),");
             var input = File.ReadAllText(file);
 
             var matchIPv6 = re.Match("Prefix: 260f:d200:3:5880::/64,");
             Assert.IsTrue(matchIPv6.Success);
+            Assert.AreEqual(matchIPv6.Groups[1].Value, "260f:d200:3:5880::/64");
 
             var list = new List<string>();
             foreach (Match match in re.Matches(input))
             {
-                if (!list.Contains(match.Value))
+                var prefix = match.Groups[1].Value;
+                if (!list.Contains(prefix))
                 {
-                    list.Add(match.Value);
+                    list.Add(prefix);
                 }
             }
             list.Sort();
