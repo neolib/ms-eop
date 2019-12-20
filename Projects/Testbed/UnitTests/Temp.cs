@@ -10,22 +10,20 @@ namespace Testbed.UnitTests
     using static Console;
 
     [TestClass]
-    public class Sandbox
+    public class Temp
     {
         [TestMethod]
-        public void TestStringConcat()
+        public void CreateAsciiFile()
         {
-            var a = 1234;
-            var b = "def";
-            var c = DateTime.Now;
+            var file = @"C:\TEMP\ASCII.BIN";
+            var bytes = new byte[256];
 
-            var s = "a=" + a + ",b=" + b + ",c=" + c;
-
-            WriteLine(s);
+            for (int i = 0; i < bytes.Length; i++) bytes[i] = (byte)i;
+            File.WriteAllBytes(file, bytes);
         }
 
         [TestMethod]
-        public void Test()
+        public void TestExtractPrefix()
         {
             var file = @"C:\My\dev\v\result.csv";
             var re = new Regex(@"Prefix: (.+/\d+),");
