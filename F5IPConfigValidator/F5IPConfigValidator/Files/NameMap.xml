@@ -212,4 +212,7 @@
     <EnvironmentSpace SpaceName="EX"
                       EnvironmentNames="GLS10-GZ0,GLS10-RZ0,NAT01-GZ0,NAT01-RZ0" />
   </EnvironmentSpaces>
+  <ExclusionList>
+    <IPString StartsWith="10.250.,10.192.,10.193.,10.194.,10.195.,10.196.,10.197.,10.198.,10.199." />
+  </ExclusionList>
 </Map>

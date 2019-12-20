@@ -62,6 +62,7 @@ namespace F5IPConfigValidator
         private StringMap suffixNameMap = new StringMap();
         private StringMap forestNameMap = new StringMap();
         private StringMap envSpaceMap = new StringMap();
+        private List<string> ipStringExclusionList = new List<string>();
 
         private StringMap addressSpaceIdMap = new StringMap {
             { "Default", SpecialAddressSpaces.DefaultAddressSpaceId },
@@ -134,6 +135,15 @@ namespace F5IPConfigValidator
                         envSpaceMap[envName] = spaceName;
                     }
                 }
+
+                foreach (var node in mapDoc.Root.Element("ExclusionList").Elements())
+                {
+                    var values = node.Attribute("StartsWith").Value;
+                    foreach (var value in values.SplitWithoutEmpty(','))
+                    {
+                        ipStringExclusionList.Add(value);
+                    }
+                }
             }
         }
 
@@ -182,7 +192,7 @@ namespace F5IPConfigValidator
         internal async Task Process(string resultFile)
         {
             // CSV header row
-            WriteLine("Address Space,Comment,Environment,Forest,EOP DC,IP Query,Prefix,IPAM DC,Region,Status,Summary,Title,Id");
+            WriteLine("Address Space,Comment,Environment,Forest,EOP DC,IP Query,Prefix,IPAM DC,Region,Status,Summary,Title,Prefix ID");
 
             //var debug = false;
             var ipStringSeparators = new[] { ',', ' ' };
@@ -204,13 +214,33 @@ namespace F5IPConfigValidator
                 var envName = ExtractEnvironmentName_(configName);
                 var eopDcName = ExtractDcName_(envName);
                 var forestName = GetForestName(envName);
-                if (eopDcName != null)
+
+                /*
+                 * Pre-validate forest/datacenter names.
+                 * */
+
+                if (eopDcName == null)
+                {
+                    Error.WriteLine($"***Environment {envName} has no datacenter name");
+                }
+                else
                 {
                     var azureName = GetAzureDcName(eopDcName);
                     if (azureName == null)
                     {
-                        var summary = $"EOP datacenter name {eopDcName} has no Azure name";
+                        var summary = $"EOP datacenter {eopDcName} has no Azure name";
                         WriteLine($",,{envName},{forestName},{eopDcName},,,,,{ValidationStatus.NoMappingDcName},{summary}");
+                    }
+                }
+
+                if (forestName == null)
+                {
+                    Error.WriteLine($"***Environment {envName} has no mapped forest name");
+                    forestName = ExtractForestName_(envName);
+                    if (forestName == null)
+                    {
+                        Error.WriteLine($"***Environment {envName} has no forest name section");
+                        return;
                     }
                 }
             }
@@ -230,20 +260,20 @@ namespace F5IPConfigValidator
                 var envName = ExtractEnvironmentName_(configName);
                 var eopDcName = ExtractDcName_(envName);
                 var forestName = GetForestName(envName);
+
+                if (eopDcName == null)
+                {
+                    Error.WriteLine($"Skipping {envName} without EOP datacenter name");
+                    return;
+                }
                 if (forestName == null)
                 {
-                    Error.WriteLine($"***Config name {configName} has no mapped forest name.");
                     forestName = ExtractForestName_(envName);
                     if (forestName == null)
                     {
-                        Error.WriteLine($"***Config name {configName} has no forest name.");
+                        Error.WriteLine($"Skipping {envName} without forest name");
                         return;
                     }
-                }
-                if (eopDcName == null)
-                {
-                    Error.WriteLine($"***Config name {configName} has no datacenter name.");
-                    return;
                 }
 
                 foreach (var node in fileNode_.Elements())
@@ -275,6 +305,13 @@ namespace F5IPConfigValidator
                     if (ipString_.Contains(':') &&
                         !ipString_.EndsWith("::") &&
                         ipString_.Count((c) => c == ':') <= 4) { return; }
+
+                    // Skip any IP string that has any prefix in the exclusion list.
+                    if (ipStringExclusionList.Any((text_) => ipString_.StartsWith(text_)))
+                    {
+                        Error.WriteLine($"Skipping IP string {ipString_}");
+                        return;
+                    }
 
                     lock (ipHotList)
                     {
