@@ -28,6 +28,7 @@ namespace IpamFix
         private const string NameRegion = "Region";
         private const string NameStatus = "Status";
         private const string NameSummary = "Summary";
+        private const string TitlePattern = @"(?<h>EOP:\s+)(?<f>\w+)-(?<d>\w+?)(?<t>(FSPROD)?\s+-\s+IPv.+)";
 
         private string[] ExcelFieldNames = new[] {
             NameId, NameAddressSpace, NameEnvironment,
@@ -76,13 +77,11 @@ namespace IpamFix
                     cacheFileWriter.WriteLine($"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameTitle},New Title,{NameId}");
                 }
 
-                var titlePattern = new Regex(
-                    @"(?<h>EOP:\s+)(?<f>\w+)-(?<dc>\w+?)(?<t>(FSPROD)?\s+-\s+IPv.+)",
-                    RegexOptions.Singleline);
-                var list = ReadRecords(resultExcelFile);
+                var titleRegex = new Regex(TitlePattern, RegexOptions.Singleline);
+                var records = ReadRecords(resultExcelFile);
 
-                if (list == null) return;
-                if (list.Count == 0)
+                if (records == null) return;
+                if (records.Count == 0)
                 {
                     Error.WriteLine("No result records");
                     return;
@@ -90,8 +89,9 @@ namespace IpamFix
 
                 var changedCount = 0;
 
-                foreach (var record in list)
+                foreach (var record in records)
                 {
+                    if (record.Id == null) continue; // static record
                     if (cacheList.Any((line_) => line_.Contains(record.Id)))
                     {
                         WriteLine($"Hit cache: {record.AddressSpace},{record.Prefix}");
@@ -100,18 +100,18 @@ namespace IpamFix
 
                     if (record.Status == "InvalidTitle")
                     {
-                        var match = titlePattern.Match(record.Title);
+                        var match = titleRegex.Match(record.Title);
                         if (match.Success)
                         {
                             var headGroup = match.Groups["h"];
                             var forestGroup = match.Groups["f"];
-                            var dcGroup = match.Groups["dc"];
+                            var dcGroup = match.Groups["d"];
                             var tailGroup = match.Groups["t"];
                             string newTitle = null;
 
                             if (record.Summary.Contains("not contain forest name"))
                             {
-                                newTitle = titlePattern.Replace(record.Title, (match_) =>
+                                newTitle = titleRegex.Replace(record.Title, (match_) =>
                                     $"{headGroup.Value}{record.Forest}-{dcGroup.Value}{tailGroup.Value}");
                             }
                             else if (record.Summary.Contains("not contain datacenter name"))
@@ -119,13 +119,13 @@ namespace IpamFix
                                 if (string.Compare(forestGroup.Value, record.Forest, true) != 0)
                                 {
                                     // Title contains no forest name, need to replace forest part as well
-                                    newTitle = titlePattern.Replace(record.Title, (match_) =>
+                                    newTitle = titleRegex.Replace(record.Title, (match_) =>
                                         $"{headGroup.Value}{record.Forest}-{record.EopDcName}{tailGroup.Value}");
                                 }
                                 else
                                 {
                                     // Need only to replace datacenter part
-                                    newTitle = titlePattern.Replace(record.Title, (match_) =>
+                                    newTitle = titleRegex.Replace(record.Title, (match_) =>
                                         $"{headGroup.Value}{forestGroup.Value}-{record.EopDcName}{tailGroup.Value}");
                                 }
                             }
@@ -134,10 +134,15 @@ namespace IpamFix
                             {
                                 try
                                 {
-                                    UpdatePrefixTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Wait();
-                                    changedCount++;
-                                    var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
-                                    cacheFileWriter.WriteLine(logLine);
+                                    var success = UpdatePrefixTitle(record.AddressSpace,
+                                        record.Prefix, record.Id, newTitle.ToString()).Result;
+
+                                    if (success)
+                                    {
+                                        changedCount++;
+                                        var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
+                                        cacheFileWriter.WriteLine(logLine);
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
@@ -145,14 +150,18 @@ namespace IpamFix
                                 }
                             }
                         }
-                    } // if
+                    }
+                    else if (record.Title == "Load from BGPL")
+                    {
+                        // Fix datacenter and title
+                    }
                 } // record
 
                 WriteLine($"Total records changed: {changedCount}");
             }
         }
 
-        async Task UpdatePrefixTitle(string addressSpace, string prefix, string prefixId, string newTitle)
+        async Task<bool> UpdatePrefixTitle(string addressSpace, string prefix, string prefixId, string newTitle)
         {
             var queryModel = AllocationQueryModel.Create(addressSpaceIdMap[addressSpace], prefix);
             var queryResult = await IpamClient.QueryAllocationsAsync(queryModel);
@@ -161,10 +170,12 @@ namespace IpamFix
             {
                 allocModel.Tags["Title"] = newTitle;
                 await IpamClient.UpdateAllocationTagsV2Async(allocModel);
+                return true;
             }
             else
             {
-                Error.WriteLine($"***{addressSpace},{prefix}: Id mismatch!");
+                Error.WriteLine($"***Prefix ID mismatch: {addressSpace},{prefix},{prefixId},{allocModel.Id}");
+                return false;
             }
         }
 
@@ -211,6 +222,12 @@ namespace IpamFix
                             var addressSpace = ReadString_(NameAddressSpace);
 
                             if (string.IsNullOrEmpty(addressSpace)) continue;
+
+                            if (!addressSpaceIdMap.ContainsKey(addressSpace))
+                            {
+                                Error.WriteLine($"Address space map has no key {addressSpace}");
+                                return null;
+                            }
 
                             list.Add(new ValidationRecord
                             {
