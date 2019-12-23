@@ -10,18 +10,51 @@ using System.Threading.Tasks;
 namespace first_ipam
 {
     using static System.Console;
+    using StringMap = Dictionary<string, string>;
 
     class Program
     {
+        private StringMap addressSpaceIdMap = new StringMap {
+            { "Default", SpecialAddressSpaces.DefaultAddressSpaceId },
+            { "GalaCake", SpecialAddressSpaces.GalaCakeAddressSpaceId },
+            { "EX", SpecialAddressSpaces.EXAddressSpaceId },
+            { "RX", SpecialAddressSpaces.RXAddressSpaceId },
+            };
+
         static void Main(string[] args)
+        {
+            new Program().Run(args);
+        }
+
+        void Run(string[] args)
         {
             var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
             var ipamClient = new IpamClient(ipamClientSettings);
-            var addressSpaceId = SpecialAddressSpaces.DefaultAddressSpaceId; //ipamClientSettings.InitialAddressSpaceId;
+            //var addressSpaceId = ipamClientSettings.InitialAddressSpaceId;
 
             try
             {
-                foreach (var ipString in args) Dump_(DoQuery_(ipString).Result);
+                var addressSpace = "Default";
+
+                foreach (var arg in args)
+                {
+                    if (!IsIpString(arg))
+                    {
+                        if (addressSpaceIdMap.ContainsKey(arg))
+                        {
+                            addressSpace = arg;
+                            continue;
+                        }
+                        else
+                        {
+                            WriteLine($"Invalid address space name {arg}");
+                            break;
+                        }
+                    }
+
+                    Dump_(DoQuery_(addressSpace, arg).Result);
+                }
+
                 TestUpdatTags_().Wait();
             }
             catch (Exception ex)
@@ -32,8 +65,14 @@ namespace first_ipam
             WriteLine("Hit ENTER to exit...");
             ReadLine();
 
-            AllocationQueryModel CreateQueryModel_(string ipString_)
+            bool IsIpString(string s_)
             {
+                return s_.Contains(':') || s_.Contains('.');
+            }
+
+            AllocationQueryModel CreateQueryModel_(string addressSpace_, string ipString_)
+            {
+                var addressSpaceId = addressSpaceIdMap[addressSpace_];
                 var queryModel = AllocationQueryModel.Create(addressSpaceId, ipString_);
                 queryModel.ReturnParentWhenNotFound = !ipString_.Contains('/');
                 queryModel.MaxResults = 1000;
@@ -42,28 +81,30 @@ namespace first_ipam
 
             async Task TestUpdatTags_()
             {
+                var addressSpace = "Default";
                 var targetPrefix = "207.46.34.207/32";
-                var list = await DoQuery_(targetPrefix); ;
+                var list = await DoQuery_(addressSpace, targetPrefix); ;
                 Dump_(list);
 
                 var alloc = list.Single();
                 WriteLine($"Updating target: {targetPrefix}");
+                alloc.Tags["Title"] = "ier01.mel01:Lo0 modified by v-chunly on " + DateTime.Now;
                 alloc.Tags["Description"] = "***TEST*** modified by v-chunly on " + DateTime.Now;
                 await ipamClient.UpdateAllocationTagsV2Async(alloc);
 
-                Dump_(await DoQuery_(targetPrefix));
+                Dump_(await DoQuery_(addressSpace, targetPrefix));
             }
 
-            async Task<List<AllocationModel>> DoQuery_(string ipString)
+            async Task<List<AllocationModel>> DoQuery_(string addressSpace_, string ipString_)
             {
-                WriteLine($"Querying {ipString}");
-                var queryModel = CreateQueryModel_(ipString);
+                WriteLine($"Querying {ipString_} in {addressSpace_}");
+                var queryModel = CreateQueryModel_(addressSpace_, ipString_);
                 return await ipamClient.QueryAllocationsAsync(queryModel);
             }
 
-            void Dump_(List<AllocationModel> allocations)
+            void Dump_(List<AllocationModel> allocations_)
             {
-                foreach (var alloc in allocations)
+                foreach (var alloc in allocations_)
                 {
                     WriteLine($"Prefix: {alloc.Prefix}");
                     WriteLine($"ID: {alloc.Id}");
