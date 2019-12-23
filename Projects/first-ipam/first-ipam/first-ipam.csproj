@@ -33,13 +33,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="D:\CxCache\IpamAsrExports-master.1.14.101.598\lib\net462\Microsoft.Azure.Ipam.Client.dll">
+    <Reference Include="..\..\IpamAsrExports-master.1.14.101.598\Microsoft.Azure.Ipam.Client.dll">
       <Name>Microsoft.Azure.Ipam.Client</Name>
     </Reference>
-    <Reference Include="D:\CxCache\IpamAsrExports-master.1.14.101.598\lib\net462\Microsoft.Azure.Ipam.ApiContracts.dll">
+    <Reference Include="..\..\IpamAsrExports-master.1.14.101.598\Microsoft.Azure.Ipam.ApiContracts.dll">
       <Name>Microsoft.Azure.Ipam.ApiContracts</Name>
     </Reference>
-    <Reference Include="D:\CxCache\IpamAsrExports-master.1.14.101.598\lib\net462\Microsoft.Azure.Ipam.Contracts.dll">
+    <Reference Include="..\..\IpamAsrExports-master.1.14.101.598\Microsoft.Azure.Ipam.Contracts.dll">
       <Name>Microsoft.Azure.Ipam.Contracts</Name>
     </Reference>
     <Reference Include="System" />
