@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Testbed
 {
@@ -9,18 +10,37 @@ namespace Testbed
     {
         static void Main(string[] args)
         {
-            if (args.Length > 0)
-            {
-                var name = args[0];
+            var name = args.FirstOrDefault();
 
+            if (name == null)
+            {
+                Error.WriteLine("No applet name specified.");
+            }
+            else
+            {
+                var found = false;
                 try
                 {
-                    var appletType = typeof(Program).Assembly.GetType("Testbed.Applets." + name);
-                    var ctor = appletType.GetConstructor(new Type[] { });
-                    var applet = ctor.Invoke(null) as IApplet;
-                    var newArgs = new string[args.Length - 1];
-                    Array.Copy(args, 1, newArgs, 0, newArgs.Length);
-                    applet.Run(newArgs);
+                    var myTypes = typeof(Program).Assembly.GetTypes();
+                    foreach (var type in myTypes)
+                    {
+                        if (type.Name == name &&
+                            type.GetInterfaces().Any((type_) => type_ == typeof(IApplet)))
+                        {
+                            found = true;
+                            var ctor = type.GetConstructor(new Type[] { });
+                            var applet = ctor.Invoke(null) as IApplet;
+                            var newArgs = new string[args.Length - 1];
+                            Array.Copy(args, 1, newArgs, 0, newArgs.Length);
+                            applet.Run(newArgs);
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        Error.WriteLine($"Applet by name {name} not found.");
+                    }
                 }
                 catch (Exception ex)
                 {
