@@ -45,5 +45,50 @@ namespace Testbed.UnitTests
             list.Sort();
             list.ForEach((item_) => WriteLine(item_));
         }
+
+        private string GetResponseString(WebResponse resp)
+        {
+            using (var sr = new StreamReader(resp.GetResponseStream()))
+            {
+                return sr.ReadToEnd();
+            }
+        }
+
+        [TestMethod]
+        public void TestWebClient()
+        {
+            using (var c = new WebClient())
+            {
+                try
+                {
+                    var s = c.DownloadString("https://www.w3.org/xxx");
+                    WriteLine(s);
+                }
+                catch (WebException ex)
+                {
+                    WriteLine(ex);
+                    WriteLine(GetResponseString(ex.Response));
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestWebRequest()
+        {
+            var request = WebRequest.CreateHttp("https://www.w3.org/xxx");
+            try
+            {
+                using (var resp = request.GetResponse())
+                {
+                    WriteLine(GetResponseString(resp));
+                }
+            }
+            catch (WebException ex)
+            {
+                WriteLine(ex);
+                WriteLine(GetResponseString(ex.Response));
+            }
+        }
+
     }
 }

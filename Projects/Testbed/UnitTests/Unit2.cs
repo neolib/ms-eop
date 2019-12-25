@@ -39,7 +39,7 @@ namespace Testbed.UnitTests
         {
             var input = "EOP: EUR-DB3FSPROD - IPv4_Anchor - IPV4_HRI";
             var titlePattern = new Regex(@"(?<h>EOP:\s+)(?<f>\w+)-(?<d>\w+?)(?<t>(FSPROD)?\s+-\s+IPv.+)",
-                 RegexOptions.Singleline);
+                 RegexOptions.Singleline | RegexOptions.IgnoreCase);
             var match = titlePattern.Match(input);
 
             Assert.IsTrue(match.Success);
