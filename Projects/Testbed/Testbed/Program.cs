@@ -6,14 +6,24 @@ namespace Testbed
     using Applets;
     using static System.Console;
 
+    enum ExitCode
+    {
+        Chaos = -1,
+        Success = 0,
+        BadArgs,
+        Exception
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
+            Environment.ExitCode = (int)ExitCode.Chaos;
             var name = args.FirstOrDefault();
 
             if (name == null)
             {
+                Environment.ExitCode = (int)ExitCode.BadArgs;
                 Error.WriteLine("No applet name specified.");
             }
             else
@@ -28,7 +38,7 @@ namespace Testbed
                             type.GetInterfaces().Any((type_) => type_ == typeof(IApplet)))
                         {
                             found = true;
-                            var ctor = type.GetConstructor(new Type[] { });
+                            var ctor = type.GetConstructor(Type.EmptyTypes);
                             var applet = ctor.Invoke(null) as IApplet;
                             var newArgs = new string[args.Length - 1];
                             Array.Copy(args, 1, newArgs, 0, newArgs.Length);
@@ -39,12 +49,14 @@ namespace Testbed
 
                     if (!found)
                     {
+                        Environment.ExitCode = (int)ExitCode.BadArgs;
                         Error.WriteLine($"Applet by name {name} not found.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    WriteLine(ex);
+                    Environment.ExitCode = (int)ExitCode.Exception;
+                    Error.WriteLine(ex);
                 }
             }
 
@@ -53,6 +65,8 @@ namespace Testbed
                 Write("Hit ENTER to exit...");
                 ReadLine();
             }
+
+            Environment.ExitCode = (int)ExitCode.Success;
         }
     }
 
