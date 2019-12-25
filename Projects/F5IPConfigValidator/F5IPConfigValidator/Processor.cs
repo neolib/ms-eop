@@ -261,6 +261,12 @@ namespace F5IPConfigValidator
                 var eopDcName = ExtractDcName_(envName);
                 var forestName = GetForestName(envName);
 
+                // Need to normalize GTM environment name.
+                if (envName.StartsWithText("GTM-"))
+                {
+                    envName = $"{forestName}-{eopDcName}";
+                }
+
                 if (eopDcName == null)
                 {
                     Error.WriteLine($"Skipping {envName} without EOP datacenter name");
@@ -333,6 +339,11 @@ namespace F5IPConfigValidator
                             var addressSpace = entry.Key;
                             var record = await ValidateIpString(addressSpace, forestName, eopDcName, ipString_);
                             if (record.Status == ValidationStatus.NoMatch) continue;
+                            if (record.Status == ValidationStatus.Unknown)
+                            {
+                                Error.WriteLine("Program logic error, got Unknown status!");
+                                continue;
+                            }
 
                             hasAnyMatch = true;
 
@@ -616,6 +627,13 @@ namespace F5IPConfigValidator
                     $"Title does not contain forest name ({forestName})"
                     :
                     $"Title does not contain forest name ({forestName} or alias {azureForestName})";
+                return validationRecord;
+            }
+
+            if (title.ContainsText("unknown"))
+            {
+                validationRecord.Status = ValidationStatus.InvalidTitle;
+                validationRecord.Summary = "Title contains 'UNKNOWN' wording";
                 return validationRecord;
             }
 

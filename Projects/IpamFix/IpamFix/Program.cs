@@ -12,7 +12,7 @@ namespace IpamFix
         static void Main(string[] args)
         {
             var w = Stopwatch.StartNew();
-            Error.WriteLine($"Start time: {DateTime.Now}");
+            WriteLine($"Start time: {DateTime.Now}");
 
             var resultFile = args[0];
             var cacheFileName = args[1];
@@ -24,9 +24,9 @@ namespace IpamFix
 
             WriteLine();
             w.Stop();
-            Error.WriteLine($"Stop time: {DateTime.Now}");
+            WriteLine($"Stop time: {DateTime.Now}");
             var seconds = w.ElapsedMilliseconds / 1000;
-            Error.WriteLine($"Total time elapsed: {seconds / 60} minutes {seconds % 60} seconds");
+            WriteLine($"Total time elapsed: {seconds / 60} minutes {seconds % 60} seconds");
 
             ReadLine();
         }

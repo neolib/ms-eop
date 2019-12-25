@@ -45,7 +45,7 @@ namespace F5IPConfigValidator
         public static string ToCsvValue(this string self)
         {
             if (string.IsNullOrEmpty(self)) return self;
-            var s = self?.Replace("\"", "\"\"");
+            var s = self.Replace("\"", "\"\"");
             return $"\"{s}\"";
         }
     }

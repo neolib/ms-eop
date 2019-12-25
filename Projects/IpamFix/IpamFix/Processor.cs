@@ -77,7 +77,7 @@ namespace IpamFix
                     cacheFileWriter.WriteLine($"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameTitle},New Title,{NameId}");
                 }
 
-                var titleRegex = new Regex(TitlePattern, RegexOptions.Singleline);
+                var titleRegex = new Regex(TitlePattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
                 var records = ReadRecords(resultExcelFile);
 
                 if (records == null) return;
@@ -134,19 +134,22 @@ namespace IpamFix
                             {
                                 try
                                 {
-                                    var success = UpdatePrefixTitle(record.AddressSpace,
-                                        record.Prefix, record.Id, newTitle.ToString()).Result;
+                                    //var success = UpdatePrefixTitle(record.AddressSpace,
+                                    //    record.Prefix, record.Id, newTitle.ToString()).Result;
 
-                                    if (success)
+                                    //if (success)
                                     {
                                         changedCount++;
                                         var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
-                                        cacheFileWriter.WriteLine(logLine);
+
+                                        WriteLine($"{changedCount} {logLine}");
+                                        //cacheFileWriter.WriteLine(logLine);
                                     }
                                 }
                                 catch (Exception ex)
                                 {
                                     Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
+                                    break;
                                 }
                             }
                         }
