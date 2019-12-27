@@ -1,7 +1,4 @@
-﻿using Microsoft.Azure.Ipam.Client;
-using Microsoft.Azure.Ipam.Contracts;
-
-using System;
+﻿using System;
 using System.Configuration;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +7,8 @@ using System.Text;
 
 namespace first_ipam
 {
+    using Microsoft.Azure.Ipam.Client;
+    using Microsoft.Azure.Ipam.Contracts;
     using static System.Console;
     using StringMap = Dictionary<string, string>;
 
@@ -37,7 +36,8 @@ namespace first_ipam
             {
                 //QueryArgs_();
 
-                DumpDatacenterTag_().Wait();
+                DumpDatacenterRegionMap_().Wait();
+                //DumpDatacenterTag_().Wait();
                 //DumpAllSpaceTags_().Wait();
                 //TestUpdatTags_().Wait();
             }
@@ -153,6 +153,35 @@ namespace first_ipam
 
                     var tag = await ipamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
                     DumpTag_(tag);
+                    WriteLine("</Space>");
+                }
+                WriteLine("</Map>");
+            }
+
+            async Task DumpDatacenterRegionMap_()
+            {
+                WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
+                WriteLine("<Map>");
+                foreach (var entry in addressSpaceIdMap)
+                {
+                    WriteLine($"<Space Name=\"{entry.Key}\">");
+
+                    var tag = await ipamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
+
+                    if (tag.ImpliedTags.TryGetValue(SpecialTags.Region, out var regionTag))
+                    {
+                        tag.KnownValues.ForEach((name_) =>
+                        {
+                            if (regionTag.TryGetValue(name_, out var region))
+                            {
+                                WriteLine($"<Item DCName=\"{name_}\" Region=\"{Xmlize_(region)}\" />");
+                            }
+                            else
+                            {
+                                Error.WriteLine($"{name_}=???");
+                            }
+                        });
+                    }
 
                     WriteLine("</Space>");
                 }
@@ -181,16 +210,16 @@ namespace first_ipam
                 }
                 WriteLine("</ImpliedTags>");
                 WriteLine("</Tag>");
-
-                string Xmlize_(string text_)
-                {
-                    return text_?.Replace(">", "&gt;")
-                        .Replace("<", "&lt;")
-                        .Replace("\"", "&quot;")
-                        .Replace("&",  "&amp;")
-                        .Replace("'", "&apos;");
-                }
             }
+        }
+
+        static string Xmlize_(string text_)
+        {
+            return text_?.Replace(">", "&gt;")
+                .Replace("<", "&lt;")
+                .Replace("\"", "&quot;")
+                .Replace("&", "&amp;")
+                .Replace("'", "&apos;");
         }
     }
 }
