@@ -29,7 +29,7 @@ namespace IpamFix
         private const string NameRegion = "Region";
         private const string NameStatus = "Status";
         private const string NameSummary = "Summary";
-        private const string TitlePattern = @"(?<h>EOP:\s+)(?<f>\w+)-(?<d>\w+?)(?<t>(FSPROD)?\s+-\s+IPv.+)";
+        private const string TitlePattern = @"(?<h>EOP:\s+)(?<f>\w+)\s+?-\s+?(?<d>\w+?)(?<t>(FSPROD)?\s+(-\s+)?IPv\d.+)";
 
         private string[] ExcelFieldNames = new[] {
             NameId, NameAddressSpace, NameEnvironment,
@@ -103,7 +103,7 @@ namespace IpamFix
                 return;
             }
 
-            LoadIpamRegionMap().Wait();
+            /*LoadIpamRegionMap().Wait();
 
             // Verify if region maps are good.
             var allRegionsGood = true;
@@ -115,7 +115,7 @@ namespace IpamFix
                     Error.WriteLine($"Address space {entry.Key} has no region map!");
                 }
             }
-            if (!allRegionsGood) return;
+            if (!allRegionsGood) return;*/
 
             LoadNameMap();
 
@@ -127,7 +127,8 @@ namespace IpamFix
                     cacheFileWriter.WriteLine($"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameTitle},New Title,{NameId}");
                 }
 
-                var titleRegex = new Regex(TitlePattern, RegexOptions.Singleline | RegexOptions.IgnoreCase);
+                var titleRegex = new Regex(TitlePattern,
+                    RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
                 var records = ReadRecords(resultExcelFile);
 
                 if (records == null) return;
@@ -150,11 +151,19 @@ namespace IpamFix
 
                     if (record.Status == "InvalidTitle")
                     {
-                        /*
+                        if (FixInvalidTitle_() == null) break;
+                    }
+                    else if (record.Status == "EmptyDatacenter")
+                    {
+                        //if (FixEmptyDatacenter_() == null) break;
+                    }
+
+                    bool? FixInvalidTitle_()
+                    {
                         if (record.Title.ContainsText("UNKNOWN"))
                         {
                             WriteLine($"Skipping UNKNOWN title: {record.AddressSpace},{record.Prefix},{record.Title}");
-                            continue;
+                            return false;
                         }
 
                         var match = titleRegex.Match(record.Title);
@@ -191,9 +200,7 @@ namespace IpamFix
                             {
                                 try
                                 {
-                                    var success = UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Result;
-
-                                    //if (success)
+                                    //if (UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Result)
                                     {
                                         changedCount++;
                                         var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
@@ -201,21 +208,23 @@ namespace IpamFix
                                         WriteLine($"{changedCount} {logLine}");
                                         cacheFileWriter.WriteLine(logLine);
                                     }
+                                    return true;
                                 }
                                 catch (Exception ex)
                                 {
                                     Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
-                                    break;
+                                    return null;
                                 }
                             }
                         }
                         else
                         {
-                            WriteLine($"Skipping InvalidTitle: {record.AddressSpace},{record.Prefix},{record.Title}");
-                            continue;
-                        }*/
+                            WriteLine($"InvalidTitle pattern match failed: {record.AddressSpace},{record.Prefix},{record.Title}");
+                        }
+                        return false;
                     }
-                    else if (record.Status == "EmptyDatacenter")
+
+                    bool? FixEmptyDatacenter_()
                     {
                         string azureName = null;
 
@@ -232,9 +241,7 @@ namespace IpamFix
                             {
                                 try
                                 {
-                                    var success = UpdateDatacenter(record.AddressSpace, record.Prefix, record.Id, azureName).Result;
-
-                                    if (success)
+                                    if (UpdateDatacenter(record.AddressSpace, record.Prefix, record.Id, azureName).Result)
                                     {
                                         changedCount++;
                                         var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},,{record.Id}";
@@ -242,11 +249,12 @@ namespace IpamFix
                                         WriteLine($"{changedCount} {logLine}");
                                         cacheFileWriter.WriteLine(logLine);
                                     }
+                                    return true;
                                 }
                                 catch (Exception ex)
                                 {
                                     Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
-                                    //break;
+                                    return null;
                                 }
                             }
                             else
@@ -258,6 +266,7 @@ namespace IpamFix
                         {
                             WriteLine($"Azure datacenter {azureName} has no region mapping");
                         }
+                        return false;
                     }
                 } // record
 
