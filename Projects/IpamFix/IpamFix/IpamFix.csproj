@@ -69,5 +69,10 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\F5IPConfigValidator\F5IPConfigValidator\Files\NameMap.xml">
+      <Link>Files\NameMap.xml</Link>
+    </EmbeddedResource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

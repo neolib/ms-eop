@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace IpamFix
 {
@@ -61,6 +62,39 @@ namespace IpamFix
             { "RX", SpecialAddressSpaces.RXAddressSpaceId },
             };
 
+        private StringMap datacenterNameMap = new StringMap();
+        private Dictionary<string, StringMap> regionMaps = new Dictionary<string, StringMap>();
+
+        private async Task LoadIpamRegionMap()
+        {
+            foreach (var entry in addressSpaceIdMap)
+            {
+                var tag = await this.IpamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
+
+                if (tag.ImpliedTags.TryGetValue(SpecialTags.Region, out var regionMap))
+                {
+                    this.regionMaps[entry.Key] = regionMap;
+                }
+            }
+        }
+
+        private void LoadNameMap()
+        {
+            var myType = this.GetType();
+            var rcName = myType.Namespace + ".Files.NameMap.xml";
+            using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
+            {
+                var mapDoc = XDocument.Load(rcs);
+
+                foreach (var node in mapDoc.Root.Element("DCNames").Elements())
+                {
+                    var eopName = node.Attribute("EOPName").Value;
+                    var azureName = node.Attribute("AzureName").Value;
+                    datacenterNameMap[eopName] = azureName;
+                }
+            }
+        }
+
         internal void Process(string resultExcelFile, string cacheFileName)
         {
             if (!File.Exists(resultExcelFile))
@@ -68,6 +102,22 @@ namespace IpamFix
                 Error.WriteLine($"Specified Excel file does not exist ({resultExcelFile})");
                 return;
             }
+
+            LoadIpamRegionMap().Wait();
+
+            // Verify if region maps are good.
+            var allRegionsGood = true;
+            foreach (var entry in regionMaps)
+            {
+                if (entry.Value.Count == 0)
+                {
+                    allRegionsGood = false;
+                    Error.WriteLine($"Address space {entry.Key} has no region map!");
+                }
+            }
+            if (!allRegionsGood) return;
+
+            LoadNameMap();
 
             var cacheList = File.Exists(cacheFileName) ? File.ReadAllLines(cacheFileName) : new string[0];
             using (var cacheFileWriter = new StreamWriter(cacheFileName, true))
@@ -100,6 +150,13 @@ namespace IpamFix
 
                     if (record.Status == "InvalidTitle")
                     {
+                        /*
+                        if (record.Title.ContainsText("UNKNOWN"))
+                        {
+                            WriteLine($"Skipping UNKNOWN title: {record.AddressSpace},{record.Prefix},{record.Title}");
+                            continue;
+                        }
+
                         var match = titleRegex.Match(record.Title);
                         if (match.Success)
                         {
@@ -134,8 +191,7 @@ namespace IpamFix
                             {
                                 try
                                 {
-                                    //var success = UpdatePrefixTitle(record.AddressSpace,
-                                    //    record.Prefix, record.Id, newTitle.ToString()).Result;
+                                    var success = UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Result;
 
                                     //if (success)
                                     {
@@ -143,7 +199,7 @@ namespace IpamFix
                                         var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
 
                                         WriteLine($"{changedCount} {logLine}");
-                                        //cacheFileWriter.WriteLine(logLine);
+                                        cacheFileWriter.WriteLine(logLine);
                                     }
                                 }
                                 catch (Exception ex)
@@ -153,10 +209,55 @@ namespace IpamFix
                                 }
                             }
                         }
+                        else
+                        {
+                            WriteLine($"Skipping InvalidTitle: {record.AddressSpace},{record.Prefix},{record.Title}");
+                            continue;
+                        }*/
                     }
-                    else if (record.Title == "Load from BGPL")
+                    else if (record.Status == "EmptyDatacenter")
                     {
-                        // Fix datacenter and title
+                        string azureName = null;
+
+                        if (!datacenterNameMap.TryGetValue(record.EopDcName, out azureName))
+                        {
+                            azureName = record.EopDcName;
+                            WriteLine($"EOP datacenter {record.EopDcName} has no azure mapping");
+                        }
+
+                        var regionMap = regionMaps[record.AddressSpace];
+                        if (regionMap.TryGetValue(azureName, out var region))
+                        {
+                            if (string.IsNullOrWhiteSpace(record.Region) || region.IsSameTextAs(record.Region))
+                            {
+                                try
+                                {
+                                    var success = UpdateDatacenter(record.AddressSpace, record.Prefix, record.Id, azureName).Result;
+
+                                    if (success)
+                                    {
+                                        changedCount++;
+                                        var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},,{record.Id}";
+
+                                        WriteLine($"{changedCount} {logLine}");
+                                        cacheFileWriter.WriteLine(logLine);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
+                                    //break;
+                                }
+                            }
+                            else
+                            {
+                                WriteLine($"Mapped region {region} differ with {record.Region}");
+                            }
+                        }
+                        else
+                        {
+                            WriteLine($"Azure datacenter {azureName} has no region mapping");
+                        }
                     }
                 } // record
 
@@ -164,14 +265,32 @@ namespace IpamFix
             }
         }
 
-        async Task<bool> UpdatePrefixTitle(string addressSpace, string prefix, string prefixId, string newTitle)
+        async Task<bool> UpdateTitle(string addressSpace, string prefix, string prefixId, string newTitle)
         {
             var queryModel = AllocationQueryModel.Create(addressSpaceIdMap[addressSpace], prefix);
             var queryResult = await IpamClient.QueryAllocationsAsync(queryModel);
             var allocModel = queryResult.Single();
             if (allocModel.Id == prefixId)
             {
-                allocModel.Tags["Title"] = newTitle;
+                allocModel.Tags[SpecialTags.Title] = newTitle;
+                await IpamClient.UpdateAllocationTagsV2Async(allocModel);
+                return true;
+            }
+            else
+            {
+                Error.WriteLine($"***Prefix ID mismatch: {addressSpace},{prefix},{prefixId},{allocModel.Id}");
+                return false;
+            }
+        }
+
+        async Task<bool> UpdateDatacenter(string addressSpace, string prefix, string prefixId, string newDatacenter)
+        {
+            var queryModel = AllocationQueryModel.Create(addressSpaceIdMap[addressSpace], prefix);
+            var queryResult = await IpamClient.QueryAllocationsAsync(queryModel);
+            var allocModel = queryResult.Single();
+            if (allocModel.Id == prefixId)
+            {
+                allocModel.Tags[SpecialTags.Datacenter] = newDatacenter;
                 await IpamClient.UpdateAllocationTagsV2Async(allocModel);
                 return true;
             }
