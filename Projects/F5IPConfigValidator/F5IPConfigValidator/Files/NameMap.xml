@@ -197,8 +197,9 @@
     <DCName EOPName="ZRA" AzureName="ZRH20" />
   </DCNames>
   <ForestAliases>
-    <!-- Turn it on when needed
+    <!--
     <ForestAlias Name="FSPROD" ForestNames="NA,EMEA,APAC,APC01,APC02" />
+    <ForestAlias Name="APC" ForestNames="APAC,APC01,APC02" />
     -->
   </ForestAliases>
   <DCSuffixes>

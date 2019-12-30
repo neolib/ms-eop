@@ -24,6 +24,7 @@ namespace F5IPConfigValidator
         NoMappingDcName,    // EOP datacenter name has no mapping Azure name
         EmptyTitle,
         EmptyDatacenter,
+        EmptyRegion,
         MismatchedDcName,   // Azure name does not match EOP name
         InvalidTitle,       // No datacenter/forest name in title
         InvalidRegion,
@@ -485,9 +486,11 @@ namespace F5IPConfigValidator
                 {
                     allocation.Tags.TryGetValue(SpecialTags.Region, out var allocRegion);
                     allocation.Tags.TryGetValue(SpecialTags.PhysicalNetwork, out var network);
+                    allocation.Tags.TryGetValue(SpecialTags.PropertyGroup, out var propertyGroup);
+
                     summaryBuilder.AppendFormat(
-                        "Prefix: {0}, Region: {1}, Physical Network: {2}",
-                        allocation.Prefix, allocRegion, network);
+                        "Prefix: {0}, Region: {1}, Physical Network: {2}, Property Group: {3}",
+                        allocation.Prefix, allocRegion, network, propertyGroup);
                     summaryBuilder.AppendLine();
                 }
                 return new ValidationRecord(
@@ -627,36 +630,36 @@ namespace F5IPConfigValidator
 
             if (string.IsNullOrEmpty(region))
             {
-                validationRecord.Status = ValidationStatus.InvalidRegion;
+                validationRecord.Status = ValidationStatus.EmptyRegion;
                 validationRecord.Summary = "Region is empty";
                 return validationRecord;
             }
             else
             {
-                // Check if region is correct.
                 var regionMap = regionMaps[addressSpace];
-                var hasRegionMapping = false;
+                string mappedRegion = null;
 
+                // Find mapped region in region map.
                 foreach (var regionEntry in regionMap)
                 {
-                    if (regionEntry.Value.IsSameTextAs(region))
+                    foreach (var dcNameEntry in dcNameMap)
                     {
-                        /*
-                         * We could use TryGetValue here, but to be sure we do
-                         * case-insensitive explicit search.
-                         *
-                         * */
-                        hasRegionMapping = dcNameMap.Any((dcNameEntry_) =>
-                            regionEntry.Key.IsSameTextAs(dcNameEntry_.Value));
-
-                        if (hasRegionMapping) break;
+                        if (dcNameEntry.Value.IsSameTextAs(regionEntry.Key))
+                        {
+                            mappedRegion = regionEntry.Value;
+                            break;
+                        }
                     }
                 }
 
-                if (!hasRegionMapping)
+                if (!region.IsSameTextAs(mappedRegion))
                 {
                     validationRecord.Status = ValidationStatus.InvalidRegion;
-                    validationRecord.Summary = "Region does not match any datacenter name";
+                    validationRecord.Summary = mappedRegion == null
+                        ?
+                        "Region does not match any datacenter name"
+                        :
+                        $"Region does not match mapped \"{mappedRegion}\"";
                     return validationRecord;
                 }
             }
@@ -706,7 +709,7 @@ namespace F5IPConfigValidator
             if (title.ContainsText("unknown"))
             {
                 validationRecord.Status = ValidationStatus.InvalidTitle;
-                validationRecord.Summary = "Title contains 'UNKNOWN' wording";
+                validationRecord.Summary = "Title contains 'UNKNOWN' word";
                 return validationRecord;
             }
 
