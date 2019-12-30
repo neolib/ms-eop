@@ -22,30 +22,6 @@ namespace Testbed.UnitTests
             File.WriteAllBytes(file, bytes);
         }
 
-        [TestMethod]
-        public void TestExtractPrefix()
-        {
-            var file = @"C:\My\dev\v\result.csv";
-            var re = new Regex(@"Prefix: (.+/\d+),");
-            var input = File.ReadAllText(file);
-
-            var matchIPv6 = re.Match("Prefix: 260f:d200:3:5880::/64,");
-            Assert.IsTrue(matchIPv6.Success);
-            Assert.AreEqual(matchIPv6.Groups[1].Value, "260f:d200:3:5880::/64");
-
-            var list = new List<string>();
-            foreach (Match match in re.Matches(input))
-            {
-                var prefix = match.Groups[1].Value;
-                if (!list.Contains(prefix))
-                {
-                    list.Add(prefix);
-                }
-            }
-            list.Sort();
-            list.ForEach((item_) => WriteLine(item_));
-        }
-
         private string GetResponseString(WebResponse resp)
         {
             using (var sr = new StreamReader(resp.GetResponseStream()))
@@ -90,5 +66,18 @@ namespace Testbed.UnitTests
             }
         }
 
+        [TestMethod]
+        public void TestResourceStream()
+        {
+            var t = this.GetType();
+            var name = t.Namespace + ".Files.test.txt";
+            WriteLine($"Reading resource file \"{name}\"");
+            var rcs = t.Assembly.GetManifestResourceStream(name);
+            using (var sr = new StreamReader(rcs))
+            {
+                var text = sr.ReadToEnd();
+                WriteLine($"{text}");
+            }
+        }
     }
 }

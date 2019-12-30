@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Testbed.UnitTests
@@ -7,8 +8,25 @@ namespace Testbed.UnitTests
     using static Console;
 
     [TestClass]
-    public class Unit3
+    public class StringTests
     {
+        private struct Item
+        {
+            internal string name;
+            internal string tag;
+
+            internal Item(string name, string tag)
+            {
+                this.name = name;
+                this.tag = tag;
+            }
+
+            public override string ToString()
+            {
+                return $"{name} of {tag}";
+            }
+        }
+
         [TestMethod]
         public void TestStringConcat()
         {
@@ -48,8 +66,27 @@ namespace Testbed.UnitTests
         }
 
         [TestMethod]
-        public void TestA()
+        public void TestStringEmpty()
         {
+            var a = string.Empty;
+            var b = "";
+            Assert.AreEqual(a, b);
+            Assert.IsTrue(ReferenceEquals(a, b));
         }
+
+        [TestMethod]
+        public void TestStringJoin()
+        {
+            var list = new List<Item>
+            {
+                new Item("item1", "tag1"),
+                new Item("item2", "tag2"),
+                new Item("item3", "tag3"),
+            };
+
+            WriteLine(string.Join(Environment.NewLine, list));
+        }
+
     }
+
 }

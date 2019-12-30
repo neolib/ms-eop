@@ -14,7 +14,7 @@ namespace Testbed.UnitTests
     using static System.Console;
 
     [TestClass]
-    public class Unit1
+    public class XDocumentTests
     {
         [TestMethod]
         public void TestXDocumentCreation()
@@ -54,33 +54,6 @@ namespace Testbed.UnitTests
         }
 
         [TestMethod]
-        public void TestResourceStream()
-        {
-            var t = this.GetType();
-            var name = t.Namespace + ".Files.test.txt";
-            WriteLine($"Reading resource file \"{name}\"");
-            var rcs = t.Assembly.GetManifestResourceStream(name);
-            using (var sr = new StreamReader(rcs))
-            {
-                var text = sr.ReadToEnd();
-                WriteLine($"{text}");
-            }
-        }
-
-        [TestMethod]
-        public void TestStringJoin()
-        {
-            var list = new List<Item>
-            {
-                new Item("item1", "tag1"),
-                new Item("item2", "tag2"),
-                new Item("item3", "tag3"),
-            };
-
-            WriteLine(string.Join(Environment.NewLine, list));
-        }
-
-        [TestMethod]
         public void TestXDocumentXPathAttribute()
         {
             var myType = this.GetType();
@@ -108,57 +81,5 @@ namespace Testbed.UnitTests
             }
         }
 
-        [TestMethod]
-        public void TestTaskWaitAll()
-        {
-            var w = Stopwatch.StartNew();
-            var r = new Random();
-            StartWork_();
-            w.Stop();
-            WriteLine($"Total time used in ms: {w.ElapsedMilliseconds}");
-
-            void StartWork_()
-            {
-                WriteLine("Starting 10 workers...");
-                var tasks = new List<Task>();
-                for (int i = 1; i < 10; i++)
-                {
-                    tasks.Add(DoWork_($"Worker_{i}"));
-                }
-                Task.WaitAll(tasks.ToArray());
-                WriteLine("All workers are done!");
-            }
-
-            async Task DoWork_(string name_)
-            {
-                var delay = r.Next(100, 2000);
-                WriteLine($"Worker {name_} will complete in {delay} ms...");
-                await Task.Delay(delay);
-                WriteLine($"Worker {name_} completed");
-            }
-        }
-
     }
-
-    #region Help Classes
-
-    internal struct Item
-    {
-        internal string name;
-        internal string tag;
-
-        internal Item(string name, string tag)
-        {
-            this.name = name;
-            this.tag = tag;
-        }
-
-        public override string ToString()
-        {
-            return $"{name} of {tag}";
-        }
-    }
-
-    #endregion
-
 }
