@@ -90,5 +90,58 @@ namespace Testbed.UnitTests
             list.Sort();
             list.ForEach((item_) => WriteLine(item_));
         }
+
+        [TestMethod]
+        public void TestCountIPs()
+        {
+            var a = new[] {
+                "10.13.14.0",
+                "10.13.14.32",
+                "10.13.14.64",
+                "10.13.150.224",
+                "10.13.151.0",
+                "10.233.232.192",
+                "10.97.81.0",
+                "20.128.10.0",
+                "21.3.100.0",
+                "21.3.101.0",
+                "21.3.12.0",
+                "21.3.129.0",
+                "21.3.136.0",
+                "21.3.148.0",
+                "21.3.149.0",
+                "21.3.17.0",
+                "21.3.172.0",
+                "21.3.177.0",
+                "23.103.138.144",
+                "23.103.156.128",
+                "23.103.156.160",
+                "23.103.157.144",
+                "23.103.157.224",
+                "25.153.54.0",
+                "25.155.30.0",
+                "25.155.62.0",
+                "40.107.208.0",
+                };
+
+            WriteLine($"total {a.Length} IPs");
+            var text = File.ReadAllText(@"C:\My\dev\v\fixedemptydcs.csv");
+            var c = 0;
+
+            foreach (var s in a)
+            {
+                if (text.Contains(s))
+                {
+                    WriteLine($"found {s}");
+                }
+                else
+                {
+                    c++;
+                    WriteLine($"not found {s}");
+
+                }
+            }
+            WriteLine($"not found {c}");
+        }
     }
 }
