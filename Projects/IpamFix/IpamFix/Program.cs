@@ -14,13 +14,14 @@ namespace IpamFix
             var w = Stopwatch.StartNew();
             WriteLine($"Start time: {DateTime.Now}");
 
-            var resultFile = args[0];
-            var cacheFileName = args[1];
+            var cmd = args[0];
+            var resultFile = args[1];
+            var cacheFileName = args[2];
             var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
             new Processor
             {
                 IpamClient = new IpamClient(ipamClientSettings),
-            }.Process(resultFile, cacheFileName);
+            }.Process(resultFile, cacheFileName, cmd);
 
             WriteLine();
             w.Stop();

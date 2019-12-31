@@ -642,24 +642,17 @@ namespace F5IPConfigValidator
                 // Find mapped region in region map.
                 foreach (var regionEntry in regionMap)
                 {
-                    foreach (var dcNameEntry in dcNameMap)
+                    if (ipamDcName.IsSameTextAs(regionEntry.Key))
                     {
-                        if (dcNameEntry.Value.IsSameTextAs(regionEntry.Key))
-                        {
-                            mappedRegion = regionEntry.Value;
-                            break;
-                        }
+                        mappedRegion = regionEntry.Value;
+                        break;
                     }
                 }
 
                 if (!region.IsSameTextAs(mappedRegion))
                 {
                     validationRecord.Status = ValidationStatus.InvalidRegion;
-                    validationRecord.Summary = mappedRegion == null
-                        ?
-                        "Region does not match any datacenter name"
-                        :
-                        $"Region does not match mapped \"{mappedRegion}\"";
+                    validationRecord.Summary = $"Region does not match mapped \"{mappedRegion ?? "<none>"}\"";
                     return validationRecord;
                 }
             }

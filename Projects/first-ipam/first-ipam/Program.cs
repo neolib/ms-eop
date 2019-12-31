@@ -36,10 +36,11 @@ namespace first_ipam
             {
                 //QueryArgs_();
 
-                DumpDatacenterRegionMap_().Wait();
+                TestUpdateDatacenterTags_().Wait();
+                //DumpDatacenterRegionMap_().Wait();
                 //DumpDatacenterTag_().Wait();
                 //DumpAllSpaceTags_().Wait();
-                //TestUpdatTags_().Wait();
+                //TestUpdateTitleTags_().Wait();
             }
             catch (Exception ex)
             {
@@ -88,7 +89,7 @@ namespace first_ipam
                 return queryModel;
             }
 
-            async Task TestUpdatTags_()
+            async Task TestUpdateTitleTags_()
             {
                 var addressSpace = "Default";
                 var targetPrefix = "207.46.34.207/32";
@@ -97,9 +98,25 @@ namespace first_ipam
 
                 var alloc = list.Single();
                 WriteLine($"Updating target: {targetPrefix}");
-                alloc.Tags["Title"] = "ier01.mel01:Lo0 modified by v-chunly on " + DateTime.Now;
-                alloc.Tags["Description"] = "***TEST*** modified by v-chunly on " + DateTime.Now;
+                alloc.Tags[SpecialTags.Title] = "ier01.mel01:Lo0 modified by v-chunly on " + DateTime.Now;
+                alloc.Tags[SpecialTags.Description] = "***TEST*** modified by v-chunly on " + DateTime.Now;
                 await ipamClient.UpdateAllocationTagsV2Async(alloc);
+
+                Dump_(await DoQuery_(addressSpace, targetPrefix));
+            }
+
+            async Task TestUpdateDatacenterTags_()
+            {
+                var addressSpace = "Default";
+                var targetPrefix = "10.40.122.0/23";
+                var list = await DoQuery_(addressSpace, targetPrefix); ;
+                Dump_(list);
+
+                var alloc = list.Single();
+                WriteLine($"Updating target: {targetPrefix}");
+                alloc.Tags.Clear();
+                alloc.Tags[SpecialTags.Datacenter] = "AM1";
+                await ipamClient.PatchAllocationTagsV2Async(alloc);
 
                 Dump_(await DoQuery_(addressSpace, targetPrefix));
             }
@@ -168,11 +185,11 @@ namespace first_ipam
 
                     var tag = await ipamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
 
-                    if (tag.ImpliedTags.TryGetValue(SpecialTags.Region, out var regionTag))
+                    if (tag.ImpliedTags.TryGetValue(SpecialTags.Region, out var regionMap))
                     {
                         tag.KnownValues.ForEach((name_) =>
                         {
-                            if (regionTag.TryGetValue(name_, out var region))
+                            if (regionMap.TryGetValue(name_, out var region))
                             {
                                 WriteLine($"<Item DCName=\"{name_}\" Region=\"{Xmlize_(region)}\" />");
                             }
