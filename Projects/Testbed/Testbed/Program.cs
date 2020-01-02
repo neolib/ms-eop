@@ -42,7 +42,7 @@ namespace Testbed
                             var applet = ctor.Invoke(null) as IApplet;
                             var newArgs = new string[args.Length - 1];
                             Array.Copy(args, 1, newArgs, 0, newArgs.Length);
-                            applet.Run(newArgs);
+                            Environment.ExitCode = applet.Run(newArgs);
                             break;
                         }
                     }
