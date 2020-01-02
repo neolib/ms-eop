@@ -1,11 +1,22 @@
 ﻿using System;
 using System.Configuration;
 using System.Diagnostics;
+using System.Linq;
 
 namespace IpamFix
 {
     using Microsoft.Azure.Ipam.Client;
     using static System.Console;
+
+    enum ExitCode
+    {
+        Chaos = -1,
+        Success = 0,
+        BadArgs,
+        Exception,
+        FileNotFound,
+        NoRecords,
+    }
 
     class Program
     {
@@ -14,14 +25,21 @@ namespace IpamFix
             var w = Stopwatch.StartNew();
             WriteLine($"Start time: {DateTime.Now}");
 
-            var cmd = args[0];
-            var resultFile = args[1];
-            var cacheFileName = args[2];
             var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
-            new Processor
+            Environment.ExitCode = (int)ExitCode.Chaos;
+
+            try
             {
-                IpamClient = new IpamClient(ipamClientSettings),
-            }.Process(resultFile, cacheFileName, cmd);
+                new Processor
+                {
+                    IpamClient = new IpamClient(ipamClientSettings)
+                }.Run(args);
+            }
+            catch (Exception ex)
+            {
+                Environment.ExitCode = (int)ExitCode.Exception;
+                Error.WriteLine(ex);
+            }
 
             WriteLine();
             w.Stop();

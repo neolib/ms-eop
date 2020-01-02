@@ -14,7 +14,6 @@ namespace IpamFix
     using F5IPConfigValidator;
     using static Console;
     using StringMap = Dictionary<string, string>;
-    using System.Runtime.Remoting.Messaging;
 
     class Processor
     {
@@ -30,12 +29,13 @@ namespace IpamFix
         private const string NameRegion = "Region";
         private const string NameStatus = "Status";
         private const string NameSummary = "Summary";
+        private const string NameComment = "Comment";
         private const string TitlePattern = @"(?<h>EOP:\s+)(?<f>\w+)(\s+)?-(\s+)?(?<d>\w+?)(?<t>(FSPROD)?\s+(-\s+)?IPv\d.+)";
 
         private string[] ExcelFieldNames = new[] {
             NameId, NameAddressSpace, NameEnvironment,
             NamePrefix, NameForest, NameEopDc, NameIpamDc,
-            NameTitle, NameRegion, NameStatus, NameSummary
+            NameTitle, NameRegion, NameStatus, NameSummary, NameComment
             };
 
         private class ValidationRecord
@@ -52,6 +52,15 @@ namespace IpamFix
             internal string Region;
             internal string Status;
             internal string Summary;
+            internal string Comment;
+        }
+
+        private enum Command
+        {
+            Unknown,
+            FixTitle,
+            FixEmptyDC,
+            FixWrongDC,
         }
 
         internal IpamClient IpamClient { get; set; }
@@ -92,22 +101,48 @@ namespace IpamFix
             }
         }
 
-        internal void Process(string resultExcelFile, string cacheFileName, string cmd)
+        internal void Run(string[] args)
         {
-            if (!File.Exists(resultExcelFile))
+            if (args.Length != 3)
             {
-                Error.WriteLine($"Specified Excel file does not exist ({resultExcelFile})");
+                Environment.ExitCode = (int)ExitCode.BadArgs;
+                Error.WriteLine($"SYNTAX: CMD rsult.xlsx cachefile.csv");
+                return;
+            }
+
+            var cmdName = args[0];
+            var resultFile = args[1];
+            var cacheFileName = args[2];
+
+            if (!File.Exists(resultFile))
+            {
+                Environment.ExitCode = (int)ExitCode.FileNotFound;
+                Error.WriteLine($"Specified Excel file does not exist ({resultFile})");
                 return;
             }
 
             string headerText = null;
+            if (!Enum.TryParse(cmdName, out Command cmd))
+            {
+                Environment.ExitCode = (int)ExitCode.BadArgs;
+                throw new Exception($"Invalid command {cmdName}");
+            }
 
-            if (cmd == "FixTitle")
-                headerText = $"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameTitle},New Title,{NameId}";
-            else if (cmd == "FixDC")
-                headerText = $"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameId}";
-            else
-                throw new Exception($"Invalid command {cmd}");
+            switch (cmd)
+            {
+                case Command.FixTitle:
+                    headerText = $"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameTitle},New Title,{NameId}";
+                    break;
+                case Command.FixEmptyDC:
+                case Command.FixWrongDC:
+                    headerText = $"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameId}";
+                    break;
+
+                default:
+                    Environment.ExitCode = (int)ExitCode.BadArgs;
+                    Error.WriteLine($"Unhandled command {cmdName}");
+                    return;
+            }
 
             LoadDatacenterMaps().Wait();
             LoadNameMap();
@@ -122,12 +157,18 @@ namespace IpamFix
 
                 var titleRegex = new Regex(TitlePattern,
                     RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
-                var records = ReadRecords(resultExcelFile);
+                var records = ReadRecords(resultFile);
 
-                if (records == null) return;
+                if (records == null)
+                {
+                    Environment.ExitCode = (int)ExitCode.NoRecords;
+                    return;
+                }
+
                 if (records.Count == 0)
                 {
                     Error.WriteLine("No result records");
+                    Environment.ExitCode = (int)ExitCode.NoRecords;
                     return;
                 }
 
@@ -148,7 +189,14 @@ namespace IpamFix
                     }
                     else if (record.Status == "EmptyDatacenter")
                     {
-                        if (FixEmptyDatacenter_() == null) ; // break;
+                        //if (FixWrongDatacenter_() == null) ; // break;
+                    }
+                    else if (record.Status == "MismatchedDcName")
+                    {
+                        if (record.Comment == "Valid")
+                        {
+                            if (FixWrongDatacenter_() == null) ; // break;
+                        }
                     }
 
                     bool? FixInvalidTitle_()
@@ -193,8 +241,7 @@ namespace IpamFix
                             {
                                 try
                                 {
-                                    if (skipUpdate ||
-                                        UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Result)
+                                    if (UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Result)
                                     {
                                         changedCount++;
                                         var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
@@ -218,7 +265,7 @@ namespace IpamFix
                         return false;
                     }
 
-                    bool? FixEmptyDatacenter_()
+                    bool? FixWrongDatacenter_()
                     {
                         try
                         {
@@ -243,6 +290,8 @@ namespace IpamFix
 
                 WriteLine($"Total records changed: {changedCount}");
             }
+
+            Environment.ExitCode = (int)ExitCode.Success;
         }
 
         async Task<AllocationModel> QueryIpam(string addressSpace, string prefix, string prefixId)
@@ -365,6 +414,7 @@ namespace IpamFix
                                 Region = ReadString_(NameRegion),
                                 Status = ReadString_(NameStatus),
                                 Summary = ReadString_(NameSummary),
+                                Comment = ReadString_(NameComment),
                             });
                         }
                     } while (reader.NextResult());
