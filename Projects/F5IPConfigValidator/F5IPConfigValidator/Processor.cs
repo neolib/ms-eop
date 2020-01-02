@@ -527,37 +527,35 @@ namespace F5IPConfigValidator
                 Title = title,
             };
 
-            var prefixNumberString = prefix.Substring(prefix.LastIndexOf('/') + 1);
+            var isIPv6 = prefix.Contains(':');
+            var prefixNumber = int.Parse(prefix.Substring(prefix.LastIndexOf('/') + 1));
 
-            if (int.TryParse(prefixNumberString, out var prefixNumber))
+            //
+            // Skip large blocks
+            //
+
+            if (isIPv6) // IPv6
             {
-                //
-                // Skip large blocks
-                //
-
-                if (prefix.Contains(':')) // IPv6
+                if (prefixNumber < 64)
                 {
-                    if (prefixNumber < 64)
-                    {
-                        validationRecord.Status = ValidationStatus.Success;
-                        validationRecord.Summary = "Large block";
-                        return validationRecord;
-                    }
+                    validationRecord.Status = ValidationStatus.Success;
+                    validationRecord.Summary = "Large block";
+                    return validationRecord;
                 }
-                else // IPv4
+            }
+            else // IPv4
+            {
+                if (prefixNumber < 23)
                 {
-                    if (prefixNumber < 23)
-                    {
-                        validationRecord.Status = ValidationStatus.Success;
-                        validationRecord.Summary = "Large block";
-                        return validationRecord;
-                    }
+                    validationRecord.Status = ValidationStatus.Success;
+                    validationRecord.Summary = "Large block";
+                    return validationRecord;
                 }
             }
 
             if (string.IsNullOrWhiteSpace(title))
             {
-                if (prefixNumber == 32)
+                if (!isIPv6 && prefixNumber == 32)
                 {
                     validationRecord.Status = ValidationStatus.Obsolete;
                     validationRecord.Summary = "Should be deleted";
@@ -652,7 +650,7 @@ namespace F5IPConfigValidator
                 if (!region.IsSameTextAs(mappedRegion))
                 {
                     validationRecord.Status = ValidationStatus.InvalidRegion;
-                    validationRecord.Summary = $"Region does not match mapped \"{mappedRegion ?? "<none>"}\"";
+                    validationRecord.Summary = $"Region does not match implied region ({mappedRegion ?? "<none>"})";
                     return validationRecord;
                 }
             }
