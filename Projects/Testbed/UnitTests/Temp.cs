@@ -72,43 +72,11 @@ namespace Testbed.UnitTests
             var t = this.GetType();
             var name = t.Namespace + ".Files.test.txt";
             WriteLine($"Reading resource file \"{name}\"");
-            var rcs = t.Assembly.GetManifestResourceStream(name);
+            using (var rcs = t.Assembly.GetManifestResourceStream(name))
             using (var sr = new StreamReader(rcs))
             {
                 var text = sr.ReadToEnd();
                 WriteLine($"{text}");
-            }
-        }
-
-        [TestMethod]
-        public void TestLocalFunc()
-        {
-            for (int i = 0; i < 10; i++)
-            {
-                var i2 = 1234;
-                Func<int, int> func = (i_) =>
-                {
-                    return i + i_;
-                };
-
-                WriteLine(func(i2));
-            }
-        }
-
-        [TestMethod]
-        public void TestYield()
-        {
-            foreach (var i in Get_(10))
-            {
-                WriteLine(i);
-            }
-
-            IEnumerable<int> Get_(int c)
-            {
-                while (c-- > 0)
-                {
-                    yield return c;
-                }
             }
         }
     }
