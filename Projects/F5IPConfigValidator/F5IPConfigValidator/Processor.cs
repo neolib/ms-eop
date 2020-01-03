@@ -14,6 +14,7 @@ namespace F5IPConfigValidator
     using StringList = List<string>;
     using StringMap = Dictionary<string, string>;
     using StringListMap = Dictionary<string, List<string>>;
+    using System.Diagnostics;
 
     #region Classes
 
@@ -68,12 +69,13 @@ namespace F5IPConfigValidator
         internal IpamClient IpamClient { get; set; }
         private List<string> ipHotList = new List<string>();
         private List<string> prefixIdList = new List<string>();
-        private StringMap datacenterNameMap = new StringMap();
+        private StringMap dcNameMap = new StringMap();
         private StringMap suffixNameMap = new StringMap();
         private StringMap forestNameMap = new StringMap();
         private StringMap envSpaceMap = new StringMap();
         private StringMap dcNameExceptionMap = new StringMap();
         private StringListMap forestAliasMap = new StringListMap();
+        private StringListMap azureNameMap = new StringListMap();
         private StringList ipStringExclusionList = new StringList();
         private Dictionary<string, StringMap> regionMaps = new Dictionary<string, StringMap>();
 
@@ -117,7 +119,7 @@ namespace F5IPConfigValidator
                 {
                     var eopName = node.Attribute("EOPName").Value;
                     var azureName = node.Attribute("AzureName").Value;
-                    datacenterNameMap[eopName] = azureName;
+                    dcNameMap[eopName] = azureName;
                 }
 
                 foreach (var node in mapDoc.Root.Element("ForestAliases").Elements())
@@ -163,11 +165,22 @@ namespace F5IPConfigValidator
                     }
                 }
             }
+
+            // Build reverse Azure name map out of datacenter nam map.
+            foreach (var entry in dcNameMap)
+            {
+                if (!azureNameMap.TryGetValue(entry.Value, out var list))
+                {
+                    list = new StringList();
+                    azureNameMap[entry.Value] = list;
+                }
+                list.Add(entry.Key);
+            }
         }
 
         private string GetAzureDcName(string eopName)
         {
-            if (datacenterNameMap.TryGetValue(eopName.ToUpper(), out var name))
+            if (dcNameMap.TryGetValue(eopName.ToUpper(), out var name))
             { return name; }
             return null;
         }
@@ -200,9 +213,16 @@ namespace F5IPConfigValidator
             return null;
         }
 
-        private StringList GetForestAlias(string forestName)
+        private StringList GetForestAliases(string forestName)
         {
             if (forestAliasMap.TryGetValue(forestName.ToUpper(), out var list))
+            { return list; }
+            return null;
+        }
+
+        private StringList GetAzureReversedNames(string azureName)
+        {
+            if (azureNameMap.TryGetValue(azureName.ToUpper(), out var list))
             { return list; }
             return null;
         }
@@ -693,12 +713,32 @@ namespace F5IPConfigValidator
 
             // Check if title contains datacenter name.
             var containsDcName = false;
+
             foreach (var entry in dcNameMap)
             {
                 if (title.ContainsText(entry.Value))
                 {
                     containsDcName = true;
                     break;
+                }
+            }
+
+            /*
+             * I'm not sure if this is helpful but I do observe some titles
+             * contain reversed datacenter name by Azure name.
+             *
+             * */
+
+            if (!containsDcName)
+            {
+                var dcNameList = GetAzureReversedNames(ipamDcName);
+                foreach (var name in dcNameList)
+                {
+                    if (title.ContainsText(name))
+                    {
+                        containsDcName = true;
+                        break;
+                    }
                 }
             }
 
@@ -723,7 +763,7 @@ namespace F5IPConfigValidator
             if (!title.ContainsText(forestName))
             {
                 var containsAlias = false;
-                var aliasList = GetForestAlias(forestName);
+                var aliasList = GetForestAliases(forestName);
 
                 if (aliasList?.Count > 0)
                 {
