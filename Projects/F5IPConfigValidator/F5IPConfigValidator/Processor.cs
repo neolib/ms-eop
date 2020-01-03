@@ -194,6 +194,13 @@ namespace F5IPConfigValidator
             return null;
         }
 
+        private string GetDcExceptionName(string envName)
+        {
+            if (dcNameExceptionMap.TryGetValue(envName.ToUpper(), out var dcExName))
+            { return dcExName; }
+            return null;
+        }
+
         /// <summary>
         /// Loads datacenter to region mappings from IPAM.
         /// </summary>
@@ -481,7 +488,7 @@ namespace F5IPConfigValidator
             string eopDcName,
             string ipString)
         {
-            var envName = $"{forestName}-{eopDcName}".ToUpper();
+            var envName = $"{forestName}-{eopDcName}";
             var queryModel = AllocationQueryModel.Create(addressSpaceIdMap[addressSpace], ipString);
             queryModel.ReturnParentWhenNotFound = !ipString.Contains('/');
             queryModel.MaxResults = 1000;
@@ -607,13 +614,9 @@ namespace F5IPConfigValidator
                 ))
             {
                 // If not, check if this environment has an exception datacenter name.
-                var exNameMatch = false;
-                if (dcNameExceptionMap.TryGetValue(envName, out var dcExName))
-                {
-                    exNameMatch = ipamDcName.IsSameTextAs(dcExName);
-                }
+                var dcExName = GetDcExceptionName(envName);
 
-                if (!exNameMatch)
+                if (!ipamDcName.IsSameTextAs(dcExName))
                 {
                     validationRecord.Status = ValidationStatus.MismatchedDcName;
                     validationRecord.Summary = azureDcName == null || azureDcName.IsSameTextAs(eopDcName)
