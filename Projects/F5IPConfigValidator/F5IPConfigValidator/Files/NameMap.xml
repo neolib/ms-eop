@@ -199,10 +199,9 @@
     <DCName EOPName="MNZ" AzureName="MNZ21" />
   </DCNames>
   <ForestAliases>
-    <!--
-    <ForestAlias Name="FSPROD" ForestNames="NA,EMEA,APAC,APC01,APC02" />
-    <ForestAlias Name="APC" ForestNames="APAC,APC01,APC02" />
-    -->
+    <ForestAlias ForestName="APC01" Aliases="APC,APAC" />
+    <ForestAlias ForestName="APC02" Aliases="APC,APAC" />
+    <ForestAlias ForestName="APAC" Aliases="APC" />
   </ForestAliases>
   <DCSuffixes>
     <DCSuffix Text="-FX" ForestNames="GLS07,SIT01,SIT02,USG01,USG02" />

@@ -11,7 +11,11 @@ namespace F5IPConfigValidator
     using Microsoft.Azure.Ipam.Client;
     using Microsoft.Azure.Ipam.Contracts;
     using static System.Console;
+    using StringList = List<string>;
     using StringMap = Dictionary<string, string>;
+    using StringListMap = Dictionary<string, List<string>>;
+
+    #region Classes
 
     public enum ValidationStatus
     {
@@ -55,18 +59,22 @@ namespace F5IPConfigValidator
         public static readonly ValidationRecord Success = new ValidationRecord(ValidationStatus.Success);
     }
 
+    #endregion
+
     class Processor
     {
+        private static char[] FieldSeparatorChars = new[] { ',', ' ' };
+
         internal IpamClient IpamClient { get; set; }
         private List<string> ipHotList = new List<string>();
         private List<string> prefixIdList = new List<string>();
         private StringMap datacenterNameMap = new StringMap();
-        private StringMap forestAliasMap = new StringMap();
         private StringMap suffixNameMap = new StringMap();
         private StringMap forestNameMap = new StringMap();
         private StringMap envSpaceMap = new StringMap();
         private StringMap dcNameExceptionMap = new StringMap();
-        private List<string> ipStringExclusionList = new List<string>();
+        private StringListMap forestAliasMap = new StringListMap();
+        private StringList ipStringExclusionList = new StringList();
         private Dictionary<string, StringMap> regionMaps = new Dictionary<string, StringMap>();
 
         private StringMap addressSpaceIdMap = new StringMap {
@@ -100,6 +108,7 @@ namespace F5IPConfigValidator
         {
             var myType = this.GetType();
             var rcName = myType.Namespace + ".Files.NameMap.xml";
+
             using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
             {
                 var mapDoc = XDocument.Load(rcs);
@@ -113,19 +122,16 @@ namespace F5IPConfigValidator
 
                 foreach (var node in mapDoc.Root.Element("ForestAliases").Elements())
                 {
-                    var alias = node.Attribute("Name").Value;
-                    var forestNames = node.Attribute("ForestNames").Value;
-                    foreach (var forestName in forestNames.SplitWithoutEmpty(','))
-                    {
-                        forestAliasMap[forestName] = alias;
-                    }
+                    var forestName = node.Attribute("ForestName").Value;
+                    var aliases = node.Attribute("Aliases").Value;
+                    forestAliasMap[forestName] = aliases.SplitWithoutEmpty(FieldSeparatorChars).ToList();
                 }
 
                 foreach (var node in mapDoc.Root.Element("DCSuffixes").Elements())
                 {
                     var suffix = node.Attribute("Text").Value;
                     var forestNames = node.Attribute("ForestNames").Value;
-                    foreach (var forestName in forestNames.SplitWithoutEmpty(','))
+                    foreach (var forestName in forestNames.SplitWithoutEmpty(FieldSeparatorChars))
                     {
                         suffixNameMap[forestName] = suffix;
                     }
@@ -135,7 +141,7 @@ namespace F5IPConfigValidator
                 {
                     var spaceName = node.Attribute("SpaceName").Value;
                     var envNames = node.Attribute("EnvironmentNames").Value;
-                    foreach (var envName in envNames.SplitWithoutEmpty(','))
+                    foreach (var envName in envNames.SplitWithoutEmpty(FieldSeparatorChars))
                     {
                         envSpaceMap[envName] = spaceName;
                     }
@@ -151,7 +157,7 @@ namespace F5IPConfigValidator
                 foreach (var node in mapDoc.Root.Element("ExclusionList").Elements())
                 {
                     var values = node.Attribute("StartsWith").Value;
-                    foreach (var value in values.SplitWithoutEmpty(','))
+                    foreach (var value in values.SplitWithoutEmpty(FieldSeparatorChars))
                     {
                         ipStringExclusionList.Add(value);
                     }
@@ -163,13 +169,6 @@ namespace F5IPConfigValidator
         {
             if (datacenterNameMap.TryGetValue(eopName.ToUpper(), out var name))
             { return name; }
-            return null;
-        }
-
-        private string GetForestAlias(string forestName)
-        {
-            if (forestAliasMap.TryGetValue(forestName.ToUpper(), out var alias))
-            { return alias; }
             return null;
         }
 
@@ -198,6 +197,13 @@ namespace F5IPConfigValidator
         {
             if (dcNameExceptionMap.TryGetValue(envName.ToUpper(), out var dcExName))
             { return dcExName; }
+            return null;
+        }
+
+        private StringList GetForestAlias(string forestName)
+        {
+            if (forestAliasMap.TryGetValue(forestName.ToUpper(), out var list))
+            { return list; }
             return null;
         }
 
@@ -247,8 +253,6 @@ namespace F5IPConfigValidator
             // CSV header row
             WriteLine("Address Space,Comment,Environment,Forest,EOP DC,IP Query,Prefix,IPAM DC,Region,Status,Summary,Title,Prefix ID");
 
-            //var debug = false;
-            var ipStringSeparators = new[] { ',', ' ' };
             var xd = XDocument.Load(resultFile);
             var envNodes = xd.Root.XPathSelectElements("//file[not(starts-with(@name, '_'))]");
 
@@ -333,15 +337,17 @@ namespace F5IPConfigValidator
                     }
                 }
 
+                var FieldFieldSeparatorChars = new[] { ',', ' ' };
+
                 foreach (var node in fileNode_.Elements())
                 {
                     foreach (var attr in node.Attributes())
                     {
                         if (attr.Name == "path") continue;
 
-                        if (attr.Value.IndexOfAny(ipStringSeparators) > 0)
+                        if (attr.Value.IndexOfAny(FieldFieldSeparatorChars) > 0)
                         {
-                            var a = attr.Value.SplitWithoutEmpty(ipStringSeparators);
+                            var a = attr.Value.SplitWithoutEmpty(FieldFieldSeparatorChars);
                             foreach (var ipString in a)
                             {
                                 await ProcessIpString_(ipString);
@@ -714,17 +720,34 @@ namespace F5IPConfigValidator
                 return validationRecord;
             }
 
-            var azureForestName = GetForestAlias(forestName);
-
-            if (!(title.ContainsText(forestName) || title.ContainsText(azureForestName)))
+            if (!title.ContainsText(forestName))
             {
-                validationRecord.Status = ValidationStatus.InvalidTitle;
-                validationRecord.Summary = azureForestName == null
-                    ?
-                    $"Title does not contain forest name ({forestName})"
-                    :
-                    $"Title does not contain forest name ({forestName} or alias {azureForestName})";
-                return validationRecord;
+                var containsAlias = false;
+                var aliasList = GetForestAlias(forestName);
+
+                if (aliasList?.Count > 0)
+                {
+                    foreach (var forestAlias in aliasList)
+                    {
+                        if (title.ContainsText(forestAlias))
+                        {
+                            containsAlias = true;
+                            break;
+                        }
+                    }
+
+                }
+
+                if (!containsAlias)
+                {
+                    validationRecord.Status = ValidationStatus.InvalidTitle;
+                    validationRecord.Summary = aliasList?.Count > 0
+                        ?
+                        $"Title does not contain forest name ({forestName} or any of aliases ({string.Join(",", aliasList)})"
+                        :
+                        $"Title does not contain forest name ({forestName})";
+                    return validationRecord;
+                }
             }
 
             if (title.ContainsText("unknown"))
