@@ -34,6 +34,7 @@ namespace F5IPConfigValidator
     {
         public string Id;
         public string AddressSpace;
+        public string IpString;
         public string Prefix;
         public string Environment;  // Forest-DC
         public string Forest;       // Forest name in _environments.xml
@@ -64,6 +65,7 @@ namespace F5IPConfigValidator
         private StringMap suffixNameMap = new StringMap();
         private StringMap forestNameMap = new StringMap();
         private StringMap envSpaceMap = new StringMap();
+        private StringMap dcNameExceptionMap = new StringMap();
         private List<string> ipStringExclusionList = new List<string>();
         private Dictionary<string, StringMap> regionMaps = new Dictionary<string, StringMap>();
 
@@ -137,6 +139,13 @@ namespace F5IPConfigValidator
                     {
                         envSpaceMap[envName] = spaceName;
                     }
+                }
+
+                foreach (var node in mapDoc.Root.Element("DCNameExceptions").Elements())
+                {
+                    var envName = node.Attribute("Environment").Value;
+                    var dcName = node.Attribute("AzureDCName").Value;
+                    dcNameExceptionMap[envName] = dcName;
                 }
 
                 foreach (var node in mapDoc.Root.Element("ExclusionList").Elements())
@@ -251,6 +260,7 @@ namespace F5IPConfigValidator
 
                 /*
                  * Pre-validate forest/datacenter names.
+                 *
                  * */
 
                 if (eopDcName == null)
@@ -321,8 +331,6 @@ namespace F5IPConfigValidator
                     foreach (var attr in node.Attributes())
                     {
                         if (attr.Name == "path") continue;
-                        //if (debug) continue;
-                        //else debug = true;
 
                         if (attr.Value.IndexOfAny(ipStringSeparators) > 0)
                         {
@@ -366,6 +374,7 @@ namespace F5IPConfigValidator
                     }
 
                     var hasAnyMatch = false;
+
                     foreach (var entry in addressSpaceIdMap)
                     {
                         try
@@ -381,12 +390,10 @@ namespace F5IPConfigValidator
 
                             hasAnyMatch = true;
 
-                            // The following properties are not set in ValidateIpString.
-                            record.Environment = envName;
-
                             /*
                              * If the IP string has a parent prefix in this address space,
                              * then check if its environment should really be in it.
+                             *
                              * */
 
                             if (record.Status != ValidationStatus.MultipleMatches &&
@@ -401,23 +408,24 @@ namespace F5IPConfigValidator
                                         ValidationStatus.WrongAddressSpace,
                                         $"Should be in address space {mappedSpaceName}")
                                     {
+                                        Id = record.Id,
                                         AddressSpace = record.AddressSpace,
                                         Environment = record.Environment,
                                         Forest = record.Forest,
                                         EopDcName = record.EopDcName,
-                                        Id = record.Id,
                                         Prefix = record.Prefix,
+                                        IpString = ipString_,
                                         IpamDcName = record.IpamDcName,
                                         Region = record.Region,
                                         Title = record.Title,
                                     };
-                                    DumpValidationRecord(wrongSpaceRecord, envName, ipString_);
+                                    DumpValidationRecord(wrongSpaceRecord);
                                 }
                             }
 
                             if (record.Status != ValidationStatus.Success)
                             {
-                                DumpValidationRecord(record, envName, ipString_);
+                                DumpValidationRecord(record);
                             }
                         }
                         catch (Exception ex)
@@ -431,9 +439,11 @@ namespace F5IPConfigValidator
                         var noMatchRecord = new ValidationRecord(ValidationStatus.NoMatch)
                         {
                             Forest = forestName,
-                            EopDcName = eopDcName
+                            EopDcName = eopDcName,
+                            Environment = envName,
+                            IpString = ipString_,
                         };
-                        DumpValidationRecord(noMatchRecord, envName, ipString_);
+                        DumpValidationRecord(noMatchRecord);
                     }
                 }
             }
@@ -460,9 +470,9 @@ namespace F5IPConfigValidator
             }
         }
 
-        private void DumpValidationRecord(ValidationRecord record, string envName, string ipString)
+        private void DumpValidationRecord(ValidationRecord record)
         {
-            WriteLine($"{record.AddressSpace},,{envName},{record.Forest},{record.EopDcName},{ipString},{record.Prefix},{record.IpamDcName},{record.Region.ToCsvValue()},{record.Status},{record.Summary.ToCsvValue()},{record.Title.ToCsvValue()},{record.Id}");
+            WriteLine($"{record.AddressSpace},,{record.Environment},{record.Forest},{record.EopDcName},{record.IpString},{record.Prefix},{record.IpamDcName},{record.Region.ToCsvValue()},{record.Status},{record.Summary.ToCsvValue()},{record.Title.ToCsvValue()},{record.Id}");
         }
 
         private async Task<ValidationRecord> ValidateIpString(
@@ -471,6 +481,7 @@ namespace F5IPConfigValidator
             string eopDcName,
             string ipString)
         {
+            var envName = $"{forestName}-{eopDcName}".ToUpper();
             var queryModel = AllocationQueryModel.Create(addressSpaceIdMap[addressSpace], ipString);
             queryModel.ReturnParentWhenNotFound = !ipString.Contains('/');
             queryModel.MaxResults = 1000;
@@ -500,6 +511,8 @@ namespace F5IPConfigValidator
                     AddressSpace = addressSpace,
                     Forest = forestName,
                     EopDcName = eopDcName,
+                    Environment = envName,
+                    IpString = ipString,
                 };
             }
 
@@ -517,11 +530,13 @@ namespace F5IPConfigValidator
 
             var validationRecord = new ValidationRecord(ValidationStatus.Unknown)
             {
+                Id = parent.Id,
                 AddressSpace = addressSpace,
+                Environment = envName,
                 Forest = forestName,
                 EopDcName = eopDcName,
-                Id = parent.Id,
                 Prefix = prefix,
+                IpString = ipString,
                 IpamDcName = ipamDcName,
                 Region = region,
                 Title = title,
@@ -583,6 +598,7 @@ namespace F5IPConfigValidator
                 :
                 null;
 
+            // Test if datacenter name matches any of EOP/mapped/normalized names.
             if (!(
                 ipamDcName.IsSameTextAs(eopDcName) ||
                 ipamDcName.IsSameTextAs(azureDcName) ||
@@ -590,13 +606,23 @@ namespace F5IPConfigValidator
                 normalizedDcName.IsSameTextAs(azureDcName)
                 ))
             {
-                validationRecord.Status = ValidationStatus.MismatchedDcName;
-                validationRecord.Summary = azureDcName == null || azureDcName.IsSameTextAs(eopDcName)
-                    ?
-                    $"Datacenter {ipamDcName} does not match EOP name {eopDcName}"
-                    :
-                    $"Datacenter {ipamDcName} does not match EOP name {eopDcName} or mapped Azure name {azureDcName}";
-                return validationRecord;
+                // If not, check if this environment has an exception datacenter name.
+                var exNameMatch = false;
+                if (dcNameExceptionMap.TryGetValue(envName, out var dcExName))
+                {
+                    exNameMatch = ipamDcName.IsSameTextAs(dcExName);
+                }
+
+                if (!exNameMatch)
+                {
+                    validationRecord.Status = ValidationStatus.MismatchedDcName;
+                    validationRecord.Summary = azureDcName == null || azureDcName.IsSameTextAs(eopDcName)
+                        ?
+                        $"Datacenter {ipamDcName} does not match EOP name {eopDcName}"
+                        :
+                        $"Datacenter {ipamDcName} does not match EOP name {eopDcName} or mapped Azure name {azureDcName}";
+                    return validationRecord;
+                }
             }
 
             /*
@@ -607,10 +633,11 @@ namespace F5IPConfigValidator
              * */
 
             var dcNameMap = new StringMap();
-            Func<string, bool> dcNameMapcontains = (name_) =>
-                !string.IsNullOrEmpty(name_) &&
-                    dcNameMap.Values.Any((dcName_) => dcName_.IsSameTextAs(name_));
-
+            Func<string, bool?> dcNameMapcontains = (name_) =>
+            {
+                if (string.IsNullOrEmpty(name_)) return null;
+                return dcNameMap.Values.Any((dcName_) => dcName_.IsSameTextAs(name_));
+            };
 
             dcNameMap["datacenter"] = ipamDcName;
             if (dcNameMapcontains(eopDcName) == false)

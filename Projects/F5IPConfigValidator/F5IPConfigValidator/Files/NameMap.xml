@@ -195,6 +195,8 @@
     <DCName EOPName="YTB" AzureName="YTO21" />
     <DCName EOPName="ZR0" AzureName="ZRH20" />
     <DCName EOPName="ZRA" AzureName="ZRH20" />
+    <!-- Tentative mappings -->
+    <DCName EOPName="MNZ" AzureName="MNZ21" />
   </DCNames>
   <ForestAliases>
     <!--
@@ -216,4 +218,11 @@
   <ExclusionList>
     <IPString StartsWith="10.250.,10.192.,10.193.,10.194.,10.195.,10.196.,10.197.,10.198.,10.199." />
   </ExclusionList>
+  <!-- Exception Rules (they do not follow normal logics) -->
+  <DCNameExceptions>
+    <Exception Environment="APC01-HKA" AzureDCName="HK2" />
+    <Exception Environment="JPN01-OS2" AzureDCName="OSA20" />
+    <Exception Environment="NOR01-OSA" AzureDCName="OSL20" />
+    <Exception Environment="GALLATIN-SHA" AzureDCName="SHA02" />
+  </DCNameExceptions>
 </Map>
