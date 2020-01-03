@@ -144,7 +144,9 @@ namespace IpamFix
                     return;
             }
 
+            WriteLine("Loading datacenter maps...");
             LoadDatacenterMaps().Wait();
+            WriteLine("Loading name maps...");
             LoadNameMap();
 
             var cacheList = File.Exists(cacheFileName) ? File.ReadAllLines(cacheFileName) : new string[0];
@@ -185,21 +187,30 @@ namespace IpamFix
 
                     if (record.Status == "InvalidTitle")
                     {
-                        //if (FixInvalidTitle_() == null) break;
+                        if (cmd == Command.FixTitle)
+                        {
+                            //if (FixTitle_() == null) break;
+                        }
                     }
                     else if (record.Status == "EmptyDatacenter")
                     {
-                        //if (FixWrongDatacenter_() == null) ; // break;
+                        if (cmd == Command.FixEmptyDC)
+                        {
+                            //if (FixWrongDatacenter_() == null) ; // break;
+                        }
                     }
                     else if (record.Status == "MismatchedDcName")
                     {
-                        if (record.Comment == "Valid")
+                        if (cmd == Command.FixWrongDC)
                         {
-                            if (FixWrongDatacenter_() == null) ; // break;
+                            if (record.Comment == "Valid")
+                            {
+                                if (FixDatacenter_() == null) ; // break;
+                            }
                         }
                     }
 
-                    bool? FixInvalidTitle_()
+                    bool? FixTitle_()
                     {
                         if (record.Title.ContainsText("UNKNOWN"))
                         {
@@ -253,7 +264,7 @@ namespace IpamFix
                                 }
                                 catch (Exception ex)
                                 {
-                                    Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
+                                    Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex.Message}");
                                     return null;
                                 }
                             }
@@ -265,7 +276,7 @@ namespace IpamFix
                         return false;
                     }
 
-                    bool? FixWrongDatacenter_()
+                    bool? FixDatacenter_()
                     {
                         try
                         {
@@ -282,7 +293,7 @@ namespace IpamFix
                         }
                         catch (Exception ex)
                         {
-                            Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
+                            Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex.Message}");
                             return null;
                         }
                     }
