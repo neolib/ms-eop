@@ -1,9 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Text.RegularExpressions;
+
 
 namespace Testbed.UnitTests
 {
@@ -18,26 +16,25 @@ namespace Testbed.UnitTests
         {
             for (int i = 0; i < 10; i++)
             {
-                var i2 = 1234;
-                Func<int, int> func = (i_) =>
+                Func<int> func = () =>
                 {
-                    return i + i_;
+                    return i;
                 };
 
-                WriteLine(func(i2));
+                WriteLine(func());
             }
         }
 
         public void TestLocalFunc2()
         {
             var list = new List<int>();
-            Func<int, bool> containsFunc = (i_) => list.Contains(i_);
+            Func<int, bool> fnContains = (i_) => list.Contains(i_);
 
             list.Add(1);
             list.Add(2);
             list.Add(3);
 
-            Assert.IsTrue(containsFunc(1));
+            Assert.IsTrue(fnContains(1));
         }
 
         [TestMethod]

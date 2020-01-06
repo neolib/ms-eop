@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.DesignerServices;
 using System.Threading.Tasks;
 
 namespace Testbed.UnitTests
@@ -27,7 +26,7 @@ namespace Testbed.UnitTests
                 var tasks = new List<Task>();
                 for (int i = 1; i < 10; i++)
                 {
-                    tasks.Add(DoWork_($"Worker_{i}"));
+                    tasks.Add(DoWork_($"Worker#{i}"));
                 }
                 Task.WaitAll(tasks.ToArray());
                 WriteLine("All workers are done!");
@@ -36,9 +35,9 @@ namespace Testbed.UnitTests
             async Task DoWork_(string name_)
             {
                 var delay = r.Next(100, 2000);
-                WriteLine($"Worker {name_} will complete in {delay} ms...");
+                WriteLine($"{name_} will complete in {delay} ms...");
                 await Task.Delay(delay);
-                WriteLine($"Worker {name_} completed");
+                WriteLine($"{name_} completed");
             }
         }
 
@@ -52,20 +51,36 @@ namespace Testbed.UnitTests
                 list.Add(new Item("item" + i, "tag" + i));
             }
 
+            var rng = new Random();
             var tasks = new List<Task>();
+
+            int GetDelay_()
+            {
+                lock (rng)
+                {
+                    return rng.Next(100, 333);
+                }
+            }
+
             foreach (var item in list)
             {
                 tasks.Add(Test_());
 
                 async Task Test_()
                 {
-                    await Task.Delay(100);
-                    WriteLine($"{item.name},{item.tag}");
-                    item.tag = "updated!";
+                    await Task.Delay(GetDelay_());
+                    WriteLine($"{item.name}={item.tag}");
+                    item.tag = "updated @" + DateTime.Now.ToString("ss.fff");
                 }
             }
 
             Task.WaitAll(tasks.ToArray());
+
+            WriteLine("***");
+            foreach (var item in list)
+            {
+                WriteLine($"{item.name}={item.tag}");
+            }
         }
 
         [TestMethod]
