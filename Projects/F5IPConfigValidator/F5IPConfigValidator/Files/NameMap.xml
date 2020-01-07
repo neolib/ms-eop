@@ -224,4 +224,9 @@
     <Exception Environment="NOR01-OSA" AzureDCName="OSL20" />
     <Exception Environment="GALLATIN-SHA" AzureDCName="SHA02" />
   </DCNameExceptions>
+  <TitleWordingIssues>
+    <Contains Text="unknown" />
+    <Contains Text="??" />
+    <Pattern Text="\b(temp|test)\b" />
+  </TitleWordingIssues>
 </Map>

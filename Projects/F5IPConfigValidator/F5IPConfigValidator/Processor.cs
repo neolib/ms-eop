@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -14,7 +15,6 @@ namespace F5IPConfigValidator
     using StringList = List<string>;
     using StringMap = Dictionary<string, string>;
     using StringListMap = Dictionary<string, List<string>>;
-    using System.Diagnostics;
 
     #region Classes
 
@@ -33,6 +33,7 @@ namespace F5IPConfigValidator
         MismatchedDcName,   // Azure name does not match EOP name
         InvalidTitle,       // No datacenter/forest name in title
         InvalidRegion,
+        DubiousTitle,       // Title has dubious words
     }
 
     public class ValidationRecord
@@ -78,6 +79,8 @@ namespace F5IPConfigValidator
         private StringListMap azureNameMap = new StringListMap();
         private StringList ipStringExclusionList = new StringList();
         private Dictionary<string, StringMap> regionMaps = new Dictionary<string, StringMap>();
+        private Dictionary<string, Regex> dubiousTitlePatterns = new Dictionary<string, Regex>();
+        private StringList dubiousTitleWords = new StringList();
 
         private StringMap addressSpaceIdMap = new StringMap {
             { "Default", SpecialAddressSpaces.DefaultAddressSpaceId },
@@ -162,6 +165,25 @@ namespace F5IPConfigValidator
                     foreach (var value in values.SplitWithoutEmpty(FieldSeparatorChars))
                     {
                         ipStringExclusionList.Add(value);
+                    }
+                }
+
+                foreach (var node in mapDoc.Root.Element("TitleWordingIssues").Elements())
+                {
+                    if (node.Name == "Contains")
+                    {
+                        dubiousTitleWords.Add(node.Attribute("Text").Value);
+                    }
+                    else if (node.Name == "Pattern")
+                    {
+                        var text = node.Attribute("Text").Value;
+                        dubiousTitlePatterns[text] = (new Regex(
+                            text,
+                            RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Singleline));
+                    }
+                    else
+                    {
+                        Error.WriteLine($"Invalid node name {node.Name} in TitleWordingIssues");
                     }
                 }
             }
@@ -789,11 +811,28 @@ namespace F5IPConfigValidator
                 }
             }
 
-            if (title.ContainsText("unknown"))
+            /*
+             * Check for wording issues in title.
+             *
+             * */
+
+            foreach (var word in dubiousTitleWords)
             {
-                validationRecord.Status = ValidationStatus.InvalidTitle;
-                validationRecord.Summary = "Title contains 'UNKNOWN' word";
-                return validationRecord;
+                if (title.ContainsText(word))
+                {
+                    validationRecord.Status = ValidationStatus.DubiousTitle;
+                    validationRecord.Summary = $"Title contains '{word}'";
+                    return validationRecord;
+                }
+            }
+            foreach (var pattern in dubiousTitlePatterns.Keys)
+            {
+                if (dubiousTitlePatterns[pattern].IsMatch(title))
+                {
+                    validationRecord.Status = ValidationStatus.DubiousTitle;
+                    validationRecord.Summary = $"Title matches pattern '{pattern}'";
+                    return validationRecord;
+                }
             }
 
             validationRecord.Status = ValidationStatus.Success;
