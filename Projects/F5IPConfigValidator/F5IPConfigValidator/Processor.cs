@@ -601,6 +601,13 @@ namespace F5IPConfigValidator
                 }
             }
 
+            if (string.IsNullOrWhiteSpace(ipamDcName))
+            {
+                validationRecord.Status = ValidationStatus.EmptyDatacenter;
+                validationRecord.Summary = "Datacenter should not be empty";
+                return validationRecord;
+            }
+
             if (string.IsNullOrWhiteSpace(title))
             {
                 if (!isIPv6 && prefixNumber == 32)
@@ -613,14 +620,6 @@ namespace F5IPConfigValidator
                 validationRecord.Status = ValidationStatus.EmptyTitle;
                 validationRecord.Summary = "Title should not be empty";
                 return validationRecord;
-            }
-
-            if (string.IsNullOrWhiteSpace(ipamDcName))
-            {
-                validationRecord.Status = ValidationStatus.EmptyDatacenter;
-                validationRecord.Summary = "Datacenter should not be empty";
-                return validationRecord;
-
             }
 
             var azureDcName = GetAzureDcName(eopDcName);
