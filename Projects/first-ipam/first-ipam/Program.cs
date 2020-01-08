@@ -9,6 +9,7 @@ namespace first_ipam
 {
     using Microsoft.Azure.Ipam.Client;
     using Microsoft.Azure.Ipam.Contracts;
+    using System.Collections.Specialized;
     using static System.Console;
     using StringMap = Dictionary<string, string>;
 
@@ -29,7 +30,22 @@ namespace first_ipam
 
         void Run(string[] args)
         {
-            var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
+            var sectionName = "IpamClientSettings";
+            if (args.Length > 0)
+            {
+                var arg = args[0];
+                if (arg.StartsWith(sectionName))
+                {
+                    sectionName = arg;
+                    var newArgs = new string[args.Length - 1];
+                    Array.Copy(args, 1, newArgs, 0, newArgs.Length);
+                    args = newArgs;
+                }
+            }
+
+            WriteLine($"Using {sectionName}");
+            var settings = ConfigurationManager.GetSection(sectionName) as NameValueCollection;
+            var ipamClientSettings = new IpamClientSettings(settings);
             ipamClient = new IpamClient(ipamClientSettings);
 
             try
@@ -85,6 +101,9 @@ namespace first_ipam
             var queryModel = AllocationQueryModel.Create(addressSpaceId, ipString_);
             queryModel.ReturnParentWhenNotFound = !ipString_.Contains('/');
             queryModel.MaxResults = 1000;
+            // Possible use of RequiredTags:
+            //queryModel.RequiredTags[SpecialTags.Datacenter] = "AM1";
+
             return queryModel;
         }
 
