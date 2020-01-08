@@ -61,6 +61,8 @@ namespace IpamFix
             FixTitle,
             FixEmptyDC,
             FixWrongDC,
+            FixEmptyRegion,
+            FixWrongRegion,
         }
 
         internal IpamClient IpamClient { get; set; }
@@ -75,12 +77,12 @@ namespace IpamFix
         private StringMap datacenterNameMap = new StringMap();
         private Dictionary<string, TagModel> datacenterMaps = new Dictionary<string, TagModel>();
 
-        private async Task LoadDatacenterMaps()
+        private async Task LoadIpamMaps()
         {
             foreach (var entry in addressSpaceIdMap)
             {
-                var tag = await this.IpamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
-                datacenterMaps[entry.Key] = tag;
+                var dcTag = await this.IpamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
+                datacenterMaps[entry.Key] = dcTag;
             }
         }
 
@@ -135,7 +137,12 @@ namespace IpamFix
                     break;
                 case Command.FixEmptyDC:
                 case Command.FixWrongDC:
-                    headerText = $"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameId}";
+                    headerText = $"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},New Datacenter,{NameId}";
+                    break;
+
+                case Command.FixEmptyRegion:
+                case Command.FixWrongRegion:
+                    headerText = $"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},New Region,{NameId}";
                     break;
 
                 default:
@@ -144,8 +151,8 @@ namespace IpamFix
                     return;
             }
 
-            WriteLine("Loading datacenter maps...");
-            LoadDatacenterMaps().Wait();
+            WriteLine("Loading IPAM maps...");
+            LoadIpamMaps().Wait();
             WriteLine("Loading name maps...");
             LoadNameMap();
 
@@ -205,8 +212,15 @@ namespace IpamFix
                         {
                             if (record.Comment == "Valid")
                             {
-                                if (FixDatacenter_() == null) ; // break;
+                                //if (FixDatacenter_() == null) ; // break;
                             }
+                        }
+                    }
+                    else if (record.Status == "EmptyRegion")
+                    {
+                        if (cmd == Command.FixEmptyRegion && record.IpamDcName == "PUS01")
+                        {
+                            if (FixRegion_() == null) ; // break;
                         }
                     }
 
@@ -284,7 +298,29 @@ namespace IpamFix
                             if (newDcName != null)
                             {
                                 changedCount++;
-                                var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{newDcName},{record.Region},{record.Id}";
+                                var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{newDcName},{record.Id}";
+
+                                WriteLine($"{changedCount} {logLine}");
+                                cacheFileWriter.WriteLine(logLine);
+                            }
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex.Message}");
+                            return null;
+                        }
+                    }
+
+                    bool? FixRegion_()
+                    {
+                        try
+                        {
+                            var newRegion = UpdateRegion(record.AddressSpace, record.Prefix, record.Id, record.IpamDcName).Result;
+                            if (newRegion != null)
+                            {
+                                changedCount++;
+                                var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{newRegion},{record.Id}";
 
                                 WriteLine($"{changedCount} {logLine}");
                                 cacheFileWriter.WriteLine(logLine);
@@ -357,6 +393,27 @@ namespace IpamFix
                 allocation.Tags[SpecialTags.Datacenter] = newDcName;
                 await IpamClient.PatchAllocationTagsV2Async(allocation);
                 return newDcName;
+            }
+            return null;
+        }
+
+        async Task<string> UpdateRegion(string addressSpace, string prefix, string prefixId, string ipamDcName)
+        {
+            var regionMap = datacenterMaps[addressSpace].ImpliedTags[SpecialTags.Region];
+            if (!regionMap.TryGetValue(ipamDcName, out var region))
+            {
+                WriteLine($"Datacenter {ipamDcName} has no region mapping");
+                if (ipamDcName == "PUS01") region = "Korea South 2";
+                else return null;
+            }
+
+            var allocation = await QueryIpam(addressSpace, prefix, prefixId);
+            if (allocation != null)
+            {
+                allocation.Tags.Clear();
+                allocation.Tags[SpecialTags.Region] = region;
+                await IpamClient.PatchAllocationTagsV2Async(allocation);
+                return region;
             }
             return null;
         }
