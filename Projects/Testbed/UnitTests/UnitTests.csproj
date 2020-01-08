@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncTests.cs" />
+    <Compile Include="LanguageTests.cs" />
     <Compile Include="LocalFuncTests.cs" />
     <Compile Include="Temp.cs" />
     <Compile Include="XDocumentTests.cs" />
