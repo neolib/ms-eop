@@ -188,7 +188,7 @@ namespace F5IPConfigValidator
                 }
             }
 
-            // Build reverse Azure name map out of datacenter nam map.
+            // Build reverse Azure name map out of datacenter name map.
             foreach (var entry in dcNameMap)
             {
                 if (!azureNameMap.TryGetValue(entry.Value, out var list))
@@ -242,7 +242,7 @@ namespace F5IPConfigValidator
             return null;
         }
 
-        private StringList GetAzureReversedNames(string azureName)
+        private StringList GetEopNames(string azureName)
         {
             if (azureNameMap.TryGetValue(azureName.ToUpper(), out var list))
             { return list; }
@@ -746,39 +746,42 @@ namespace F5IPConfigValidator
 
             /*
              * I'm not sure if this is helpful but I do observe some titles
-             * contain reversed datacenter name by Azure name.
+             * contain EOP datacenter name by Azure name.
              *
              * */
 
             if (!containsDcName)
             {
-                var dcNameList = GetAzureReversedNames(ipamDcName);
-                foreach (var name in dcNameList)
+                var dcNameList = GetEopNames(ipamDcName);
+                if (dcNameList != null)
                 {
-                    if (title.ContainsText(name))
+                    foreach (var name in dcNameList)
                     {
-                        containsDcName = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!containsDcName)
-            {
-                // It's a little tricky to get a useful description...
-                var summaryBuilder = new StringBuilder();
-                summaryBuilder.AppendFormat("Title does not contain datacenter name {0}", ipamDcName);
-                foreach (var entry in dcNameMap)
-                {
-                    if (entry.Key != "datacenter")
-                    {
-                        summaryBuilder.AppendFormat(" or {0} name {1}", entry.Key, entry.Value);
+                        if (title.ContainsText(name))
+                        {
+                            containsDcName = true;
+                            break;
+                        }
                     }
                 }
 
-                validationRecord.Status = ValidationStatus.InvalidTitle;
-                validationRecord.Summary = summaryBuilder.ToString();
-                return validationRecord;
+                if (!containsDcName)
+                {
+                    // It's a little tricky to get a useful description...
+                    var summaryBuilder = new StringBuilder();
+                    summaryBuilder.AppendFormat("Title does not contain datacenter name {0}", ipamDcName);
+                    foreach (var entry in dcNameMap)
+                    {
+                        if (entry.Key != "datacenter")
+                        {
+                            summaryBuilder.AppendFormat(" or {0} name {1}", entry.Key, entry.Value);
+                        }
+                    }
+
+                    validationRecord.Status = ValidationStatus.InvalidTitle;
+                    validationRecord.Summary = summaryBuilder.ToString();
+                    return validationRecord;
+                }
             }
 
             if (!title.ContainsText(forestName))
@@ -821,7 +824,7 @@ namespace F5IPConfigValidator
                 if (title.ContainsText(word))
                 {
                     validationRecord.Status = ValidationStatus.DubiousTitle;
-                    validationRecord.Summary = $"Title contains '{word}'";
+                    validationRecord.Summary = $"Title contains text '{word}'";
                     return validationRecord;
                 }
             }
