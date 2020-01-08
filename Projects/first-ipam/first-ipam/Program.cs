@@ -20,6 +20,7 @@ namespace first_ipam
             { "EX", SpecialAddressSpaces.EXAddressSpaceId },
             { "RX", SpecialAddressSpaces.RXAddressSpaceId },
             };
+        private IpamClient ipamClient;
 
         static void Main(string[] args)
         {
@@ -29,18 +30,16 @@ namespace first_ipam
         void Run(string[] args)
         {
             var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
-            var ipamClient = new IpamClient(ipamClientSettings);
-            //var addressSpaceId = ipamClientSettings.InitialAddressSpaceId;
+            ipamClient = new IpamClient(ipamClientSettings);
 
             try
             {
-                //QueryArgs_();
-
-                TestUpdateDatacenterTags_().Wait();
-                //DumpDatacenterRegionMap_().Wait();
-                //DumpDatacenterTag_().Wait();
-                //DumpAllSpaceTags_().Wait();
-                //TestUpdateTitleTags_().Wait();
+                QueryArgs(args);
+                //TestUpdateDatacenterTags().Wait();
+                //DumpDatacenterRegionMap().Wait();
+                //DumpDatacenterTag().Wait();
+                //DumpAllSpaceTags().Wait();
+                //TestUpdateTitleTags().Wait();
             }
             catch (Exception ex)
             {
@@ -49,188 +48,187 @@ namespace first_ipam
 
             Error.WriteLine("Hit ENTER to exit...");
             ReadLine();
+        }
 
+        void QueryArgs(string[] args)
+        {
+            var addressSpace = "Default";
 
-            void QueryArgs_()
+            foreach (var arg in args)
             {
-                var addressSpace = "Default";
-
-                foreach (var arg in args)
+                if (!IsIpString(arg))
                 {
-                    if (!IsIpString(arg))
+                    if (addressSpaceIdMap.ContainsKey(arg))
                     {
-                        if (addressSpaceIdMap.ContainsKey(arg))
-                        {
-                            addressSpace = arg;
-                            continue;
-                        }
-                        else
-                        {
-                            WriteLine($"Invalid address space name {arg}");
-                            break;
-                        }
+                        addressSpace = arg;
+                        continue;
                     }
-
-                    Dump_(DoQuery_(addressSpace, arg).Result);
-                }
-            }
-
-            bool IsIpString(string s_)
-            {
-                return s_.Contains(':') || s_.Contains('.');
-            }
-
-            AllocationQueryModel CreateQueryModel_(string addressSpace_, string ipString_)
-            {
-                var addressSpaceId = addressSpaceIdMap[addressSpace_];
-                var queryModel = AllocationQueryModel.Create(addressSpaceId, ipString_);
-                queryModel.ReturnParentWhenNotFound = !ipString_.Contains('/');
-                queryModel.MaxResults = 1000;
-                return queryModel;
-            }
-
-            async Task TestUpdateTitleTags_()
-            {
-                var addressSpace = "Default";
-                var targetPrefix = "207.46.34.207/32";
-                var list = await DoQuery_(addressSpace, targetPrefix); ;
-                Dump_(list);
-
-                var alloc = list.Single();
-                WriteLine($"Updating target: {targetPrefix}");
-                alloc.Tags[SpecialTags.Title] = "ier01.mel01:Lo0 modified by v-chunly on " + DateTime.Now;
-                alloc.Tags[SpecialTags.Description] = "***TEST*** modified by v-chunly on " + DateTime.Now;
-                await ipamClient.UpdateAllocationTagsV2Async(alloc);
-
-                Dump_(await DoQuery_(addressSpace, targetPrefix));
-            }
-
-            async Task TestUpdateDatacenterTags_()
-            {
-                var addressSpace = "Default";
-                var targetPrefix = "10.40.122.0/23";
-                var list = await DoQuery_(addressSpace, targetPrefix); ;
-                Dump_(list);
-
-                var alloc = list.Single();
-                WriteLine($"Updating target: {targetPrefix}");
-                alloc.Tags.Clear();
-                alloc.Tags[SpecialTags.Datacenter] = "AM1";
-                await ipamClient.PatchAllocationTagsV2Async(alloc);
-
-                Dump_(await DoQuery_(addressSpace, targetPrefix));
-            }
-
-            async Task<List<AllocationModel>> DoQuery_(string addressSpace_, string ipString_)
-            {
-                WriteLine($"Querying {ipString_} in {addressSpace_}");
-                var queryModel = CreateQueryModel_(addressSpace_, ipString_);
-                return await ipamClient.QueryAllocationsAsync(queryModel);
-            }
-
-            void Dump_(List<AllocationModel> allocations_)
-            {
-                foreach (var alloc in allocations_)
-                {
-                    WriteLine($"Prefix: {alloc.Prefix}");
-                    WriteLine($"ID: {alloc.Id}");
-                    WriteLine($"ETag: {alloc.ETag}");
-                    WriteLine("Tags:");
-                    foreach (var entry in alloc.Tags)
+                    else
                     {
-                        Console.WriteLine($"  {entry.Key}: {entry.Value}");
+                        WriteLine($"Invalid address space name {arg}");
+                        break;
                     }
-                    WriteLine();
                 }
-            }
 
-            async Task DumpAllSpaceTags_()
-            {
-                WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
-                WriteLine("<AllTags>");
-                foreach (var entry in addressSpaceIdMap)
-                {
-                    WriteLine($"<Space Name=\"{entry.Key}\">");
-
-                    var tags = await ipamClient.GetTagsAsync(entry.Value);
-                    tags.ForEach((tag_) => DumpTag_(tag_));
-
-                    WriteLine("</Space>");
-                }
-                WriteLine("</AllTags>");
-            }
-
-            async Task DumpDatacenterTag_()
-            {
-                WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
-                WriteLine("<Map>");
-                foreach (var entry in addressSpaceIdMap)
-                {
-                    WriteLine($"<Space Name=\"{entry.Key}\">");
-
-                    var tag = await ipamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
-                    DumpTag_(tag);
-                    WriteLine("</Space>");
-                }
-                WriteLine("</Map>");
-            }
-
-            async Task DumpDatacenterRegionMap_()
-            {
-                WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
-                WriteLine("<Map>");
-                foreach (var entry in addressSpaceIdMap)
-                {
-                    WriteLine($"<Space Name=\"{entry.Key}\">");
-
-                    var tag = await ipamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
-
-                    if (tag.ImpliedTags.TryGetValue(SpecialTags.Region, out var regionMap))
-                    {
-                        tag.KnownValues.ForEach((name_) =>
-                        {
-                            if (regionMap.TryGetValue(name_, out var region))
-                            {
-                                WriteLine($"<Item DCName=\"{name_}\" Region=\"{Xmlize_(region)}\" />");
-                            }
-                            else
-                            {
-                                Error.WriteLine($"{name_}=???");
-                            }
-                        });
-                    }
-
-                    WriteLine("</Space>");
-                }
-                WriteLine("</Map>");
-            }
-
-            void DumpTag_(TagModel tag_)
-            {
-                WriteLine($"<Tag Name=\"{tag_.Name}\">");
-                WriteLine("<KnownValues>");
-                foreach (var value in tag_.KnownValues)
-                {
-                    WriteLine($"<Value>{Xmlize_(value)}</Value>");
-                }
-                WriteLine("</KnownValues>");
-
-                WriteLine("<ImpliedTags>");
-                foreach (var tagEntry in tag_.ImpliedTags)
-                {
-                    WriteLine($"<ImpliedTag Name=\"{tagEntry.Key}\">");
-                    foreach (var entry in tagEntry.Value)
-                    {
-                        WriteLine($"<Item Name=\"{entry.Key}\" Value=\"{Xmlize_(entry.Value)}\" />");
-                    }
-                    WriteLine($"</ImpliedTag>");
-                }
-                WriteLine("</ImpliedTags>");
-                WriteLine("</Tag>");
+                Dump(DoQuery(addressSpace, arg).Result);
             }
         }
 
-        static string Xmlize_(string text_)
+        bool IsIpString(string s_)
+        {
+            return s_.Contains(':') || s_.Contains('.');
+        }
+
+        AllocationQueryModel CreateQueryModel(string addressSpace_, string ipString_)
+        {
+            var addressSpaceId = addressSpaceIdMap[addressSpace_];
+            var queryModel = AllocationQueryModel.Create(addressSpaceId, ipString_);
+            queryModel.ReturnParentWhenNotFound = !ipString_.Contains('/');
+            queryModel.MaxResults = 1000;
+            return queryModel;
+        }
+
+        async Task TestUpdateTitleTags()
+        {
+            var addressSpace = "Default";
+            var targetPrefix = "207.46.34.207/32";
+            var list = await DoQuery(addressSpace, targetPrefix); ;
+            Dump(list);
+
+            var alloc = list.Single();
+            WriteLine($"Updating target: {targetPrefix}");
+            alloc.Tags[SpecialTags.Title] = "ier01.mel01:Lo0 modified by v-chunly on " + DateTime.Now;
+            alloc.Tags[SpecialTags.Description] = "***TEST*** modified by v-chunly on " + DateTime.Now;
+            await ipamClient.UpdateAllocationTagsV2Async(alloc);
+
+            Dump(await DoQuery(addressSpace, targetPrefix));
+        }
+
+        async Task TestUpdateDatacenterTags()
+        {
+            var addressSpace = "Default";
+            var targetPrefix = "10.40.122.0/23";
+            var list = await DoQuery(addressSpace, targetPrefix); ;
+            Dump(list);
+
+            var alloc = list.Single();
+            WriteLine($"Updating target: {targetPrefix}");
+            alloc.Tags.Clear();
+            alloc.Tags[SpecialTags.Datacenter] = "CYG01";
+            await ipamClient.PatchAllocationTagsV2Async(alloc);
+
+            Dump(await DoQuery(addressSpace, targetPrefix));
+        }
+
+        async Task<List<AllocationModel>> DoQuery(string addressSpace_, string ipString_)
+        {
+            WriteLine($"Querying {ipString_} in {addressSpace_}");
+            var queryModel = CreateQueryModel(addressSpace_, ipString_);
+            return await ipamClient.QueryAllocationsAsync(queryModel);
+        }
+
+        void Dump(List<AllocationModel> allocations_)
+        {
+            foreach (var alloc in allocations_)
+            {
+                WriteLine($"Prefix: {alloc.Prefix}");
+                WriteLine($"ID: {alloc.Id}");
+                WriteLine($"ETag: {alloc.ETag}");
+                WriteLine("Tags:");
+                foreach (var entry in alloc.Tags)
+                {
+                    Console.WriteLine($"  {entry.Key}: {entry.Value}");
+                }
+                WriteLine();
+            }
+        }
+
+        async Task DumpAllSpaceTags()
+        {
+            WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
+            WriteLine("<AllTags>");
+            foreach (var entry in addressSpaceIdMap)
+            {
+                WriteLine($"<Space Name=\"{entry.Key}\">");
+
+                var tags = await ipamClient.GetTagsAsync(entry.Value);
+                tags.ForEach((tag_) => DumpTag(tag_));
+
+                WriteLine("</Space>");
+            }
+            WriteLine("</AllTags>");
+        }
+
+        async Task DumpDatacenterTag()
+        {
+            WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
+            WriteLine("<Map>");
+            foreach (var entry in addressSpaceIdMap)
+            {
+                WriteLine($"<Space Name=\"{entry.Key}\">");
+
+                var tag = await ipamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
+                DumpTag(tag);
+                WriteLine("</Space>");
+            }
+            WriteLine("</Map>");
+        }
+
+        async Task DumpDatacenterRegionMap()
+        {
+            WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
+            WriteLine("<Map>");
+            foreach (var entry in addressSpaceIdMap)
+            {
+                WriteLine($"<Space Name=\"{entry.Key}\">");
+
+                var tag = await ipamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
+
+                if (tag.ImpliedTags.TryGetValue(SpecialTags.Region, out var regionMap))
+                {
+                    tag.KnownValues.ForEach((name_) =>
+                    {
+                        if (regionMap.TryGetValue(name_, out var region))
+                        {
+                            WriteLine($"<Item DCName=\"{name_}\" Region=\"{Xmlize(region)}\" />");
+                        }
+                        else
+                        {
+                            Error.WriteLine($"{name_}=???");
+                        }
+                    });
+                }
+
+                WriteLine("</Space>");
+            }
+            WriteLine("</Map>");
+        }
+
+        void DumpTag(TagModel tag_)
+        {
+            WriteLine($"<Tag Name=\"{tag_.Name}\">");
+            WriteLine("<KnownValues>");
+            foreach (var value in tag_.KnownValues)
+            {
+                WriteLine($"<Value>{Xmlize(value)}</Value>");
+            }
+            WriteLine("</KnownValues>");
+
+            WriteLine("<ImpliedTags>");
+            foreach (var tagEntry in tag_.ImpliedTags)
+            {
+                WriteLine($"<ImpliedTag Name=\"{tagEntry.Key}\">");
+                foreach (var entry in tagEntry.Value)
+                {
+                    WriteLine($"<Item Name=\"{entry.Key}\" Value=\"{Xmlize(entry.Value)}\" />");
+                }
+                WriteLine($"</ImpliedTag>");
+            }
+            WriteLine("</ImpliedTags>");
+            WriteLine("</Tag>");
+        }
+
+        static string Xmlize(string text_)
         {
             return text_?.Replace(">", "&gt;")
                 .Replace("<", "&lt;")
