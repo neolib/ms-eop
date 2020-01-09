@@ -196,7 +196,7 @@ namespace IpamFix
                     {
                         if (cmd == Command.FixTitle)
                         {
-                            //if (FixTitle_() == null) break;
+                            if (FixTitle_() == null) break;
                         }
                     }
                     else if (record.Status == "EmptyDatacenter")
@@ -220,73 +220,77 @@ namespace IpamFix
                     {
                         if (cmd == Command.FixEmptyRegion && record.IpamDcName == "PUS01")
                         {
-                            if (FixRegion_() == null) ; // break;
+                            //if (FixRegion_() == null) ; // break;
                         }
                     }
 
                     bool? FixTitle_()
                     {
-                        if (record.Title.ContainsText("UNKNOWN"))
+                        string newTitle = null;
+
+                        if (record.Title == "Load from BGPL")
                         {
-                            WriteLine($"Skipping UNKNOWN title: {record.AddressSpace},{record.Prefix},{record.Title}");
-                            return false;
-                        }
-
-                        var match = titleRegex.Match(record.Title);
-                        if (match.Success)
-                        {
-                            var headGroup = match.Groups["h"];
-                            var forestGroup = match.Groups["f"];
-                            var dcGroup = match.Groups["d"];
-                            var tailGroup = match.Groups["t"];
-                            string newTitle = null;
-
-                            if (record.Summary.Contains("not contain forest name"))
-                            {
-                                newTitle = titleRegex.Replace(record.Title, (match_) =>
-                                    $"{headGroup.Value}{record.Forest}-{dcGroup.Value}{tailGroup.Value}");
-                            }
-                            else if (record.Summary.Contains("not contain datacenter name"))
-                            {
-                                if (string.Compare(forestGroup.Value, record.Forest, true) != 0)
-                                {
-                                    // Title contains no forest name, need to replace forest part as well
-                                    newTitle = titleRegex.Replace(record.Title, (match_) =>
-                                        $"{headGroup.Value}{record.Forest}-{record.EopDcName}{tailGroup.Value}");
-                                }
-                                else
-                                {
-                                    // Need only to replace datacenter part
-                                    newTitle = titleRegex.Replace(record.Title, (match_) =>
-                                        $"{headGroup.Value}{forestGroup.Value}-{record.EopDcName}{tailGroup.Value}");
-                                }
-                            }
-
-                            if (newTitle != null)
-                            {
-                                try
-                                {
-                                    if (UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Result)
-                                    {
-                                        changedCount++;
-                                        var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
-
-                                        WriteLine($"{changedCount} {logLine}");
-                                        cacheFileWriter.WriteLine(logLine);
-                                    }
-                                    return true;
-                                }
-                                catch (Exception ex)
-                                {
-                                    Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex.Message}");
-                                    return null;
-                                }
-                            }
+                            var ipVersion = record.Prefix.Contains(':') ? "IPv6" : "IPv4";
+                            newTitle = $"EOP: {record.Forest} - {record.EopDcName} {ipVersion}_BGPL";
                         }
                         else
                         {
-                            WriteLine($"InvalidTitle pattern match failed: {record.AddressSpace},{record.Prefix},{record.Title}");
+                            var match = titleRegex.Match(record.Title);
+                            if (match.Success)
+                            {
+                                var headGroup = match.Groups["h"];
+                                var forestGroup = match.Groups["f"];
+                                var dcGroup = match.Groups["d"];
+                                var tailGroup = match.Groups["t"];
+
+                                if (record.Summary.Contains("not contain forest name"))
+                                {
+                                    newTitle = titleRegex.Replace(record.Title, (match_) =>
+                                        $"{headGroup.Value}{record.Forest}-{dcGroup.Value}{tailGroup.Value}");
+                                }
+                                else if (record.Summary.Contains("not contain datacenter name"))
+                                {
+                                    if (string.Compare(forestGroup.Value, record.Forest, true) != 0)
+                                    {
+                                        // Title contains no forest name, need to replace forest part as well
+                                        newTitle = titleRegex.Replace(record.Title, (match_) =>
+                                            $"{headGroup.Value}{record.Forest}-{record.EopDcName}{tailGroup.Value}");
+                                    }
+                                    else
+                                    {
+                                        // Need only to replace datacenter part
+                                        newTitle = titleRegex.Replace(record.Title, (match_) =>
+                                            $"{headGroup.Value}{forestGroup.Value}-{record.EopDcName}{tailGroup.Value}");
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                WriteLine($"InvalidTitle pattern match failed: {record.AddressSpace},{record.Prefix},{record.Title}");
+                            }
                         }
+
+                        if (newTitle != null)
+                        {
+                            try
+                            {
+                                if (UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Result)
+                                {
+                                    changedCount++;
+                                    var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
+
+                                    WriteLine($"{changedCount} {logLine}");
+                                    cacheFileWriter.WriteLine(logLine);
+                                }
+                                return true;
+                            }
+                            catch (Exception ex)
+                            {
+                                Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex.Message}");
+                                return null;
+                            }
+                        }
+
                         return false;
                     }
 
