@@ -65,11 +65,12 @@ namespace F5IPConfigValidator
 
     class Processor
     {
-        private static char[] FieldSeparatorChars = new[] { ',', ' ' };
+        private static readonly char[] FieldSeparatorChars = new[] { ',', ' ' };
 
         internal IpamClient IpamClient { get; set; }
         private List<string> ipHotList = new List<string>();
         private List<string> prefixIdList = new List<string>();
+
         private StringMap dcNameMap = new StringMap();
         private StringMap suffixNameMap = new StringMap();
         private StringMap forestNameMap = new StringMap();
@@ -177,9 +178,9 @@ namespace F5IPConfigValidator
                     else if (node.Name == "Pattern")
                     {
                         var text = node.Attribute("Text").Value;
-                        dubiousTitlePatterns[text] = (new Regex(
+                        dubiousTitlePatterns[text] = new Regex(
                             text,
-                            RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Singleline));
+                            RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture | RegexOptions.Singleline);
                     }
                     else
                     {
@@ -188,7 +189,13 @@ namespace F5IPConfigValidator
                 }
             }
 
-            // Build reverse Azure name map out of datacenter name map.
+            /*
+             * Build reverse Azure name map out of datacenter name map.
+             *
+             * EOP to Azure mapping is one/many to one, but Azure to EOP is one to many.
+             *
+             * */
+
             foreach (var entry in dcNameMap)
             {
                 if (!azureNameMap.TryGetValue(entry.Value, out var list))
@@ -799,7 +806,6 @@ namespace F5IPConfigValidator
                             break;
                         }
                     }
-
                 }
 
                 if (!containsAlias)

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
+<!--
+All forest/datacener/Azure names must be in uppercase!
+-->
 <Map>
-  <!-- All names must be in uppercase! -->
-
   <DCNames>
     <DCName EOPName="AM1" AzureName="AM1" />
     <DCName EOPName="AMS" AzureName="AM1" />
