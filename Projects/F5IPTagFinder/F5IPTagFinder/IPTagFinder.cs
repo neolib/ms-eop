@@ -12,25 +12,27 @@ namespace F5Automation
 {
     public class IPTagFinder
     {
-        public const string IPv4Pattern = @"(?:\d+\.\d+\.\d+\.\d+)";
-        public const string IPv4RangePattern = @"(?:\d+\.\d+\.\d+\.\d+/\d+)";
-        public const string IPv6Pattern = @"(?:[1-9a-f][\da-f]*)(?::(?:[\da-f]+)*)+";
-        public const string IPv6RangePattern = @"(?:[1-9a-f][\da-f]*)(?::(?:[\da-f]+)*)+/\d+";
-        public const string SeparatorPattern = @"?:\s*(?:,|\s)\s*";
+        public const string IPv4Pattern = @"(\d+\.\d+\.\d+\.\d+)";
+        public const string IPv4RangePattern = @"(\d+\.\d+\.\d+\.\d+/\d+)";
+        public const string IPv6Pattern = @"([1-9a-f][\da-f]*)(:([\da-f]+)*)+";
+        public const string IPv6RangePattern = @"([1-9a-f][\da-f]*)(:([\da-f]+)*)+/\d+";
+        public const string SeparatorPattern = @"\s*(,|\s)\s*";
 
         public static Regex IPv4Regex = new Regex(
-            $@"^{IPv4Pattern}({SeparatorPattern}{IPv4Pattern})*$");
+            $@"^{IPv4Pattern}({SeparatorPattern}{IPv4Pattern})*$",
+            RegexOptions.ExplicitCapture);
 
         public static Regex IPv4RangeRegex = new Regex(
-            $@"^{IPv4RangePattern}({SeparatorPattern}{IPv4RangePattern})*$");
+            $@"^{IPv4RangePattern}({SeparatorPattern}{IPv4RangePattern})*$",
+            RegexOptions.ExplicitCapture);
 
         public static Regex IPVv6Regex = new Regex(
             $@"^{IPv6Pattern}({SeparatorPattern}{IPv6Pattern})*$",
-            RegexOptions.IgnoreCase);
+            RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
         public static Regex IPv6RangeRegex = new Regex(
             $@"^{IPv6RangePattern}({SeparatorPattern}{IPv6RangePattern})*$",
-            RegexOptions.IgnoreCase);
+            RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
         public static Regex VlanRegex = new Regex(
             $@"^\s*(?<no>\d+)\s+(?<name>\w+)\s+(?<v4>{IPv4RangePattern})(\s+(?<v6>{IPv6RangePattern}))?\s*$",
