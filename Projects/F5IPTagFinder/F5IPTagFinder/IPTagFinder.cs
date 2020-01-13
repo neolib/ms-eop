@@ -14,23 +14,31 @@ namespace F5Automation
     {
         public const string IPv4Pattern = @"(?:\d+\.\d+\.\d+\.\d+)";
         public const string IPv4RangePattern = @"(?:\d+\.\d+\.\d+\.\d+/\d+)";
-        public const string IPV6Pattern = @"(?:[1-9a-f][\da-f]*)(?::(?:[\da-f]+)*)+";
-        public const string IPV6RangePattern = @"(?:[1-9a-f][\da-f]*)(?::(?:[\da-f]+)*)+/\d+";
+        public const string IPv6Pattern = @"(?:[1-9a-f][\da-f]*)(?::(?:[\da-f]+)*)+";
+        public const string IPv6RangePattern = @"(?:[1-9a-f][\da-f]*)(?::(?:[\da-f]+)*)+/\d+";
         public const string SeparatorPattern = @"?:\s*(?:,|\s)\s*";
 
-        public static Regex ipv4Regex = new Regex(
+        public static Regex IPv4Regex = new Regex(
             $@"^{IPv4Pattern}({SeparatorPattern}{IPv4Pattern})*$");
 
-        public static Regex ipv4RangeRegex = new Regex(
+        public static Regex IPv4RangeRegex = new Regex(
             $@"^{IPv4RangePattern}({SeparatorPattern}{IPv4RangePattern})*$");
 
-        public static Regex ipv6Regex = new Regex(
-            $@"^{IPV6Pattern}({SeparatorPattern}{IPV6Pattern})*$",
+        public static Regex IPVv6Regex = new Regex(
+            $@"^{IPv6Pattern}({SeparatorPattern}{IPv6Pattern})*$",
             RegexOptions.IgnoreCase);
 
-        public static Regex ipv6RangeRegex = new Regex(
-            $@"^{IPV6RangePattern}({SeparatorPattern}{IPV6RangePattern})*$",
+        public static Regex IPv6RangeRegex = new Regex(
+            $@"^{IPv6RangePattern}({SeparatorPattern}{IPv6RangePattern})*$",
             RegexOptions.IgnoreCase);
+
+        public static Regex VlanRegex = new Regex(
+            $@"^\s*(?<no>\d+)\s+(?<name>\w+)\s+(?<v4>{IPv4RangePattern})(\s+(?<v6>{IPv6RangePattern}))?\s*$",
+            RegexOptions.Multiline | RegexOptions.ExplicitCapture);
+
+        public static Regex VlanRegex2 = new Regex(
+            $@"^\s*(?<name>([a-z]+(\s+[a-z]+)?)|(\d+(/\d+)?))\s+(\-\s+)?((?<v4>({IPv4Pattern})|({IPv4RangePattern}))|(?<v6>({IPv6Pattern})|({IPv6RangePattern})))\s*$",
+            RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
         List<XAttribute> tagNames = new List<XAttribute>();
 
@@ -41,7 +49,7 @@ namespace F5Automation
             return 0;
         }
 
-        void Process(string dir)
+        private void Process(string dir)
         {
             WriteLine($"<!-- Target dir: {dir} -->");
             WriteLine("<result>");
@@ -58,11 +66,13 @@ namespace F5Automation
             WriteLine("</result>");
         }
 
-        public void ProcessFile(string filename)
+        private void ProcessFile(string filename)
         {
-            WriteLine($"  <file name=\"{Path.GetFileName(filename)}\">");
+            var barename = Path.GetFileName(filename);
+            WriteLine($"  <file name=\"{barename}\">");
             var xd = XDocument.Load(filename);
             WalkNode_(xd.Root);
+            ExtractVlanInfo_();
             WriteLine("  </file>");
 
             void WalkNode_(XElement node)
@@ -104,7 +114,7 @@ namespace F5Automation
 
             void AddTagName_(XAttribute attr)
             {
-                if (!tagNames.Any((attr_) => 
+                if (!tagNames.Any((attr_) =>
                     attr.Parent.Name == attr_.Parent.Name && attr.Name == attr_.Name)
                     )
                 {
@@ -138,13 +148,48 @@ namespace F5Automation
                 if (s.StartsWith("ffff:ffff:")) return false;
                 if (s.StartsWith("0:")) return false;
 
-                if (ipv4Regex.IsMatch(s)) return true;
-                if (ipv6Regex.IsMatch(s)) return true;
-                if (ipv4RangeRegex.IsMatch(s)) return true;
-                if (ipv6RangeRegex.IsMatch(s)) return true;
+                if (IPv4Regex.IsMatch(s)) return true;
+                if (IPVv6Regex.IsMatch(s)) return true;
+                if (IPv4RangeRegex.IsMatch(s)) return true;
+                if (IPv6RangeRegex.IsMatch(s)) return true;
 
                 return false;
             }
+
+            void ExtractVlanInfo_()
+            {
+                if (xd.Root.FirstNode is XComment comment)
+                {
+                    var matches1 = VlanRegex.Matches(comment.Value);
+                    var matches2 = VlanRegex.Matches(comment.Value);
+
+                    if (matches1.Count > 0 || matches2.Count > 0)
+                    {
+                        WriteLine("    <VLANs>");
+                        foreach (Match match in matches1)
+                        {
+                            Write($"      <VLAN name=\"{match.Groups["name"]}\" no=\"{match.Groups["no"]}\" IPv4=\"{match.Groups["v4"]}\"");
+                            if (match.Groups["v6"].Success)
+                            {
+                                Write($" IPv6=\"{match.Groups["v6"]}\"");
+                            }
+                            WriteLine(" />");
+                        }
+
+                        foreach (Match match in matches2)
+                        {
+                            Write($"      <VLAN name=\"{match.Groups["name"]}\"");
+                            if (match.Groups["v4"].Success)
+                                Write($" IPv4=\"{match.Groups["v4"]}\"");
+                            else
+                                Write($" IPv6=\"{match.Groups["v6"]}\"");
+                            WriteLine(" />");
+                        }
+                        WriteLine("    </VLANs>");
+                    }
+                }
+            }
         }
+
     }
 }

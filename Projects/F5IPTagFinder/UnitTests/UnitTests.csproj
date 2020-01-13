@@ -49,6 +49,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IPTagFinderTests.cs" />
@@ -62,6 +64,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\..\..\..\..\Substrate\src\sources\dev\Hygiene\src\Deployment\Config\F5Automation\fra01-mr2.xml">
+      <Link>Files\fra01-mr2.xml</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\..\..\..\..\..\..\Substrate\src\sources\dev\Hygiene\src\Deployment\Config\F5Automation\zaf01-ct2.xml">
+      <Link>Files\zaf01-ct2.xml</Link>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\..\..\..\..\..\Substrate\src\sources\dev\Hygiene\src\Deployment\Config\F5Automation\son01-sn1.xml">
+      <Link>Files\son01-sn1.xml</Link>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
