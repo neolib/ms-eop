@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace IpamFix
 {
@@ -113,17 +114,19 @@ namespace IpamFix
             }
 
             var cmdName = args[0];
-            var resultFile = args[1];
+            var resultExcelFile = args[1];
             var cacheFileName = args[2];
+            var ipXmlFile = args.Length > 3 ? args[3] : "result.xml";
 
-            if (!File.Exists(resultFile))
+            if (!File.Exists(resultExcelFile))
             {
                 Environment.ExitCode = (int)ExitCode.FileNotFound;
-                Error.WriteLine($"Specified Excel file does not exist ({resultFile})");
+                Error.WriteLine($"Specified Excel file does not exist ({resultExcelFile})");
                 return;
             }
 
             string headerText = null;
+
             if (!Enum.TryParse(cmdName, out Command cmd))
             {
                 Environment.ExitCode = (int)ExitCode.BadArgs;
@@ -156,7 +159,9 @@ namespace IpamFix
             WriteLine("Loading name maps...");
             LoadNameMap();
 
+            var ipXDoc = File.Exists(ipXmlFile) ? XDocument.Load(ipXmlFile) : null;
             var cacheList = File.Exists(cacheFileName) ? File.ReadAllLines(cacheFileName) : new string[0];
+
             using (var cacheFileWriter = new StreamWriter(cacheFileName, true))
             {
                 if (cacheList == null || cacheList.Length == 0)
@@ -166,7 +171,7 @@ namespace IpamFix
 
                 var titleRegex = new Regex(TitlePattern,
                     RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
-                var records = ReadRecords(resultFile);
+                var records = ReadRecords(resultExcelFile);
 
                 if (records == null)
                 {
@@ -224,16 +229,25 @@ namespace IpamFix
                         }
                     }
 
+                    string FindVlanName_(string prefix, string filename)
+                    {
+                        var vlanNode = ipXDoc.XPathSelectElement($"//file[@name='{filename}.xml']/VLANs/VLAN[@*='{prefix}']");
+                        return vlanNode?.Attribute("name").Value;
+                    }
+
                     bool? FixTitle_()
                     {
                         string newTitle = null;
+                        string description = null;
 
-                        if (record.Title == "Load from BGPL")
+                        if (record.Title.StartsWith("Load from BGPL"))
                         {
+                            var vlan = FindVlanName_(record.Prefix, record.Environment);
                             var ipVersion = record.Prefix.Contains(':') ? "IPv6" : "IPv4";
-                            newTitle = $"EOP: {record.Forest} - {record.EopDcName} {ipVersion}_BGPL";
+                            newTitle = $"EOP: {record.Forest}-{record.EopDcName} - {ipVersion}_{vlan}";
+                            description = record.Title;
                         }
-                        else
+                        else if (false)
                         {
                             var match = titleRegex.Match(record.Title);
                             if (match.Success)
@@ -274,7 +288,7 @@ namespace IpamFix
                         {
                             try
                             {
-                                if (UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle.ToString()).Result)
+                                if (UpdateTitle(record.AddressSpace, record.Prefix, record.Id, newTitle, description).Result)
                                 {
                                     changedCount++;
                                     var logLine = $"{record.AddressSpace},{record.IpString},{record.Prefix},{record.Forest},{record.EopDcName},{record.IpamDcName},{record.Region},{record.Title.ToCsvValue()},{newTitle.ToCsvValue()},{record.Id}";
@@ -370,12 +384,15 @@ namespace IpamFix
             return null;
         }
 
-        async Task<bool> UpdateTitle(string addressSpace, string prefix, string prefixId, string newTitle)
+        async Task<bool> UpdateTitle(string addressSpace, string prefix, string prefixId,
+            string newTitle, string description = null)
         {
             var allocation = await QueryIpam(addressSpace, prefix, prefixId);
             if (allocation != null)
             {
+                allocation.ModifiedOn = DateTime.Now;
                 allocation.Tags[SpecialTags.Title] = newTitle;
+                if (description != null) allocation.Tags[SpecialTags.Description] = description;
                 await IpamClient.UpdateAllocationTagsV2Async(allocation);
                 return true;
             }
@@ -393,6 +410,7 @@ namespace IpamFix
             var allocation = await QueryIpam(addressSpace, prefix, prefixId);
             if (allocation != null)
             {
+                allocation.ModifiedOn = DateTime.Now;
                 allocation.Tags.Clear();
                 allocation.Tags[SpecialTags.Datacenter] = newDcName;
                 await IpamClient.PatchAllocationTagsV2Async(allocation);
@@ -431,8 +449,7 @@ namespace IpamFix
                     var list = new List<ValidationRecord>();
                     do
                     {
-                        WriteLine($"***{reader.Name}***");
-                        if (reader.Name != "result") continue;
+                        WriteLine($"***Reading sheet {reader.Name}...");
 
                         // First row is header
                         var fieldNames = new string[reader.FieldCount];
