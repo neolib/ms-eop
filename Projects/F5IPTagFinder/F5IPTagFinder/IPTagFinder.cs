@@ -68,11 +68,12 @@ namespace F5Automation
 
         private void ProcessFile(string filename)
         {
-            var barename = Path.GetFileName(filename);
-            WriteLine($"  <file name=\"{barename}\">");
             var xd = XDocument.Load(filename);
-            WalkNode_(xd.Root);
+            var barename = Path.GetFileName(filename);
+
+            WriteLine($"  <file name=\"{barename}\">");
             ExtractVlanInfo_();
+            WalkNode_(xd.Root);
             WriteLine("  </file>");
 
             void WalkNode_(XElement node)
@@ -161,7 +162,7 @@ namespace F5Automation
                 if (xd.Root.FirstNode is XComment comment)
                 {
                     var matches1 = VlanRegex.Matches(comment.Value);
-                    var matches2 = VlanRegex.Matches(comment.Value);
+                    var matches2 = VlanRegex2.Matches(comment.Value);
 
                     if (matches1.Count > 0 || matches2.Count > 0)
                     {
