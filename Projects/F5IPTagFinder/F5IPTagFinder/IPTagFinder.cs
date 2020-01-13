@@ -26,7 +26,7 @@ namespace F5Automation
             $@"^{IPv4RangePattern}({SeparatorPattern}{IPv4RangePattern})*$",
             RegexOptions.ExplicitCapture);
 
-        public static Regex IPVv6Regex = new Regex(
+        public static Regex IPv6Regex = new Regex(
             $@"^{IPv6Pattern}({SeparatorPattern}{IPv6Pattern})*$",
             RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
@@ -152,7 +152,7 @@ namespace F5Automation
                 if (s.StartsWith("0:")) return false;
 
                 if (IPv4Regex.IsMatch(s)) return true;
-                if (IPVv6Regex.IsMatch(s)) return true;
+                if (IPv6Regex.IsMatch(s)) return true;
                 if (IPv4RangeRegex.IsMatch(s)) return true;
                 if (IPv6RangeRegex.IsMatch(s)) return true;
 

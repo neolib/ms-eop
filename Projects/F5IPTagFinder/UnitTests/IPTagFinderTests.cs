@@ -44,14 +44,14 @@ namespace UnitTests
         [TestMethod]
         public void TestIPv6RegEx()
         {
-            Assert.IsTrue(IPTagFinder.IPVv6Regex.IsMatch("2a01:111:f400:fc18:0:0:0:16"));
-            Assert.IsTrue(IPTagFinder.IPVv6Regex.IsMatch("2a01:111:e400:3a55::::"));
-            Assert.IsTrue(IPTagFinder.IPVv6Regex.IsMatch("2a01:111:e400:3a55::,2a01:111:e400:3a55::"));
-            Assert.IsTrue(IPTagFinder.IPVv6Regex.IsMatch("2a01:111:e400:3a55:: 2a01:111:e400:3a55::"));
-            Assert.IsTrue(IPTagFinder.IPVv6Regex.IsMatch("2a01:111:e400:3a55:: \t2a01:111:e400:3a55::"));
-            Assert.IsTrue(IPTagFinder.IPVv6Regex.IsMatch("2a01:111:e400:3a55::, \t2a01:111:e400:3a55::"));
-            Assert.IsTrue(IPTagFinder.IPVv6Regex.IsMatch("2a01:111:e400:3a55:: , \t2a01:111:e400:3a55::"));
-            Assert.IsFalse(IPTagFinder.IPVv6Regex.IsMatch("2a01:111:e400:3a55:: 2a01:111:e400:3a55:: abc"));
+            Assert.IsTrue(IPTagFinder.IPv6Regex.IsMatch("2a01:111:f400:fc18:0:0:0:16"));
+            Assert.IsTrue(IPTagFinder.IPv6Regex.IsMatch("2a01:111:e400:3a55::::"));
+            Assert.IsTrue(IPTagFinder.IPv6Regex.IsMatch("2a01:111:e400:3a55::,2a01:111:e400:3a55::"));
+            Assert.IsTrue(IPTagFinder.IPv6Regex.IsMatch("2a01:111:e400:3a55:: 2a01:111:e400:3a55::"));
+            Assert.IsTrue(IPTagFinder.IPv6Regex.IsMatch("2a01:111:e400:3a55:: \t2a01:111:e400:3a55::"));
+            Assert.IsTrue(IPTagFinder.IPv6Regex.IsMatch("2a01:111:e400:3a55::, \t2a01:111:e400:3a55::"));
+            Assert.IsTrue(IPTagFinder.IPv6Regex.IsMatch("2a01:111:e400:3a55:: , \t2a01:111:e400:3a55::"));
+            Assert.IsFalse(IPTagFinder.IPv6Regex.IsMatch("2a01:111:e400:3a55:: 2a01:111:e400:3a55:: abc"));
         }
 
         [TestMethod]
