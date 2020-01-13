@@ -66,5 +66,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Files\_environments.xml" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="README.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
