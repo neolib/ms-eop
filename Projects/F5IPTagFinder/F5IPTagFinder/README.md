@@ -1,7 +1,7 @@
-﻿F5IPTagFinder
+﻿#F5IPTagFinder
 ========================================
 
-*Commandline Arguments:
+##Commandline Arguments:
 
 First commandline argument is the path to F5 XML files.
 
