@@ -5,11 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using static System.Console;
 
 
 namespace F5Automation
 {
+    using static System.Console;
+
     public class IPTagFinder
     {
         public const string IPv4Pattern = @"(\d+\.\d+\.\d+\.\d+)";
@@ -53,7 +54,8 @@ namespace F5Automation
 
         private void Process(string dir)
         {
-            WriteLine($"<!-- Target dir: {dir} -->");
+            WriteLine("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+            WriteLine($"<!-- Source dir: {dir} -->");
             WriteLine("<result>");
 
             foreach (var filename in Directory.GetFiles(dir, "*.xml"))
