@@ -1,7 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace Testbed.UnitTests
 {
@@ -34,6 +37,60 @@ namespace Testbed.UnitTests
             {
                 WriteLine($"{i}:{a[i]}");
             }
+        }
+
+        interface IDummy
+        {
+            string Name { get; set; }
+            string Address { get; set; }
+
+            int Add(int a, int b);
+        }
+
+        class Dummy : IDummy
+        {
+            public static int SeqNo { get; set; }
+
+            public string Name { get; set; }
+            public string Address { get; set; }
+
+            public int Add(int a, int b) => a + b;
+
+            private string DoNotCallMe(object notUseful) => nameof(DoNotCallMe);
+
+        }
+
+        [TestMethod]
+        public void TestInvokeMethod()
+        {
+            var dummy = new Dummy();
+            var type = dummy.GetType();
+
+            foreach (var pi in type.GetProperties())
+            {
+                WriteLine($"+{pi.PropertyType} {pi.Name}");
+            }
+            foreach (var mi in type.GetMethods())
+            {
+                var @static = mi.IsStatic ? "static " : "";
+                var @public = mi.IsPublic ? "public" : "private";
+                Write($"-{@static}{@public} {mi.ReturnType} {mi.Name}(");
+
+                var sb = new StringBuilder();
+
+                foreach (var t in mi.GetParameters())
+                {
+                    sb.Append($"{t.ParameterType} {t.Name}, ");
+                }
+                if (sb.Length > 2) sb.Length -=2;
+                WriteLine($"{sb})");
+            }
+
+            var flags = BindingFlags.NonPublic | BindingFlags.Instance;
+            var methodInfo = type.GetMethod("DoNotCallMe", flags);
+            Assert.IsNotNull(methodInfo);
+            Assert.AreEqual(methodInfo.Name, methodInfo.Invoke(dummy, flags,
+                null, new object[] { null }, CultureInfo.CurrentCulture));
         }
     }
 }
