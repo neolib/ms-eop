@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 
 namespace Testbed.Applets
 {
@@ -8,6 +9,9 @@ namespace Testbed.Applets
     {
         public int Run(string[] args)
         {
+            var process = Process.Start(@"c:\temp\test.cmd");
+            process.WaitForExit();
+
             return 0;
         }
     }

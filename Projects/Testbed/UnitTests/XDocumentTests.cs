@@ -1,5 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.IO;
 using System.Linq;
+using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
@@ -49,7 +51,7 @@ namespace Testbed.UnitTests
         }
 
         [TestMethod]
-        public void TestXDocumentXPathAttribute()
+        public void TestXPathAttribute()
         {
             var myType = this.GetType();
             var rcName = myType.Namespace + ".Files.env.xml";
@@ -63,7 +65,7 @@ namespace Testbed.UnitTests
         }
 
         [TestMethod]
-        public void TestXDocumentXPathStartsWith()
+        public void TestXPathStartsWith()
         {
             var myType = this.GetType();
             var rcName = myType.Namespace + ".Files.env.xml";
@@ -73,6 +75,25 @@ namespace Testbed.UnitTests
                 var name = "am5";   // starts-with is case-sensitive
                 var node = xd.XPathSelectElement($"//add[starts-with(@key, '{name}')]");
                 WriteLine(node.Attribute("value").Value);
+            }
+        }
+
+        [TestMethod]
+        public void TestXPathWithNamespace()
+        {
+            var nsm = new XmlNamespaceManager(new NameTable());
+            nsm.AddNamespace("ns", "http://schemas.microsoft.com/developer/msbuild/2003");
+
+            var csprojPath = Path.GetFullPath(@"..\..\UnitTests.csproj");
+            var xd = XDocument.Load(csprojPath);
+            var xpath = "/ns:Project/ns:ItemGroup/ns:ProjectReference";
+            var projRefNodes = xd.XPathSelectElements(xpath, nsm);
+
+            foreach (var projRefNode in projRefNodes)
+            {
+                var refCsrojPath = projRefNode.Attribute("Include").Value;
+
+                WriteLine(refCsrojPath);
             }
         }
 

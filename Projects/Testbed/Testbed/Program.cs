@@ -8,7 +8,7 @@ namespace Testbed
 
     enum ExitCode
     {
-        Chaos = -1,
+        Chaos = -99,
         Success = 0,
         BadArgs,
         Exception
