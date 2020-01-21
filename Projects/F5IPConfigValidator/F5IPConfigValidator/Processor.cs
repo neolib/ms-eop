@@ -11,6 +11,7 @@ namespace F5IPConfigValidator
 {
     using Microsoft.Azure.Ipam.Client;
     using Microsoft.Azure.Ipam.Contracts;
+    using Common;
     using static System.Console;
     using StringList = List<string>;
     using StringMap = Dictionary<string, string>;

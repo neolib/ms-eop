@@ -4,6 +4,7 @@ using System.Linq;
 
 namespace autobcc
 {
+    using Common;
     using static Console;
 
     enum ExitCode
@@ -31,7 +32,9 @@ namespace autobcc
 
                 if (arg.StartsWith("/") || arg.StartsWith("-"))
                 {
-                    if (string.Compare("out", 0, arg, 1, 3, true) == 0)
+                    var option = arg.Substring(1);
+
+                    if (option.IsSameTextAs("out"))
                     {
                         i++;
                         if (i < args.Length)
@@ -89,8 +92,10 @@ namespace autobcc
                     ? File.ReadAllText(outputFile) : string.Empty;
                 var outputStream = outputFile != null ? new StreamWriter(outputFile, true) : null;
 
-                void WriteOutput_(string line)
+                void WriteOutput_(string line = null)
                 {
+                    if (line == null) line = string.Empty;
+
                     // Also writes to standard output
                     WriteLine(line);
                     outputStream?.WriteLine(line);
@@ -104,6 +109,8 @@ namespace autobcc
 
                     if (p.RefProjects.Count > 0)
                     {
+                        var newCount = 0;
+                        var skippedCount = 0;
                         var seperator = "REM " + new string('-', 80);
 
                         WriteOutput_(seperator);
@@ -114,23 +121,24 @@ namespace autobcc
                         {
                             var dir = Path.GetDirectoryName(filepath);
 
-                            if (outputContent.IndexOf(dir, StringComparison.CurrentCultureIgnoreCase) >= 0)
+                            if (outputContent.ContainsText(dir))
                             {
+                                skippedCount++;
                                 Error.WriteLine($"Already in output file: {dir}");
                             }
                             else
                             {
+                                newCount++;
                                 WriteOutput_($"cd /d \"{dir}\"");
                                 WriteOutput_("getdeps /build:latest");
                                 WriteOutput_("bcc");
                             }
                         }
 
-                        if (outputStream != null)
-                        {
-                            outputStream.Flush();
-                            outputStream.Close();
-                        }
+                        if (newCount> 0) WriteOutput_();
+                        WriteOutput_($"REM {newCount} found, {skippedCount} skipped");
+
+                        outputStream?.Close();
                     }
                     else
                     {

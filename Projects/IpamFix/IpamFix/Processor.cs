@@ -12,7 +12,7 @@ namespace IpamFix
     using ExcelDataReader;
     using Microsoft.Azure.Ipam.Client;
     using Microsoft.Azure.Ipam.Contracts;
-    using F5IPConfigValidator;
+    using Common;
     using static Console;
     using StringMap = Dictionary<string, string>;
 

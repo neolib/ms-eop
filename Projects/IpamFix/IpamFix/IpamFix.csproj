@@ -58,7 +58,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\F5IPConfigValidator\F5IPConfigValidator\ExtensionMethods.cs">
+    <Compile Include="..\..\common\ExtensionMethods.cs">
       <Link>ExtensionMethods.cs</Link>
     </Compile>
     <Compile Include="Processor.cs" />

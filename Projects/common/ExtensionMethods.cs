@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace F5IPConfigValidator
+namespace Common
 {
     public static class ExtensionMethods
     {
