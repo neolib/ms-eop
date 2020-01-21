@@ -24,7 +24,7 @@ namespace autobcc
         {
             csprojPath = Path.GetFullPath(csprojPath);
 
-            if (RefProjects.Contains(csprojPath)) return;
+            if (RefProjects.Contains(csprojPath, StringComparer.CurrentCultureIgnoreCase)) return;
 
             var xd = XDocument.Load(csprojPath);
             var csprojDir = Path.GetDirectoryName(csprojPath);
