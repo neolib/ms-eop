@@ -49,13 +49,13 @@ namespace autobcc
 
                             try
                             {
-                                var process = Process.Start(cmdFilePath);
+                                var process = Process.Start("notepad.exe", $"\"{cmdFilePath}\"\"");
 
-                                process.WaitForExit();
+                                process.WaitForInputIdle();
                             }
                             finally
                             {
-                                if (cmdFilePath != null) File.Delete(cmdFilePath);
+                                File.Delete(cmdFilePath);
                             }
                         }
                         Environment.ExitCode = 0;
@@ -76,30 +76,21 @@ namespace autobcc
 
             string GenerateCmd_(IList<string> fileList)
             {
-                var cmdFilePath = Path.Combine(Path.GetTempPath(), $"autobcc{DateTime.Now.Ticks}.cmd");
+                var cmdFilePath = Path.Combine(Path.GetTempPath(), $"autobcc{DateTime.Now.Ticks}.txt");
                 using (var writer = new StreamWriter(cmdFilePath))
                 {
-                    writer.WriteLine(GetAutobccResource_());
-
                     foreach (var filepath in fileList)
                     {
                         var dir = Path.GetDirectoryName(filepath);
 
-                        writer.WriteLine($"call :build {dir}");
+                        writer.WriteLine($"cd /d \"{dir}\"");
+                        writer.WriteLine("getdeps /build:latest");
+                        writer.WriteLine("bcc");
                     }
                 }
                 return cmdFilePath;
             }
 
-            string GetAutobccResource_()
-            {
-                var type = typeof(Program);
-                var rcName = type.Namespace + ".autobcc.cmd";
-                using (var reader = new StreamReader(type.Assembly.GetManifestResourceStream(rcName)))
-                {
-                    return reader.ReadToEnd();
-                }
-            }
         }
     }
 }
