@@ -51,4 +51,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>setlocal
+set BIN_DIR=C:\My\bin\
+
+if "$(ConfigurationName)"=="Release" (
+echo Copying to %25BIN_DIR%25
+xcopy /y "$(TargetPath)" %25BIN_DIR%25
+)</PostBuildEvent>
+  </PropertyGroup>
 </Project>

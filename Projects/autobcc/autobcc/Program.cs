@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace autobcc
 {
@@ -24,49 +22,129 @@ namespace autobcc
         {
             void SetExitCode_(ExitCode code) => Environment.ExitCode = (int)code;
 
-            if (args.Length == 1)
+            string csprojPath = null;
+            string outputFile = null;
+
+            for (int i = 0; i < args.Length; i++)
             {
-                var csprojPath = args[0];
+                var arg = args[i];
 
-                try
+                if (arg.StartsWith("/") || arg.StartsWith("-"))
                 {
-                    if (File.Exists(csprojPath))
+                    if (string.Compare("out", 0, arg, 1, 3, true) == 0)
                     {
-                        var p = new Processor();
-
-                        p.Process(args[0]);
-
-                        if (p.RefProjects.Count > 0)
+                        i++;
+                        if (i < args.Length)
                         {
-                            foreach (var filepath in p.RefProjects)
-                            {
-                                var dir = Path.GetDirectoryName(filepath);
-
-                                WriteLine($"cd /d \"{dir}\"");
-                                WriteLine("getdeps /build:latest");
-                                WriteLine("bcc");
-                            }
-                            WriteLine();
+                            outputFile = args[i];
                         }
                         else
                         {
-                            WriteLine("No dependent projects found.");
+                            Error.WriteLine("No output file specified.");
+                            SetExitCode_(ExitCode.BagBadArgs);
+                            return;
                         }
-
-                        Environment.ExitCode = 0;
                     }
-                    else SetExitCode_(ExitCode.FileNotFound);
+                    else
+                    {
+                        Error.WriteLine($"Unknown option {arg}.");
+                        SetExitCode_(ExitCode.BagBadArgs);
+                        return;
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    WriteLine(ex.Message);
-                    Environment.ExitCode = -1;
+                    if (csprojPath == null)
+                    {
+                        csprojPath = arg;
+                    }
+                    else
+                    {
+                        Error.WriteLine("Program accepts only one input file.");
+                        SetExitCode_(ExitCode.BagBadArgs);
+                        return;
+                    }
                 }
             }
-            else
+
+            if (csprojPath == null)
             {
-                Error.WriteLine("Need project pathname.");
-                SetExitCode_(ExitCode.BagBadArgs);
+                var csprojFiles = Directory.GetFiles(".", "*.csproj");
+
+                if (csprojFiles.Length == 1)
+                {
+                    csprojPath = csprojFiles[0];
+                }
+                else
+                {
+                    Error.WriteLine("Need to specify a C# project file.");
+                    SetExitCode_(ExitCode.BagBadArgs);
+                    return;
+                }
+            }
+
+            try
+            {
+                var outputContent = outputFile != null && File.Exists(outputFile)
+                    ? File.ReadAllText(outputFile) : string.Empty;
+                var outputStream = outputFile != null ? new StreamWriter(outputFile, true) : null;
+
+                void WriteOutput_(string line)
+                {
+                    // Also writes to standard output
+                    WriteLine(line);
+                    outputStream?.WriteLine(line);
+                }
+
+                if (File.Exists(csprojPath))
+                {
+                    var p = new Processor();
+
+                    p.Process(csprojPath);
+
+                    if (p.RefProjects.Count > 0)
+                    {
+                        var seperator = "REM " + new string('-', 80);
+
+                        WriteOutput_(seperator);
+                        WriteOutput_($"REM Dependent list of {csprojPath}");
+                        WriteOutput_(seperator);
+
+                        foreach (var filepath in p.RefProjects)
+                        {
+                            var dir = Path.GetDirectoryName(filepath);
+
+                            if (outputContent.IndexOf(dir, StringComparison.CurrentCultureIgnoreCase) >= 0)
+                            {
+                                Error.WriteLine($"Already in output file: {dir}");
+                            }
+                            else
+                            {
+                                WriteOutput_($"cd /d \"{dir}\"");
+                                WriteOutput_("getdeps /build:latest");
+                                WriteOutput_("bcc");
+                            }
+                        }
+
+                        if (outputStream != null)
+                        {
+                            outputStream.Flush();
+                            outputStream.Close();
+                        }
+                    }
+                    else
+                    {
+                        WriteLine("No dependent projects found.");
+                    }
+
+                    Environment.ExitCode = 0;
+                }
+                else SetExitCode_(ExitCode.FileNotFound);
+            }
+            catch (Exception ex)
+            {
+                WriteLine(ex.Message);
+                SetExitCode_(ExitCode.Exception);
             }
         }
     }

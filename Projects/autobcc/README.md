@@ -3,8 +3,15 @@
 This program accepts an input csproj filepath and outputs a list of dependent
 projects and commands ready to be pasted and run in CoreXT environment.
 
-You can use commandline redirection to redirect output to a file, for example:
+## Commandline Arguments:
 
-`autobcc projectname.csproj > list.txt`
+autobcc [project.csproj] [/out output.txt]
+
+If no input file specified, it will use the one found in current directory.
+
+## Special Notes:
+
+The program appends to output.txt if specified; and it does not append duplicate
+dependent project files by examing the content of output.txt.
 
 -=|E.O.F|=-
