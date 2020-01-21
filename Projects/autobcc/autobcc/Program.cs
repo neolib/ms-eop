@@ -24,13 +24,6 @@ namespace autobcc
         {
             void SetExitCode_(ExitCode code) => Environment.ExitCode = (int)code;
 
-            if (Environment.GetEnvironmentVariable("CorextExeVersion") == null)
-            {
-                WriteLine("Must run autobcc in CoreXT environment.");
-                SetExitCode_(ExitCode.NoCoreXt);
-                //return;
-            }
-
             if (args.Length == 1)
             {
                 var csprojPath = args[0];
@@ -45,19 +38,21 @@ namespace autobcc
 
                         if (p.RefProjects.Count > 0)
                         {
-                            var cmdFilePath = GenerateCmd_(p.RefProjects);
-
-                            try
+                            foreach (var filepath in p.RefProjects)
                             {
-                                var process = Process.Start("notepad.exe", $"\"{cmdFilePath}\"\"");
+                                var dir = Path.GetDirectoryName(filepath);
 
-                                process.WaitForInputIdle();
+                                WriteLine($"cd /d \"{dir}\"");
+                                WriteLine("getdeps /build:latest");
+                                WriteLine("bcc");
                             }
-                            finally
-                            {
-                                File.Delete(cmdFilePath);
-                            }
+                            WriteLine();
                         }
+                        else
+                        {
+                            WriteLine("No dependent projects found.");
+                        }
+
                         Environment.ExitCode = 0;
                     }
                     else SetExitCode_(ExitCode.FileNotFound);
@@ -73,24 +68,6 @@ namespace autobcc
                 Error.WriteLine("Need project pathname.");
                 SetExitCode_(ExitCode.BagBadArgs);
             }
-
-            string GenerateCmd_(IList<string> fileList)
-            {
-                var cmdFilePath = Path.Combine(Path.GetTempPath(), $"autobcc{DateTime.Now.Ticks}.txt");
-                using (var writer = new StreamWriter(cmdFilePath))
-                {
-                    foreach (var filepath in fileList)
-                    {
-                        var dir = Path.GetDirectoryName(filepath);
-
-                        writer.WriteLine($"cd /d \"{dir}\"");
-                        writer.WriteLine("getdeps /build:latest");
-                        writer.WriteLine("bcc");
-                    }
-                }
-                return cmdFilePath;
-            }
-
         }
     }
 }
