@@ -19,9 +19,39 @@ namespace autobcc
 
     class Program
     {
+        private static readonly string InetRootEnvVar = "INETROOT";
+        private static readonly string InetRootEnvMacro = $"%{InetRootEnvVar}%";
+
         static void Main(string[] args)
         {
             void SetExitCode_(ExitCode code) => Environment.ExitCode = (int)code;
+
+            string InferInetRoot_(string path)
+            {
+                var folders = new[] { ".git", ".corext" };
+                string inetRoot = null;
+
+                path = Path.GetDirectoryName(Path.GetFullPath(path));
+
+                for (var index = path.IndexOf('\\', 3);
+                    index > 0 && index < path.Length - 1;
+                    index = path.IndexOf('\\', index + 1))
+                {
+                    var dir = path.Substring(0, index);
+
+                    if (!folders.Any((folder_) => Directory.Exists(Path.Combine(dir, folder_))))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        inetRoot = dir;
+                        break;
+                    }
+                }
+
+                return inetRoot;
+            }
 
             string csprojPath = null;
             string outputFile = null;
@@ -103,6 +133,24 @@ namespace autobcc
 
                 if (File.Exists(csprojPath))
                 {
+                    var csprojFulPath = Path.GetFullPath(csprojPath);
+                    var inetRoot = Environment.GetEnvironmentVariable(InetRootEnvVar);
+
+                    if (string.IsNullOrEmpty(inetRoot))
+                    {
+                        inetRoot = InferInetRoot_(csprojFulPath);
+                        if (string.IsNullOrEmpty(inetRoot))
+                        {
+                            Error.WriteLine($"Error: {InetRootEnvMacro} is not defined and could not be inferred from project path.");
+                            SetExitCode_(ExitCode.NoCoreXt);
+                            return;
+                        }
+                        else
+                        {
+                            Error.WriteLine($"Warning: {InetRootEnvMacro} is not defined, will use inferred path \"{inetRoot}\".");
+                        }
+                    }
+
                     var p = new Processor();
 
                     p.Process(csprojPath);
@@ -114,12 +162,14 @@ namespace autobcc
                         var seperator = "REM " + new string('-', 80);
 
                         WriteOutput_(seperator);
-                        WriteOutput_($"REM Dependent list of {csprojPath}");
+                        WriteOutput_($"REM Dependent list of {csprojFulPath.Replace(inetRoot, InetRootEnvMacro)}");
                         WriteOutput_(seperator);
 
                         foreach (var filepath in p.RefProjects)
                         {
                             var dir = Path.GetDirectoryName(filepath);
+
+                            if (inetRoot != null) dir = dir.Replace(inetRoot, InetRootEnvMacro);
 
                             if (outputContent.ContainsText(dir))
                             {
