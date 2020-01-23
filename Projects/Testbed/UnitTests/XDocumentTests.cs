@@ -82,6 +82,11 @@ namespace Testbed.UnitTests
         public void TestXPathWithNamespace()
         {
             var nsm = new XmlNamespaceManager(new NameTable());
+
+            // Official doc says: Use String.Empty to add a default namespace.
+            //
+            // It's not true. You can add an empty named namespace, but XPathSelectElements
+            // requires you to qualify each element even if it is in default namespace.
             nsm.AddNamespace("ns", "http://schemas.microsoft.com/developer/msbuild/2003");
 
             var csprojPath = Path.GetFullPath(@"..\..\UnitTests.csproj");
@@ -95,6 +100,16 @@ namespace Testbed.UnitTests
 
                 WriteLine(refCsrojPath);
             }
+        }
+
+        [TestMethod]
+        public void Test()
+        {
+            var xml = "<root><abc>text</abc><def><xyz>xyz</xyz></def></root>";
+            var xd = XDocument.Parse(xml);
+
+            Assert.IsNull(xd.Root.Element("xyz"));
+            Assert.IsNotNull(xd.Root.Element("abc"));
         }
 
     }
