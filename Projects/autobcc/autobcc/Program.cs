@@ -144,6 +144,7 @@ namespace autobcc
                         new Processor
                         {
                             CacheContent = outputContent,
+                            InetRoot = inetRoot,
                             Output = outputStream
                         }.Process(csprojFullPath);
                     }

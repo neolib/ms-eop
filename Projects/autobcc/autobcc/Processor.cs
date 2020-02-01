@@ -47,7 +47,7 @@ namespace autobcc
                     if (CacheContent.ContainsText(dir))
                     {
                         skippedCount++;
-                        Error.WriteLine($"Already in output file: {dir}");
+                        Error.WriteLine($"Hit cache: {dir}");
                     }
                     else
                     {
@@ -61,7 +61,7 @@ namespace autobcc
                 if (newCount > 0) WriteOutput();
                 WriteOutput($"REM {newCount} found, {skippedCount} skipped");
 
-                Output.Flush();
+                Output?.Flush();
             }
             else
             {
