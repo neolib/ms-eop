@@ -19,40 +19,37 @@ namespace autobcc
 
     class Program
     {
-        private static readonly string InetRootEnvVar = "INETROOT";
-        private static readonly string InetRootEnvMacro = $"%{InetRootEnvVar}%";
+        internal static void SetExitCode(ExitCode code) => Environment.ExitCode = (int)code;
+
+        private static string InferInetRoot(string path)
+        {
+            var folders = new[] { ".git", ".corext" };
+            string inetRoot = null;
+
+            path = Path.GetDirectoryName(Path.GetFullPath(path));
+
+            for (var index = path.IndexOf('\\', 3);
+                index > 0 && index < path.Length - 1;
+                index = path.IndexOf('\\', index + 1))
+            {
+                var dir = path.Substring(0, index);
+
+                if (!folders.Any((folder_) => Directory.Exists(Path.Combine(dir, folder_))))
+                {
+                    continue;
+                }
+                else
+                {
+                    inetRoot = dir;
+                    break;
+                }
+            }
+
+            return inetRoot;
+        }
 
         static void Main(string[] args)
         {
-            void SetExitCode_(ExitCode code) => Environment.ExitCode = (int)code;
-
-            string InferInetRoot_(string path)
-            {
-                var folders = new[] { ".git", ".corext" };
-                string inetRoot = null;
-
-                path = Path.GetDirectoryName(Path.GetFullPath(path));
-
-                for (var index = path.IndexOf('\\', 3);
-                    index > 0 && index < path.Length - 1;
-                    index = path.IndexOf('\\', index + 1))
-                {
-                    var dir = path.Substring(0, index);
-
-                    if (!folders.Any((folder_) => Directory.Exists(Path.Combine(dir, folder_))))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        inetRoot = dir;
-                        break;
-                    }
-                }
-
-                return inetRoot;
-            }
-
             string csprojPath = null;
             string outputFile = null;
 
@@ -74,14 +71,14 @@ namespace autobcc
                         else
                         {
                             Error.WriteLine("No output file specified.");
-                            SetExitCode_(ExitCode.BagBadArgs);
+                            SetExitCode(ExitCode.BagBadArgs);
                             return;
                         }
                     }
                     else
                     {
                         Error.WriteLine($"Unknown option {arg}.");
-                        SetExitCode_(ExitCode.BagBadArgs);
+                        SetExitCode(ExitCode.BagBadArgs);
                         return;
                     }
                 }
@@ -94,7 +91,7 @@ namespace autobcc
                     else
                     {
                         Error.WriteLine("Program accepts only one input file.");
-                        SetExitCode_(ExitCode.BagBadArgs);
+                        SetExitCode(ExitCode.BagBadArgs);
                         return;
                     }
                 }
@@ -111,7 +108,7 @@ namespace autobcc
                 else
                 {
                     Error.WriteLine("Need to specify a C# project file.");
-                    SetExitCode_(ExitCode.BagBadArgs);
+                    SetExitCode(ExitCode.BagBadArgs);
                     return;
                 }
             }
@@ -122,87 +119,47 @@ namespace autobcc
                     ? File.ReadAllText(outputFile) : string.Empty;
                 var outputStream = outputFile != null ? new StreamWriter(outputFile, true) : null;
 
-                void WriteOutput_(string line = null)
-                {
-                    if (line == null) line = string.Empty;
-
-                    // Also writes to standard output
-                    WriteLine(line);
-                    outputStream?.WriteLine(line);
-                }
-
                 if (File.Exists(csprojPath))
                 {
-                    var csprojFulPath = Path.GetFullPath(csprojPath);
-                    var inetRoot = Environment.GetEnvironmentVariable(InetRootEnvVar);
+                    var csprojFullPath = Path.GetFullPath(csprojPath);
+                    var inetRoot = Environment.GetEnvironmentVariable(Processor.InetRootEnvVar);
 
                     if (string.IsNullOrEmpty(inetRoot))
                     {
-                        inetRoot = InferInetRoot_(csprojFulPath);
+                        inetRoot = InferInetRoot(csprojFullPath);
                         if (string.IsNullOrEmpty(inetRoot))
                         {
-                            Error.WriteLine($"Error: {InetRootEnvMacro} is not defined and could not be inferred from project path.");
-                            SetExitCode_(ExitCode.NoCoreXt);
+                            Error.WriteLine($"Error: {Processor.InetRootEnvMacro} is not defined and could not be inferred from project path.");
+                            SetExitCode(ExitCode.NoCoreXt);
                             return;
                         }
                         else
                         {
-                            Error.WriteLine($"Warning: {InetRootEnvMacro} is not defined, will use inferred path \"{inetRoot}\".");
+                            Error.WriteLine($"Warning: {Processor.InetRootEnvMacro} is not defined, will use inferred path \"{inetRoot}\".");
                         }
                     }
 
-                    var p = new Processor();
-
-                    p.Process(csprojPath);
-
-                    if (p.RefProjects.Count > 0)
+                    try
                     {
-                        var newCount = 0;
-                        var skippedCount = 0;
-                        var seperator = "REM " + new string('-', 80);
-
-                        WriteOutput_(seperator);
-                        WriteOutput_($"REM Dependent list of {csprojFulPath.Replace(inetRoot, InetRootEnvMacro)}");
-                        WriteOutput_(seperator);
-
-                        foreach (var filepath in p.RefProjects)
+                        new Processor
                         {
-                            var dir = Path.GetDirectoryName(filepath);
-
-                            if (inetRoot != null) dir = dir.Replace(inetRoot, InetRootEnvMacro);
-
-                            if (outputContent.ContainsText(dir))
-                            {
-                                skippedCount++;
-                                Error.WriteLine($"Already in output file: {dir}");
-                            }
-                            else
-                            {
-                                newCount++;
-                                WriteOutput_($"cd /d \"{dir}\"");
-                                WriteOutput_("getdeps /build:latest");
-                                WriteOutput_("bcc");
-                            }
-                        }
-
-                        if (newCount> 0) WriteOutput_();
-                        WriteOutput_($"REM {newCount} found, {skippedCount} skipped");
-
-                        outputStream?.Close();
+                            CacheContent = outputContent,
+                            Output = outputStream
+                        }.Process(csprojFullPath);
                     }
-                    else
+                    finally
                     {
-                        WriteLine("No dependent projects found.");
+                        outputStream?.Close();
                     }
 
                     Environment.ExitCode = 0;
                 }
-                else SetExitCode_(ExitCode.FileNotFound);
+                else SetExitCode(ExitCode.FileNotFound);
             }
             catch (Exception ex)
             {
                 WriteLine(ex.Message);
-                SetExitCode_(ExitCode.Exception);
+                SetExitCode(ExitCode.Exception);
             }
         }
     }
