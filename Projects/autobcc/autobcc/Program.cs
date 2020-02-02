@@ -14,39 +14,13 @@ namespace autobcc
         BagBadArgs,
         NoCoreXt,
         FileNotFound,
+        NoRefProjects,
         Exception
     };
 
     class Program
     {
         internal static void SetExitCode(ExitCode code) => Environment.ExitCode = (int)code;
-
-        private static string InferInetRoot(string path)
-        {
-            var folders = new[] { ".git", ".corext" };
-            string inetRoot = null;
-
-            path = Path.GetDirectoryName(Path.GetFullPath(path));
-
-            for (var index = path.IndexOf('\\', 3);
-                index > 0 && index < path.Length - 1;
-                index = path.IndexOf('\\', index + 1))
-            {
-                var dir = path.Substring(0, index);
-
-                if (!folders.Any((folder_) => Directory.Exists(Path.Combine(dir, folder_))))
-                {
-                    continue;
-                }
-                else
-                {
-                    inetRoot = dir;
-                    break;
-                }
-            }
-
-            return inetRoot;
-        }
 
         static void Main(string[] args)
         {
@@ -70,7 +44,7 @@ namespace autobcc
                         }
                         else
                         {
-                            Error.WriteLine("No output file specified.");
+                            Error.WriteLine("Output option has no output file value.");
                             SetExitCode(ExitCode.BagBadArgs);
                             return;
                         }
@@ -105,9 +79,15 @@ namespace autobcc
                 {
                     csprojPath = csprojFiles[0];
                 }
+                else if (csprojFiles.Length > 1)
+                {
+                    Error.WriteLine("Multiple C# project files found in current directory.");
+                    SetExitCode(ExitCode.BagBadArgs);
+                    return;
+                }
                 else
                 {
-                    Error.WriteLine("Need to specify a C# project file.");
+                    Error.WriteLine("No C# project file specified.");
                     SetExitCode(ExitCode.BagBadArgs);
                     return;
                 }
@@ -121,32 +101,13 @@ namespace autobcc
 
                 if (File.Exists(csprojPath))
                 {
-                    var csprojFullPath = Path.GetFullPath(csprojPath);
-                    var inetRoot = Environment.GetEnvironmentVariable(Processor.InetRootEnvVar);
-
-                    if (string.IsNullOrEmpty(inetRoot))
-                    {
-                        inetRoot = InferInetRoot(csprojFullPath);
-                        if (string.IsNullOrEmpty(inetRoot))
-                        {
-                            Error.WriteLine($"Error: {Processor.InetRootEnvMacro} is not defined and could not be inferred from project path.");
-                            SetExitCode(ExitCode.NoCoreXt);
-                            return;
-                        }
-                        else
-                        {
-                            Error.WriteLine($"Warning: {Processor.InetRootEnvMacro} is not defined, will use inferred path \"{inetRoot}\".");
-                        }
-                    }
-
                     try
                     {
                         new Processor
                         {
                             CacheContent = outputContent,
-                            InetRoot = inetRoot,
                             Output = outputStream
-                        }.Process(csprojFullPath);
+                        }.Process(csprojPath);
                     }
                     finally
                     {

@@ -17,15 +17,34 @@ namespace autobcc
         public static readonly string InetRootEnvVar = "INETROOT";
         public static readonly string InetRootEnvMacro = $"%{InetRootEnvVar}%";
 
-        public string InetRoot { get; set; }
+        public string InetRoot { get; private set; }
 
         public string CacheContent { get; set; }
 
         public TextWriter Output { get; set; }
 
-        public void Process(string csprojFullPath)
+        public int Process(string csprojPath)
         {
+            var csprojFullPath = Path.GetFullPath(csprojPath);
+
+            InetRoot = Environment.GetEnvironmentVariable(Processor.InetRootEnvVar);
+
+            if (string.IsNullOrEmpty(InetRoot))
+            {
+                InetRoot = InferInetRoot(csprojFullPath);
+                if (string.IsNullOrEmpty(InetRoot))
+                {
+                    Error.WriteLine($"Error: {Processor.InetRootEnvMacro} is not defined and could not be inferred from project path.");
+                    return (int)ExitCode.NoCoreXt;
+                }
+                else
+                {
+                    Error.WriteLine($"Warning: {Processor.InetRootEnvMacro} is not defined, will use inferred path \"{InetRoot}\".");
+                }
+            }
+
             var refProjList = new List<string>();
+
             ProcessCsproj(csprojFullPath, refProjList);
 
             if (refProjList.Count > 0)
@@ -40,9 +59,7 @@ namespace autobcc
 
                 foreach (var filepath in refProjList)
                 {
-                    var dir = Path.GetDirectoryName(filepath);
-
-                    dir = dir.Replace(InetRoot, InetRootEnvMacro);
+                    var dir = Path.GetDirectoryName(filepath).Replace(InetRoot, InetRootEnvMacro);
 
                     if (CacheContent.ContainsText(dir))
                     {
@@ -62,10 +79,13 @@ namespace autobcc
                 WriteOutput($"REM {newCount} found, {skippedCount} skipped");
 
                 Output?.Flush();
+
+                return 0;
             }
             else
             {
                 WriteLine("No dependent projects found.");
+                return (int)ExitCode.NoRefProjects;
             }
         }
 
@@ -80,27 +100,76 @@ namespace autobcc
 
         private void ProcessCsproj(string csprojPath, IList<string> refProjList)
         {
-            csprojPath = Path.GetFullPath(csprojPath);
+            var csprojFullPath = Path.GetFullPath(csprojPath);
 
-            if (refProjList.Contains(csprojPath, StringComparer.CurrentCultureIgnoreCase)) return;
-
-            var xd = XDocument.Load(csprojPath);
-            var csprojDir = Path.GetDirectoryName(csprojPath);
-
-            var nsm = new XmlNamespaceManager(new NameTable());
-            nsm.AddNamespace("ns", DefaultNs);
-            var projRefNodes = xd.XPathSelectElements("/ns:Project/ns:ItemGroup/ns:ProjectReference", nsm);
-
-            foreach (var projRefNode in projRefNodes)
+            if (refProjList.Contains(csprojFullPath, StringComparer.CurrentCultureIgnoreCase))
             {
-                var refCsrojPath = projRefNode.Attribute("Include").Value;
-
-                ProcessCsproj(Path.Combine(csprojDir, refCsrojPath), refProjList);
+                // Skip duplicates...
+                return;
             }
 
-            refProjList.Add(csprojPath);
+            if (File.Exists(csprojFullPath))
+            {
+                XDocument xd;
+
+                try
+                {
+                    xd = XDocument.Load(csprojPath);
+                }
+                catch (Exception ex)
+                {
+                    Error.WriteLine($"Error loading {csprojFullPath}:\n{ex.Message}");
+                    return;
+                }
+
+                var csprojDir = Path.GetDirectoryName(csprojPath);
+                var nsm = new XmlNamespaceManager(new NameTable());
+
+                nsm.AddNamespace("ns", DefaultNs);
+
+                var xpath = "/ns:Project/ns:ItemGroup/ns:ProjectReference";
+                var projRefNodes = xd.XPathSelectElements(xpath, nsm);
+
+                foreach (var projRefNode in projRefNodes)
+                {
+                    var refCsrojPath = projRefNode.Attribute("Include").Value;
+
+                    ProcessCsproj(Path.Combine(csprojDir, refCsrojPath), refProjList);
+                }
+
+                refProjList.Add(csprojPath);
+            }
+            else
+            {
+                Error.WriteLine($"{csprojFullPath} does not exist");
+            }
         }
 
+        private static string InferInetRoot(string path)
+        {
+            var folders = new[] { ".git", ".corext" };
+            string InetRoot = null;
 
+            path = Path.GetDirectoryName(Path.GetFullPath(path));
+
+            for (var index = path.IndexOf('\\', 3);
+                index > 0 && index < path.Length - 1;
+                index = path.IndexOf('\\', index + 1))
+            {
+                var dir = path.Substring(0, index);
+
+                if (!folders.Any((folder_) => Directory.Exists(Path.Combine(dir, folder_))))
+                {
+                    continue;
+                }
+                else
+                {
+                    InetRoot = dir;
+                    break;
+                }
+            }
+
+            return InetRoot;
+        }
     }
 }
