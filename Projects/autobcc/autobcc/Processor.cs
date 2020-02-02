@@ -114,7 +114,7 @@ namespace autobcc
 
                 try
                 {
-                    xd = XDocument.Load(csprojPath);
+                    xd = XDocument.Load(csprojFullPath);
                 }
                 catch (Exception ex)
                 {
@@ -122,7 +122,7 @@ namespace autobcc
                     return;
                 }
 
-                var csprojDir = Path.GetDirectoryName(csprojPath);
+                var csprojDir = Path.GetDirectoryName(csprojFullPath);
                 var nsm = new XmlNamespaceManager(new NameTable());
 
                 nsm.AddNamespace("ns", DefaultNs);
@@ -137,7 +137,7 @@ namespace autobcc
                     ProcessCsproj(Path.Combine(csprojDir, refCsrojPath), refProjList);
                 }
 
-                refProjList.Add(csprojPath);
+                refProjList.Add(csprojFullPath);
             }
             else
             {
