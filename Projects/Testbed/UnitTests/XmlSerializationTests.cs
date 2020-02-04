@@ -25,6 +25,9 @@ namespace Testbed.UnitTests
 
             [DataMember]
             public int Qty { get; set; }
+
+            [DataMember]
+            private string Tag { get; set; } = "tag";
         }
 
         [DataContract]
@@ -40,6 +43,18 @@ namespace Testbed.UnitTests
         [TestMethod]
         public void TestDataContractInheritance()
         {
+            // GetCustomAttributes only searches the caller Type object.
+            var a = typeof(WeightedDataItem).GetCustomAttributes(true);
+            WriteLine($"{a.Length} custom attributes found:");
+            foreach (Attribute attr in a)
+            {
+                WriteLine(attr.GetType().Name);
+            }
+        }
+
+        [TestMethod]
+        public void TestDataContractSerialization()
+        {
             var item = new WeightedDataItem
             {
                 Name = "My item",
@@ -47,20 +62,27 @@ namespace Testbed.UnitTests
                 Weight = 1.23F
             };
 
-            // GetCustomAttributes only searches the caller Type object.
-            var a = item.GetType().GetCustomAttributes(true);
-            WriteLine($"{a.Length} custom attributes found:");
-            foreach (Attribute attr in a)
-            {
-                WriteLine(attr.GetType().Name);
-            }
-            WriteLine();
-
             var ar = new DataContractSerializer(item.GetType());
             var xmlWriter = new XmlTextWriter(Out);
 
             xmlWriter.Formatting = Formatting.Indented;
             ar.WriteObject(xmlWriter, item);
+        }
+
+        [TestMethod]
+        public void TestDataXmlSerialization()
+        {
+            var item = new WeightedDataItem
+            {
+                Name = "My item",
+                Qty = 1,
+                Weight = 1.23F
+            };
+
+            // XmlSerializer does not serialize private properties/fields.
+            var ar = new XmlSerializer(item.GetType());
+
+            ar.Serialize(Out, item);
         }
     }
 }
