@@ -18,6 +18,24 @@ namespace Common
             return self.IndexOf(text, StringComparison.CurrentCultureIgnoreCase) >= 0;
         }
 
+        public static bool ContainsChar(this string self, char ch)
+        {
+            if (self == null) return false;
+            return self.IndexOf(ch) >= 0;
+        }
+
+        public static bool ContainsAnyChar(this string self, params char[] chars)
+        {
+            if (self == null) return false;
+            return self.IndexOfAny(chars) >= 0;
+        }
+
+        public static bool ContainsAnyChar(this string self, char[] chars, int index, int count = 0)
+        {
+            if (self == null) return false;
+            return self.IndexOfAny(chars, index, count == 0 ? chars.Length : count) >= 0;
+        }
+
         public static bool IsSameTextAs(this string self, string text)
         {
             if (self == null) return false;
