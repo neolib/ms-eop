@@ -1,0 +1,482 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.WindowsAzure.Security.Authentication.Contracts</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.AuthenticationMethod">
+            <summary>
+            Set of supported authentication methods for ADFS token issuance.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.AuthenticationMethod.WindowsTransport">
+            <summary>
+            Authenticate using the current windows session.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.AuthenticationMethod.SmartcardCertificate">
+            <summary>
+            Authenticate using a certificate that has the Smartcard Logon EKU.
+            This requires user interaction to enter a PIN.
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.ContractNameConstants">
+            <summary>Defines the constant strings for contract names.</summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.ContractNameConstants.DsmiDataContractNamespace">
+            <summary>
+            The namespace of the data contract used by the DSMI interface.
+            </summary>
+            <remarks>
+            By default, the namespace of a data contract is "http://schemas.datacontract.org/2004/07/Clr.Namespace"
+            where Crl.Namespace is the namespace of the type.
+            See MSDN article http://msdn.microsoft.com/en-us/library/ms731045.aspx for more information.
+            </remarks>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.FederationInformationForService">
+            <summary>
+            Token issuance urls and the authentication strength to use when authenticating to a specific service.
+            </summary>
+            <remarks>
+            </remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.FederationInformationForService.AuthenticationStrength">
+            <summary>
+            The authentication strength required to authenticate to the requested realm
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.FederationInformationForService.AuthenticationMessage">
+            <summary>
+            Message that can be displayed to the user to indicate how to authenticate to the requested realm
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.FederationInformationForService.TokenIssuanceUrls">
+            <summary>
+            Set of token issuance urls for the requested federation
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.FederationInformationForService.SelfFederationTokenIssuanceUrls">
+            <summary>
+            Set of token issuance urls for federating direclty with this dSTS
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.FederationInformationForService.SelfFederationRequestWeight">
+            <summary>
+            Fraction of requests to direct to SelfFederation 
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.FederationInformationForService.ClientMetadata">
+            <summary>
+            Metadata returned by the discovery service
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.SigningKey">
+            <summary>
+            Represents a dSTS signing key. A chain of signing keys is maintained by the DSMI with each key signed by the
+            private key of the previous key in the chain (the key with ChainIndex 0 is not signed).
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.SigningKey.System#Runtime#Serialization#IExtensibleDataObject#ExtensionData">
+            <summary>
+            Gets or sets the extension data. 
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.SigningKey.CertificateRawData">
+            <summary>Gets or sets the raw data of the certificate, excluding its private key.</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.SigningKey.IsCurrent">
+            <summary>
+            Gets or sets a value that indicates if this signing key is the current one used for signing tokens that the
+            dSTS issues. Only one key in the chain will have this property set to true, i.e. the certificate with
+            Max(ChainIndex).
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.SigningKey.ChainIndex">
+            <summary>
+            Gets or sets the index of this signing key in the chain. The last signing key in the chain will have an
+            index of 0.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.SigningKey.Signature">
+            <summary>
+            Gets or sets a signature computed with this certificate as the value, and the certificate at
+            [ChainIndex - 1] as the signing key. This will be null if this is the last key in the chain.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.SigningKey.SignatureHashAlgorithm">
+            <summary>
+            Gets or sets the name of the algorithm used to compute the hash of the certificate that is used to generate
+            the Signature.
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.TokenIssuanceUrl">
+            <summary>Represents a pairing of issuance name and issuance url.</summary>
+            <remarks>
+            Examples:
+              Name = Certificate, URL = https://adfs.microsoft.com/Certificate
+              Name = Windows, URL = https://adfs.microsoft.com/Windows
+            </remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.TokenIssuanceUrl.System#Runtime#Serialization#IExtensibleDataObject#ExtensionData">
+            <summary>
+            Gets or sets the extension data. 
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.TokenIssuanceUrl.Name">
+            <summary>Gets or sets the name of the token issuance url, such as Certificate or Windows.</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.TokenIssuanceUrl.Url">
+            <summary>Gets or sets the token issuance URL.</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.TokenIssuanceUrl.AuthenticationMethod">
+            <summary>Method to use when authenticating to this url</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.Data.TokenIssuanceUrl.AuthenticationStrength">
+            <summary>The strength of authentication provided by this url</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.InternalServerErrorFault">
+            <summary>Represents an unexpected service fault.</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.InternalServerErrorFault.#ctor(System.Exception)">
+            <summary>Initializes a new instance of the <see cref="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.InternalServerErrorFault"/> class.</summary>
+            <param name="ex">The exception that caused the fault.</param>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.InvalidArgumentFault">
+            <summary>Represents a fault indicating an invalid or inconsistent input parameter.</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.MissingArgumentFault">
+            <summary>Represents a fault indicating a missing (null) input parameter.</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.ObjectNotFoundFault">
+            <summary>Represents a fault indicating the non-existence of an object with a requested key.</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.ServiceUnavailableFault">
+            <summary>Represents a fault indicating that the service is unavailable.</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.ServiceUnavailableFault.#ctor(System.Exception)">
+            <summary>Initializes a new instance of the <see cref="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Faults.ServiceUnavailableFault"/> class.</summary>
+            <param name="ex">The exception that caused the fault.</param>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsRetryOption">
+            <summary>
+            Represents the STS retry options.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsRetryOption.Default">
+            <summary>
+            Use the default option.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsRetryOption.Enabled">
+            <summary>
+            Retry STS connections.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsRetryOption.Disabled">
+            <summary>
+            No retry of STS connections.
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsHighAvailibilityOption">
+            <summary>
+            Represents STS high availibility options
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsHighAvailibilityOption.Default">
+            <summary>
+            Use default option.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsHighAvailibilityOption.Disabled">
+            <summary>
+            Use no alternate STS endpoints.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsHighAvailibilityOption.LoadAlternatesFromDns">
+            <summary>
+            Use alternate STS endpoints discovered from DNS records.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.StsHighAvailibilityOption.LoadAlternatesFromConfig">
+            <summary>
+            Use alternate STS endpoints specified in configuration. Recommended only for testing purposes.
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.SelfFederationMode">
+            <summary>
+            Available SelfFederationModes
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.SelfFederationMode.Default">
+            <summary>
+            Use default option
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.SelfFederationMode.Always">
+            <summary>
+            Always use SelfFederation
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.SelfFederationMode.Never">
+            <summary>
+            Never use SelfFederation
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.DstsStressMode">
+            <summary>
+            Represents the Dsts Stress mode which allows threads to spam requests
+            To be used for internal testing only, DO NOT USE elsewise 
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.DstsStressMode.Default">
+            <summary>
+            Use the default option.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.DstsStressMode.Enabled">
+            <summary>
+            Stress Mode Enabled
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Security.Authentication.Contracts.DstsStressMode.Disabled">
+            <summary>
+            Stress Mode Disabled
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration">
+            <summary>
+            Represents the configuration of authentication client.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.StsRetryOption">
+            <summary>
+            Gets or sets the STS retry option.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.SelfFederationMode">
+            <summary>
+            Gets or sets the SelfFederationMode
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.DstsStressMode">
+            <summary>
+            Gets or sets the DstsStressMode option.
+            To be used for internal testing only, DO NOT USE elsewise 
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.TrustedStsCertificateThumbprints">
+            <summary>
+            Gets the collection of trusted STS thumbprints.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.DstsPortOverride">
+            <summary>
+            Gets or sets the dSTS port number which would override the dSTS port
+            returned by the service.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.DstsProxyAddress">
+            <summary>
+            Gets or sets the address of the proxy that should be used when getting
+            a security token from dSTS.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.WebProxyDstsDnsNameFilter">
+            <summary>
+            Gets or sets the regular expression that matches the DNS names of the dSTSes for which
+            the web proxy should be used. If the value is null or empty, the web proxy is used 
+            for all dSTSes (i.e. the default value "*"). 
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.IsInteractive">
+            <summary>
+            Gets or sets whether or not the authentication client will prompt the user
+            (e.g. for entering a smartcard PIN). Defaults to false.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.FederatedAuthenticationMethod">
+            <summary>
+            Gets or sets the prefered authentication method for authenticating to federated STSs. 
+            This overrides IsInteractive if an interactive method is specified.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.StsHighAvailibilityOption">
+            <summary>
+            Gets or sets the STS high availibility option.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.AlternateStsHosts">
+            <summary>
+            Gets or sets the list of alternate STS hosts. Only used if StsHighAvailibilityOption == LoadAlternatesFromConfig
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.DstsNamespaceExpansions">
+            <summary>
+            Mapping from original dSTS namespaces to additional supported namespaces.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.CustomRequestMetadata">
+            <summary>
+            Metadata that will be sent to dSTS as HTTP headers
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IAuthenticationClientConfiguration.MsiCredentials">
+            <summary>
+            Gets the Msi credentials from Configuration
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.ICertificateSelector">
+            <summary>
+            Defines the contract for users to implement for their own custom certificate selection logic. This will be used during certificate selection prompts normally in active authentication workflows involving PTH.
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.ICertificateSelector.SelectCertificate(System.String,System.Uri,System.Uri)">
+            <summary>
+            Defines custom certification selection logic.
+            Realm name and applies to parameters help in remembering which certificate to use for which realm and service account. 
+            </summary>
+            <param name="message">Message associated with federation url on Dsts. For example "Please use smart card for authentication"</param>
+            <param name="realmName">Realm name for which token is requested.</param>
+            <param name="appliesTo">For which service account the token is requested</param>
+            <returns>The certificate to be used </returns>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.IClientCredential">
+            <summary>Defines a client credential (opaque).</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.IClientHomeSts">
+            <summary>Defines a client's home STS.</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IClientHomeSts.RealmName">
+            <summary>Gets the realm name of the client's STS.</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IClientHomeSts.StsEndpoint">
+            <summary>Gets the security token service endpoint address of the client's STS.</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.IManagedServiceIdentityCredential">
+            <summary>
+            MSI Credential interface
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IManagedServiceIdentityCredential.Name">
+            <summary>
+            Gets or sets MSI Name
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IManagedServiceIdentityCredential.ClientHomeStsList">
+            <summary>
+            Gets or sets Client STS list
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IManagedServiceIdentityCredential.ServiceIdentityCredentials">
+            <summary>
+            Gets or sets Service credentials
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerAuthenticationProvider">
+            <summary>
+            Defines an interface for the server authentication provider.
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerAuthenticationProvider.CreateAuthenticationMetadata">
+            <summary>
+            Creates opaque authentication metadata that can be used by the server
+            to construct the WCF Message object returned to the client.
+            </summary>
+            <returns>
+            The opaque authentication metadata.
+            </returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerAuthenticationProvider.ConfigureServiceHost(System.ServiceModel.ServiceHost)">
+            <summary>
+            Configures the WCF service host to accept federated credentials.
+            </summary>
+            <param name="serviceHost">The service host.</param>
+            <remarks>
+            This method must be called before the service host is opened. 
+            In addition, it recommended that the service endpoints are added
+            to the service host prior to calling this method.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerAuthenticationProvider.CreateAuthenticationMetadataOnClient">
+            <summary>
+            In certain scenarios where authentication metadata is not expected to change, client may prefer to create authentication metadata locally.
+            CreateAuthenticationMetadata also has same effect but has overhead of network call to get signing cert from DSTS. Signing cert information is only required on server.
+            </summary>
+            <returns>The opaque authentication metadata.</returns>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerHomeDsts">
+            <summary>
+            Defines an interface representing necessary information about the dSTS
+            for the purpose of authentication.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerHomeDsts.DstsRealm">
+            <summary>Gets the realm name for the dSTS.</summary>
+            <remarks>For example: realm://dsts.windows.azure.net/</remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerHomeDsts.DstsDnsHostName">
+            <summary>Gets the DNS host name of the dSTS.</summary>
+            <remarks>For example: cluster1.dsts.windows.azure.net</remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerHomeDsts.DstsCertificates">
+            <summary>Gets the list of dSTS certificates trusted by the server.</summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServerHomeDsts.OverrideDstsPort">
+            <summary>Gets the token issuance port of the dSTS.</summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServiceIdentity">
+            <summary>
+            Defines the dSTS service identity.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServiceIdentity.ServiceDnsHostName">
+            <summary>
+            Gets the service DNS host name.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServiceIdentity.ServiceNames">
+            <summary>
+            Gets the list of service name.
+            </summary>
+            <remarks>
+            The service name is the UserInfo part of the service target 
+            name (or service realm).
+            For example: If the service realm is svc://name@host/, then 'name'
+            is the service name and 'host' is the service DNS host name.
+            </remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Security.Authentication.Contracts.IServiceIdentity.AdditonalDnsHostNames">
+            <summary>
+            Gets the list of host names that the service will accept tokens for in addition to ServiceDnsHostName
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Security.Authentication.Contracts.Services.IDstsDiscoveryService">
+            <summary>Defines dSTS discovery (operations available to unauthenticated clients).</summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.Services.IDstsDiscoveryService.GetSigningKeyChain(System.String)">
+            <summary>
+            Looks up a previous signing key by thumbprint and returns the part of the
+            chain up to and including the specified signing key. If no signing key in
+            the signing key chain has the specified thumbprint, the operation faults.
+            </summary>
+            <param name="previousKeyThumbprint">The thumbprint of the certificate up to to include signing keys.</param>
+            <returns>The part of the chain up to and including the specified signing key.</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.Services.IDstsDiscoveryService.GetTokenIssuanceUrls(System.String)">
+            <summary>
+            Finds the federation with an exact or ending suffix match to the domainName
+            and returns its associated list of tokenIssuanceUrls.
+            If no match is found, the default federation will be used if there is one.
+            </summary>
+            <param name="domainName">The domain name for which to return token issuance URLs.</param>
+            <returns>TokenIssuanceUrls or empty set.</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Security.Authentication.Contracts.Services.IDstsDiscoveryService.GetFederationInformationForServiceRealm(System.String,System.String)">
+            <summary>
+            Finds token issuance urls by suffix match with the requested domain name and
+            also returns the authentication strength necessary for the requested realm.
+            </summary>
+            <returns>TokenIssuanceUrls or empty set</returns>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,2043 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DcmtLibManaged</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.AimsParserOperationsEnum">
+            <summary>
+            The enumeration of operation of Fabric AIMs rules
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AimsParserOperationsEnum.Suppress">
+            <summary>
+            Suppress: add cluster names into AIMS DECOMMClusters list of FcSuppressedClusterManager.xml
+            in order not to apply AIMs rules
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AimsParserOperationsEnum.Unsuppress">
+            <summary>
+            Unsuppress: remove cluster names from AIMS DECOMMClusters list of FcSuppressedClusterManager.xml
+            in order to re-apply AIMs rules
+            </summary>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser">
+            <summary>
+            Parser for the fc suppress xml file in AIMS
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.SuppressedSlbAimsRuleName">
+            <summary>
+            list name for suppressed slbs in AIMS file
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.SuppressedDecomClustersAimsRuleName">
+            <summary>
+            list name for suppressed decomm clusters in AIMS file
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.logger">
+            <summary>
+            Logger that needs to be passed in from the caller
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.GetFileContentFunc">
+            <summary>
+            Func for getting file content (for testability)
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.#ctor(Microsoft.WindowsAzure.Topology.Contracts.ITopologyLogger,System.Func{System.String,System.Collections.Generic.IEnumerable{System.String}})">
+            <summary>
+            Constructor
+            </summary>
+            <param name="logger">Logger that needs to be passed in from the caller</param>
+            <param name="getFileContentFunc">Func for getting file content (for testability)</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.GetAllSuppressedClusters(System.String,System.Collections.Generic.IList{System.String}@)">
+            <summary>
+            Gets all the suppressed clusters from AIMS file.
+            </summary>
+            <param name="aimsFilePath">AIMS file path</param>
+            <param name="clustersSuppressed">List of supppressed clusters</param>
+            <returns>True on success, false otherwise</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.GetNamedSuppressedList(System.String,System.String,System.Collections.Generic.List{System.String}@)">
+            <summary>
+            Extract the suppression list for a specific named variable in the AIMS file
+            </summary>
+            <param name="aimsFilePath"></param>
+            <param name="variableName"></param>
+            <param name="clustersSuppressed"></param>
+            <returns></returns>
+            <exception cref="T:System.ArgumentNullException"></exception>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.GetSuppressedSlbList(System.String,System.Collections.Generic.List{System.String}@)">
+            <summary>
+            Get list of suppressed SLBs from the AIMS file
+            </summary>
+            <param name="aimsFilePath"></param>
+            <param name="suppressedSlbs"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.GetSuppressedDecommList(System.String,System.Collections.Generic.List{System.String}@)">
+            <summary>
+            Get list of suppressed Decomm clusters from the AIMS file
+            </summary>
+            <param name="aimsFilePath"></param>
+            <param name="clustersSuppressed"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.ModifyAimsRule(System.String,System.String,System.Collections.Generic.List{System.String},Microsoft.Azure.Topology.DcmtLib.AimsParserOperationsEnum,System.Collections.Generic.List{System.String}@)">
+            <summary>
+            Add(Suppress)/Remove(Unsuppress) the given items to the given list. "Aims rule" in
+            this case is considered to be a 'let' statement (e.g. let DECOMMClusters = "SN2PrdApp14,CH1PrdApp16")
+            </summary>
+            <param name="originalFilePath"></param>
+            <param name="listNameToUpdate">Keyword for matching 'let' entry, e.g. 'DECOMMClusters'.</param>
+            <param name="updateList">List of items to suppress/unsuppress</param>
+            <param name="operation">Suppress/Unsuppress</param>
+            <param name="updatedFileLines"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.ModifyAimsRule(System.String,System.String,System.Collections.Generic.List{System.String},Microsoft.Azure.Topology.DcmtLib.AimsParserOperationsEnum,System.Boolean,System.Collections.Generic.List{System.String}@)">
+            <summary>
+            Add(Suppress)/Remove(Unsuppress) the given items to the given list. "Aims rule" in
+            this case is considered to be a 'let' statement (e.g. let DECOMMClusters = "SN2PrdApp14,CH1PrdApp16")
+            </summary>
+            <param name="originalFilePath"></param>
+            <param name="listNameToUpdate">Keyword for matching 'let' entry, e.g. 'DECOMMClusters'.</param>
+            <param name="updateList">List of items to suppress/unsuppress</param>
+            <param name="operation">Suppress/Unsuppress</param>
+            <param name="addToSuppressedClusterList">if to add the node of the rule into "SuppressedClusters"</param>
+            <param name="updatedFileLines"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.UpdateFabricAimsRules(System.String,System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.String}@)">
+            <summary>
+            Change the Aims rules in originalFilePath, and the output goes to outputFilePath
+            </summary>
+            <param name="originalFilePath"></param>
+            <param name="remainingClustersToSuppress"></param>
+            <param name="remainingClustersToUnsuppress"></param>
+            <param name="updatedLines"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.UpdateFabricAimsRulesWithDcName(System.String,System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.String},System.String,System.Collections.Generic.List{System.String}@)">
+            <summary>
+            Change the Aims rules in originalFilePath, and the output goes to outputFilePath
+            </summary>
+            <param name="originalFilePath"></param>
+            <param name="remainingClustersToSuppress"></param>
+            <param name="remainingClustersToUnsuppress"></param>
+            <param name="dcName"></param>
+            <param name="updatedLines"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.CheckAndAddNewDcRule(System.String,System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.String})">
+            <summary>
+            Check and add a new suppression list
+            </summary>
+            <param name="dcName"></param>
+            <param name="currentAimsLines"></param>
+            <param name="clustersToSuppress"></param>
+            <param name="clustersToUnsuppress"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.UpdateFcSuppressLine(System.String,System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.String})">
+            <summary>
+            edit the original line when it's needed to add/remove new clusters
+            </summary>
+            <param name="originalLine">original line in FcSuppressedClusterManager.xml</param>
+            <param name="clustersToSuppress">the clusters to be suppressed, list can be altered in this method</param>
+            <param name="clustersToUnsuppress">the clusters to be unsuppressed, list can be altered in this method</param>
+            <returns>text of the processed line</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.UpdateFcSuppressLineWithDcName(System.String,System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.String},System.String)">
+            <summary>
+            edit the original line when it's needed to add/remove new clusters
+            </summary>
+            <param name="originalLine">original line in FcSuppressedClusterManager.xml</param>
+            <param name="clustersToSuppress">the clusters to be suppressed, list can be altered in this method</param>
+            <param name="clustersToUnsuppress">the clusters to be unsuppressed, list can be altered in this method</param>
+            <param name="dcName"></param>
+            <returns>text of the processed line</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.GetShortDatacenterId(System.String)">
+            <summary>
+            Get the short ID for the datacenter
+            Short ID is the unique 2 letter ID
+            </summary>
+            <param name="dcName">
+            The DC Name.
+            </param>
+            <returns>
+            The short DC id.
+            </returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.GetSuppressedClusters(System.String)">
+            <summary>
+            Parse the list of suppressed clusters
+            </summary>
+            <param name="clustersString">List of suppressed clusters as string</param>
+            <returns>List of Suppressed clusters</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.AimsClusterSuppressionParser.AddOrUpdateSuppressionLine(System.String,System.String,System.Collections.Generic.List{System.String},Microsoft.Azure.Topology.DcmtLib.AimsParserOperationsEnum,System.Boolean,System.Collections.Generic.List{System.String}@)">
+            <summary>
+            Modify Aims Rule helper method
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.BriefGeographyInfo">
+            <summary>
+            Represent a Geography element defined in Clouds.xml in DCMT
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.BriefGeographyInfo.Name">
+            <summary>
+            Name of a geography in a cloud environment
+            </summary>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.AzureCloudEnv">
+            <summary>
+            Represent a cloud element defined in Clouds.xml in DCMT
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.AzureCloudEnv.Name">
+            <summary>
+            Name of this cloud environment
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AzureCloudEnv.Guid">
+            <summary>
+            GUID
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AzureCloudEnv.Alias">
+            <summary>
+            Well-know alternate name for this cloud environment
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AzureCloudEnv.Index">
+            <summary>
+            Numerical ID of this cloud environment
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.AzureCloudEnv.GeographyNames">
+            <summary>
+            Names of all geographies supported in this cloud environment
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.AzureCloudEnv.GeoInfo">
+            <summary>
+            Geographies in this cloud environment
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.AzureCloudEnv.AllClouds">
+            <summary>
+            all cloud environments
+            </summary>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments">
+            <summary>
+            Represent the rool element defined in Clouds.xml in DCMT
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.NextIndexToUse">
+            <summary>
+            The index to use for the next cloud envrionment
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.CloudEnvs">
+            <summary>
+            The list of geo regions that support availability zones
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.GuidMap">
+            <summary>
+            Mapping from entity GUIDs to entity objects
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.GeoToCloudMap">
+            <summary>
+            Mapping from geography names to CloudEnvironment objects
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.NameMap">
+            <summary>
+            Mapping from cloud names to CloudEnvironment objects
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.GetCloudByName(System.String)">
+            <summary>
+            Find the cloudEnvrionment with the given name
+            </summary>
+            <param name="cloudName">Name of the cloud environment</param>
+            <returns>object representing the cloud environment or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.GetCloudByGuid(System.Guid)">
+            <summary>
+            Find the cloudEnvrionment with the given name
+            </summary>
+            <param name="guid">GUID of the cloud environment</param>
+            <returns>object representing the cloud environment or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.GetCloudByIndex(System.Int32)">
+            <summary>
+            Find the cloudEnvrionment with the given index
+            </summary>
+            <param name="index">GUID of the cloud environment</param>
+            <returns>object representing the cloud environment or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.GetCloudByGeoName(System.String)">
+            <summary>
+            Find the CloudEnvironment to which the geography with the given name belongs
+            </summary>
+            <param name="geoName">name of the geograph</param>
+            <returns>object representing the cloud environment or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudEnvironments.Load(Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper,System.Boolean)">
+            <summary>
+            Create an instance
+            </summary>
+            <param name="dcmtDepot">where to find Clouds.xml</param>
+            <param name="loadAllMetadata">whether to load other metadata (e.g. geo, regional info) as well</param>
+            <returns>An instance</returns>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.CloudInfoValidationException">
+            <summary>
+            Exceptions likely thrown by operations related to cloud environments
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudInfoValidationException.#ctor(System.String)">
+            <summary>
+            Constructor for CloudInfoValidationException
+            </summary>
+            <param name="message">Exception message</param>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider">
+            <summary>
+            Interface to provide information about a cluster.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.Depots">
+            <summary>
+            Mapping from clouds to depot paths.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.BuildSharePath">
+            <summary>
+            Root build share path.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.IsRuntimeInCloudEnvironment">
+            <summary>
+            Indicates that ClusterDataProvider is allocated for a specific cloud.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.ExcludingCloudSettings">
+            <summary>
+            Indicates whether to exclude cloud settings specific to this cluster
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetMinimalClusterInfo">
+            <summary>
+            Indicates whether to get mimimal cluster info
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetClusterInfo(System.String)">
+            <summary>
+            Retrieves cluster information for the given cluster.
+            </summary>
+            <param name="clusterName">The name of the cluster.</param>
+            <returns>A ClusterInfo object corresponding to the named cluster.</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetClusterInfo(System.String,System.String)">
+            <summary>
+            Retrieves cluster information for the given cluster.
+            </summary>
+            <param name="clusterName">The name of the cluster.</param>
+            <param name="datacenterName">the name of the datacenter if known</param>
+            <returns>A ClusterInfo object corresponding to the named cluster.</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetClusterInfo(System.String,System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Retrieves cluster information for the given cluster.
+            </summary>
+            <param name="clusterName">The name of the cluster.</param>
+            <param name="datacenterName">the name of the datacenter if known</param>
+            <param name="cloud">which cloud environment the cluster is in if known</param>
+            <returns>A ClusterInfo object corresponding to the named cluster.</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.#ctor">
+            <summary>
+            Creates a default ClusterDataProvider.
+            </summary>
+            <remarks>
+            This will tell the ClusterDataProvider to pull its information from \\reddog, which means that construction
+            of the object and all operations on it could potentially be *very* slow.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.#ctor(System.String)">
+            <summary>
+            Creates a ClusterDataProvider with the given build share path.
+            </summary>
+            <param name="buildSharePath">Path to the build share containing DCMT, DCMT_BlackForest, DCMT_Federal, and
+            DCMT_Mooncake folders.</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.#ctor(Microsoft.Azure.Topology.DcmtLib.AzureCloud,System.Boolean,System.Boolean)">
+            <summary>
+            Creates a ClusterDataProvider for a specific cloud.
+            AzureCloud.All assumes reading from reddog.
+            Will attempt to load paths from Public cloud (reddog) and will fall back to check if the cloud domain
+            path is reachable.
+            </summary>
+            <param name="cloud">Load this specific cloud DCMT settings.</param>
+            <param name="verifyPath">Default is true to indicate we should verify the path.</param>
+            <param name="isNonPublicCloud">Default is false to indicate we should attempt the Public paths.</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.#ctor(Microsoft.Azure.Topology.DcmtLib.AzureCloud,System.String)">
+            <summary>
+            Creates a ClusterDataProvider for a specific cloud.
+            AzureCloud.All assumes reading from reddog.
+            Will attempt to load paths from Public cloud (reddog) and will fall back to check if the cloud domain
+            path is reachable.
+            </summary>
+            <param name="cloud">Load this specific cloud DCMT settings.</param>
+            <param name="dcmtRootPath">where to find DCMT files</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.InitializeInCloudEnvironment(Microsoft.Azure.Topology.DcmtLib.AzureCloud,System.Boolean,System.String)">
+            <summary>
+            ClusterDataProvider is initialized to run within the cloud.
+            This will set the build path for the cloud domain.
+            </summary>
+            <param name="cloud">Runtime cloud.</param>
+            <param name="verifyPath">Test if the path exists.</param>
+            <param name="dcmtRootPath">where to find DCMT files</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.DefaultInitialization(System.String)">
+            <summary>
+            Initialize default settings.
+            </summary>
+            <param name="buildSharePath">Path to the DCMT depots.</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.InitializeAllDepotPaths">
+            <summary>
+            Initialize all depot paths.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.InitializeSpecificRedDogDepotPath(Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Attempts to initialize a single clouds depot build path.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetDatacenter(System.String,System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Returns the path to this cluster's Datacenter.xml file and which cloud it's in.
+            </summary>
+            <param name="clusterName">The name of this cluster.</param>
+            <param name="datacenterName">the name of the datacenter if known</param>
+            <param name="cloud">which cloud environment the cluster is in if known</param>
+            <returns>path of the datacenter.xml containing the given cluster and the cloud environment</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetDatacenterRegionName(System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Gets the region name for a datacenter.
+            </summary>
+            <param name="dcName">The name of the datacenter.</param>
+            <param name="cloud">Which cloud a file resides in.</param>
+            <returns>Region name where this datacenter resides.</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetDcmtLatestBuildSharePath(Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Gets the path to a specific cloud overload.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetClusterType(System.Xml.Linq.XElement,System.Xml.Linq.XElement,System.String)">
+            <summary>
+            Gets the type of the cluster.
+            </summary>
+            <param name="datacenter">The datacenter.</param>
+            <param name="cluster">The cluster's XML entry.</param>
+            <param name="clusterName">The name of the cluster.</param>
+            <returns>The types of the cluster.</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetClusterTypes(System.Xml.Linq.XElement,System.Xml.Linq.XElement,System.String)">
+            <summary>
+            Gets the type of the cluster.
+            </summary>
+            <param name="datacenter">The datacenter.</param>
+            <param name="cluster">The cluster's XML entry.</param>
+            <param name="clusterName">The name of the cluster.</param>
+            <returns>The types of the cluster.</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetMachinePoolType(System.Xml.Linq.XElement)">
+            <summary>
+            Gets the type of the machine pool.
+            </summary>
+            <param name="machinePool">The machine pool.</param>
+            <returns>The type of the machine pool.</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterDataProvider.GetClusterSettings(System.String,System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Reads global and cluster scoped settings.
+            </summary>
+            <returns>Dictionary of cluster settings.</returns>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.ClusterInfo">
+            <summary>
+            Class that holds information about a cluster.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.LogicalDC">
+            <summary>
+            Gets the logical DC that contains this cluster.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.RegionName">
+            <summary>
+            Gets the regional name that contains this cluster.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.ClusterType">
+            <summary>
+            All types of machine pools this cluster contains.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.ClusterTypeString">
+            <summary>
+            Raw value of the cluster type string. If ClusterType is ClusterType.Unknown, check this field.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.ClusterTypes">
+            <summary>
+            All types of machine pools this cluster contains.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.ClusterTypeStrings">
+            <summary>
+            Raw value of the cluster type string. If ClusterType is ClusterType.Unknown, check this field.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.Cloud">
+            <summary>
+            Which cloud contains this cluster.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.ClusterSettings">
+            <summary>
+            Cluster specific settings.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.#ctor(System.String,System.Collections.Generic.IEnumerable{Microsoft.Azure.Topology.DcmtLib.ClusterType},Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Constructs a new ClusterInfo.
+            </summary>
+            <param name="logicalDC">The logical datacenter containing this cluster.</param>
+            <param name="clusterTypes">The types of machine pools in this cluster.</param>
+            <param name="cloud">The cloud containing this cluster.</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.#ctor(System.String,System.Collections.Generic.IEnumerable{System.String},Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Constructs a new ClusterInfo.
+            </summary>
+            <param name="logicalDC">The logical datacenter containing this cluster.</param>
+            <param name="clusterTypes">The types of machine pools in this cluster.</param>
+            <param name="cloud">The cloud containing this cluster.</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.#ctor(System.String,System.Collections.Generic.IEnumerable{System.String},System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud,System.Collections.Generic.IDictionary{System.String,System.String})">
+            <summary>
+            Constructs a new ClusterInfo.
+            </summary>
+            <param name="logicalDC">The logical datacenter containing this cluster.</param>
+            <param name="clusterTypes">The types of machine pools in this cluster.</param>
+            <param name="regionName">The region containing this cluster.</param>
+            <param name="cloud">The cloud containing this cluster.</param>
+            <param name="clusterSettings">The cloud settings for this cluster.</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.#ctor(System.String,System.Collections.Generic.IEnumerable{Microsoft.Azure.Topology.DcmtLib.ClusterType},System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud,System.Collections.Generic.IDictionary{System.String,System.String})">
+            <summary>
+            Constructs a new ClusterInfo.
+            </summary>
+            <param name="logicalDC">The logical datacenter containing this cluster.</param>
+            <param name="clusterTypes">The types of machine pools in this cluster.</param>
+            <param name="regionName">The region containing this cluster.</param>
+            <param name="cloud">The cloud containing this cluster.</param>
+            <param name="clusterSettings">The cloud settings for this cluster.</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.ClusterInfo.ParseClusterType(System.String)">
+            <summary>
+            Parses the type of the cluster.
+            </summary>
+            <param name="clusterType">Type of the cluster.</param>
+            <returns>The type of the cluster as a ClusterType, or ClusterType.Unknown if it was not recognized.</returns>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.ClusterType">
+            <summary>
+            Types of the machine pools and clusters
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.ClusterType.Unknown">
+            <summary>
+            Unknown
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.ClusterType.Fabric">
+            <summary>
+            Fabric (UFC or FCC)
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.ClusterType.Compute">
+            <summary>
+            Compute
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.ClusterType.HPC">
+            <summary>
+            HPC
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.ClusterType.XStore">
+            <summary>
+            Storage
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.ClusterType.XTransport">
+            <summary>
+            XTransport
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.ClusterType.DDC">
+            <summary>
+            SQL Azure (SAWA)
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.ClusterType.XArchive">
+            <summary>
+            XArchive
+            </summary>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.DcmtLibException">
+            <summary>
+            Exception type thrown from DcmtLib.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DcmtLibException.#ctor(System.String,System.Object[])">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Azure.Topology.DcmtLib.DcmtLibException"/> class.
+            </summary>
+            <param name="fmt">The format string.</param>
+            <param name="args">The arguments to the format string.</param>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DcmtLibException.#ctor(System.String,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Microsoft.Azure.Topology.DcmtLib.DcmtLibException"/> class.
+            </summary>
+            <param name="message">The error message that explains the reason for the exception.</param>
+            <param name="innerException">The exception that is the cause of the current exception.</param>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.IDepotEnlister">
+            <summary>
+            Class to find the correct remote branches to use for enlisting DCMT depots.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.IDepotEnlister.GetAimsEnlistment(System.String)">
+            <summary>
+            Returns an IDcmtDepot with all the information necessary to enlist in AIMS.
+            </summary>
+            <param name="clientRoot">Client root under which to enlist.</param>
+            <returns>An IDcmtDepot with all the information necessary to enlist in AIMS.</returns>
+            <remarks>
+            This method returns a depot object with all the information necessary to enlist in this depot. It will not
+            perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.IDepotEnlister.GetDcmtEnlistment(System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Returns an IDcmtDepot with all the information necessary to enlist in DCMT.
+            </summary>
+            <param name="clientRoot">Client root under which to enlist.</param>
+            <param name="cloud">Which cloud's DCMT to enlist.</param>
+            <returns>An IDcmtDepot with all the information necessary to enlist in DCMT.</returns>
+            <remarks>
+            This method returns a depot object with all the information necessary to enlist in this depot. It will not
+            perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.IDepotEnlister.GetDcmtEnlistment(System.String,System.String)">
+            <summary>
+            Returns an IDcmtDepot with all the information necessary to enlist in DCMT.
+            </summary>
+            <param name="clientRoot">Client root under which to enlist.</param>
+            <param name="cloud">Which cloud's DCMT to enlist.</param>
+            <returns>An IDcmtDepot with all the information necessary to enlist in DCMT.</returns>
+            <remarks>
+            This method returns a depot object with all the information necessary to enlist in this depot. It will not
+            perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            </remarks>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.DepotEnlister">
+            <summary>
+            Class to find the correct remote branches to use for enlisting DCMT depots.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.DcmtDepotSdPort">
+            <summary>
+            Default SD port for DCMT.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.DcmtTestDepot">
+            <summary>
+            Branch name of test DCMT depot.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.OneDcmtDepot">
+            <summary>
+            Branch name of merged DCMT depot.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.DcmtVstsProject">
+            <summary>
+            Project name of DCMT in VSTS.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.DcmtVstsRepo">
+            <summary>
+            Repo name of DCMT in VSTS. Need to update this when we know what we're naming the repo.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.GetAimsEnlistment(System.String)">
+            <summary>
+            Returns an IDcmtDepot with all the information necessary to enlist in AIMS.
+            </summary>
+            <param name="clientRoot">Client root under which to enlist.</param>
+            <returns>An IDcmtDepot with all the information necessary to enlist in AIMS.</returns>
+            <remarks>
+            This method returns a depot object with all the information necessary to enlist in this depot. It will not
+            perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.GetDcmtEnlistment(System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud)">
+            <summary>
+            Returns an IDcmtDepot with all the information necessary to enlist in DCMT.
+            </summary>
+            <param name="clientRoot">Client root under which to enlist.</param>
+            <param name="cloud">Which cloud's DCMT to enlist.</param>
+            <returns>An IDcmtDepot with all the information necessary to enlist in DCMT.</returns>
+            <remarks>
+            This method returns a depot object with all the information necessary to enlist in this depot. It will not
+            perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.GetDcmtEnlistment(System.String,System.String)">
+            <summary>
+            Returns an IDcmtDepot with all the information necessary to enlist in DCMT.
+            </summary>
+            <param name="clientRoot">Client root under which to enlist.</param>
+            <param name="cloud">Which cloud's DCMT to enlist.</param>
+            <returns>An IDcmtDepot with all the information necessary to enlist in DCMT.</returns>
+            <remarks>
+            This method returns a depot object with all the information necessary to enlist in this depot. It will not
+            perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.GetAimsEnlistment(System.String,Microsoft.Azure.Topology.DcmtLib.IPathTester)">
+             <summary>
+             Returns an IDcmtDepot with all the information necessary to enlist in AIMS.
+             </summary>
+             <param name="clientRoot">Client root under which to enlist.</param>
+             <param name="pathTester">A function that, when given a path, returns whether that path should be used as the
+             enlistment root.</param>
+             <returns>An IDcmtDepot with all the information necessary to enlist in AIMS.</returns>
+             <remarks>
+             This method returns a depot object with all the information necessary to enlist in this depot. It will not
+             perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            
+             For enlisting in AIMS, the following paths are checked:
+                 //depot/OneDCMT
+            
+             In the standard version, the first path to not have a donotuse.txt file under it is used.
+             </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.GetDcmtEnlistment(System.String,System.String,Microsoft.Azure.Topology.DcmtLib.IPathTester)">
+             <summary>
+             Returns an IDcmtDepot with all the information necessary to enlist in DCMT.
+             </summary>
+             <param name="clientRoot">Client root under which to enlist.</param>
+             <param name="cloud">Which cloud's DCMT to enlist.</param>
+             <param name="pathTester">A function that, when given a path, returns whether that path should be used as the
+             enlistment root.</param>
+             <returns>An IDcmtDepot with all the information necessary to enlist in DCMT.</returns>
+             <remarks>
+             This method returns a depot object with all the information necessary to enlist in this depot. It will not
+             perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            
+             For enlisting in DCMT, the following paths are checked:
+                 //depot/OneDCMT
+            
+             In the standard version, the first path to not have a donotuse.txt file under it is used.
+             </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.GetDcmtEnlistment(System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud,Microsoft.Azure.Topology.DcmtLib.IPathTester)">
+             <summary>
+             Returns an IDcmtDepot with all the information necessary to enlist in DCMT.
+             </summary>
+             <param name="clientRoot">Client root under which to enlist.</param>
+             <param name="cloud">Which cloud's DCMT to enlist.</param>
+             <param name="pathTester">A function that, when given a path, returns whether that path should be used as the
+             enlistment root.</param>
+             <returns>An IDcmtDepot with all the information necessary to enlist in DCMT.</returns>
+             <remarks>
+             This method returns a depot object with all the information necessary to enlist in this depot. It will not
+             perform the actual enlistment. Check the returned object's Enlistment property for enlistment information.
+            
+             For enlisting in DCMT, the following paths are checked:
+                 //depot/OneDCMT
+            
+             In the standard version, the first path to not have a donotuse.txt file under it is used.
+             </remarks>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DepotEnlister.GetEnlistment(System.String,Microsoft.Azure.Topology.DcmtLib.AzureCloud,Microsoft.Azure.Topology.DcmtLib.IPathTester,System.String,System.String)">
+            <summary>
+            Returns a new DcmtDepot from the given path.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.BriefRegionInfo">
+            <summary>
+            Represent a Region element defined in Geographies.xml in DCMT
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.BriefRegionInfo.ID">
+            <summary>
+            ID of a region in its enclosing Geography environment
+            </summary>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.CloudGeography">
+            <summary>
+            Represent a Geograph element defined in Clouds.xml in DCMT
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeography.Name">
+            <summary>
+            Name of this geography
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeography.Guid">
+            <summary>
+            GUID
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeography.Index">
+            <summary>
+            Numerical ID of this geography; unique within its enclosing cloud environment
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeography.State">
+            <summary>
+            Current state of this geography.
+            </summary>
+            <remarks>Supported values: Approved, Cancelled, Buildout, Live, Retired</remarks>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeography.ShortID">
+            <summary>
+            Short name for this geography.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeography.RegionIDs">
+            <summary>
+            Names of all geographies supported in this cloud environment
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.CloudGeography.IsGeoLive">
+            <summary>
+            Whether this geography is live
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeography.AllGeographies">
+            <summary>
+            The object representing Geographies.xml
+            </summary>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.CloudGeographies">
+            <summary>
+            Represent the rool element defined in Geographies.xml in DCMT
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.NextIndexToUse">
+            <summary>
+            The index to use for the next cloud Geography
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.ValidGeoStates">
+            <summary>
+            Semicolon (';') separated list of valid values can be assigned to the state property
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.GeoLiveStates">
+            <summary>
+            Semicolon (';') separated list of valid geography states that indicate a geography is live
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.Geographies">
+            <summary>
+            Collection of all georgraphies
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.Cloud">
+            <summary>
+            The cloud environment composing of these geographies
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.RegionInfo">
+            <summary>
+            Info about regionsin this cloud environment
+            </summary>
+        </member>
+        <member name="P:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.GuidMap">
+            <summary>
+            Mapping from entity GUIDs to entity objects
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.RegionToGeoMap">
+            <summary>
+            Mapping from region names to CloudGeography objects
+            </summary>
+        </member>
+        <member name="F:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.NameMap">
+            <summary>
+            Mapping from geograhpy names to CloudGeography objects
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.GetGeographyByName(System.String)">
+            <summary>
+            Find the CloudGeography with the given name
+            </summary>
+            <param name="geoName">Name of the cloud geography</param>
+            <returns>object representing the cloud geography or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.GetGeographyByShortID(System.String)">
+            <summary>
+            Find the CloudGeography with the given short ID
+            </summary>
+            <param name="shortID">short ID of the cloud geography</param>
+            <returns>object representing the cloud geography or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.GetGeographyByGuid(System.Guid)">
+            <summary>
+            Find the CloudGeography with the given name
+            </summary>
+            <param name="guid">GUID of the cloud geography</param>
+            <returns>object representing the cloud geography or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.GetGeographyByIndex(System.Int32)">
+            <summary>
+            Find the CloudGeography with the given index
+            </summary>
+            <param name="index">GUID of the cloud geography</param>
+            <returns>object representing the cloud geography or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.GetGeographyByRegionID(System.String)">
+            <summary>
+            Find the CloudGeography to which the region with the given ID belongs
+            </summary>
+            <param name="regID">name of the cloud geography</param>
+            <returns>object representing the cloud geography or null</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.CloudGeographies.Load(Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper,Microsoft.Azure.Topology.DcmtLib.CloudEnvironments,System.Boolean)">
+            <summary>
+            Create an instance
+            </summary>
+            <param name="dcmtDepot">where to find Geographies.xml</param>
+            <param name="clouds">info loaded from Clouds.xml</param>
+            <param name="loadAllMetadata">whether to load other metadata (e.g. cloud, regional info) as well</param>
+            <returns>An instance</returns>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.GeoInfoValidationException">
+            <summary>
+            Exceptions likely thrown by operations related to cloud geographies
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.GeoInfoValidationException.#ctor(System.String)">
+            <summary>
+            Constructor for GeoInfoValidationException
+            </summary>
+            <param name="message">Exception message</param>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.IClusterDataProvider">
+            <summary>
+            Interface to provide information about a cluster.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.IClusterDataProvider.GetClusterInfo(System.String)">
+            <summary>
+            Retrieves cluster information for the given cluster.
+            </summary>
+            <param name="clusterName">The name of the cluster.</param>
+            <returns>A ClusterInfo object corresponding to the named cluster.</returns>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.IPathTester">
+            <summary>
+            Interface for classes that test whether paths are valid root enlistments.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.IPathTester.TestPath(System.String,System.String)">
+            <summary>
+            Given a path, returns whether that path should be used as the enlistment root.
+            </summary>
+            <param name="sdPort">SD port connection string.</param>
+            <param name="path">The path to check.</param>
+            <returns>Whether this path is an acceptable root.</returns>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.DefaultPathTester">
+            <summary>
+            IPathTester implementation that queries SD for a signal file under the specified path.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DefaultPathTester.#ctor">
+            <summary>
+            Creates a new DefaultPathTester.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.DefaultPathTester.TestPath(System.String,System.String)">
+            <summary>
+            Given a path, returns whether that path should be used as the enlistment root.
+            </summary>
+            <param name="sdPort">SD port connection string.</param>
+            <param name="path">The path to check.</param>
+            <returns>Whether this path is an acceptable root.</returns>
+            <remarks>This checks &lt;path&gt;/donotuse.txt, and returns true if that file doesn't exist.</remarks>
+        </member>
+        <member name="T:Microsoft.Azure.Topology.DcmtLib.Utils">
+            <summary>
+            Utilities class.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.Utils.GetAttributeValue(System.Xml.Linq.XElement,System.Xml.Linq.XName,System.String)">
+            <summary>
+            Gets the attribute value.
+            </summary>
+            <param name="elm">The elm.</param>
+            <param name="attributeName">Name of the attribute.</param>
+            <param name="defaultVal">Default value to return if the attribute wasn't found.</param>
+            <returns>The value of the attribute, or defaultVal if it doesn't exist.</returns>
+        </member>
+        <member name="M:Microsoft.Azure.Topology.DcmtLib.Utils.Contains(System.String,System.String,System.StringComparison)">
+            <summary>
+            Case-insensitive string.Contains implementation.
+            </summary>
+            <param name="source">The source string to be checked to see if it contains the value string</param>
+            <param name="value">The value string</param>
+            <param name="comparisonOption">string comparison option</param>
+            <returns>true if value is contained within the source string.</returns>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZoneValidationException">
+            <summary>
+            Exceptions likely thrown by operations related to availability zones
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZoneValidationException.#ctor(System.String)">
+            <summary>
+            Constructor for AvailabilityZoneValidationException
+            </summary>
+            <param name="message">Exception message</param>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.ZonalCluster">
+            <summary>
+            Represent a Cluster element defined in AZs.xml
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.ZonalCluster.Name">
+            <summary>
+            Name of this cluster
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.ZonalCluster.ArtifactDatacenter">
+            <summary>
+            name of the corresponding artifact datacenter
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.ZonalCluster.ZoneInfo">
+            <summary>
+            Info about the availability zone where this cluster resides
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.PilotFishCluster">
+            <summary>
+            Represent a PilotFish Cluster node
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.Exceptions">
+            <summary>
+            Represent an Exceptions element defined in AZs.xml
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.Exceptions.AZDatacenterExceptions">
+            <summary>
+            The list of AZDatacenterExceptions in a region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.Exceptions.AZClusterExceptions">
+            <summary>
+            The list of AZClusterException in a region
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.AZExceptions">
+            <summary>
+            Node describing clusters and datacenters not in any AZ
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AZExceptions.AZ">
+            <summary>
+            Name of the Availability Zone that the AZExeceptions belong to.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AZExceptions.ExceptionInfo">
+            <summary>
+            Info about why the DC/Cluster is not in any AZ
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.AZClusterException">
+            <summary>
+            Node describing clusters not in any AZ
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AZClusterException.Name">
+            <summary>
+            Name of this cluster
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AZClusterException.ArtifactDatacenter">
+            <summary>
+            name of the corresponding artifact datacenter
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.AZDatacenterException">
+            <summary>
+            Node describing datacenters not in any AZ
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AZDatacenterException.ID">
+            <summary>
+            Datacenter ID
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone">
+            <summary>
+            Represent an AZ element defined in AZs.xml
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.ID">
+            <summary>
+            Name of this availability zone
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.Guid">
+            <summary>
+            GUID
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.Index">
+            <summary>
+            Numerical ID of this availability zone; unique within its region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.IsLive">
+            <summary>
+            Is alive flag.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.IsZoneLive">
+            <summary>
+            Whether this zone is live
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.State">
+            <summary>
+            Current state of this AZ.
+            </summary>
+            <remarks>Supported values: Proposed, Approved, Cancelled, Buildout, Preview, GA, Decommissioned</remarks>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.ArtifactDatacenters">
+            <summary>
+            semicolon-separated list of planned logical datacenters in this availability zone
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.Clusters">
+            <summary>
+            Azure clusters in this availability zone
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.PFClusters">
+            <summary>
+            PilotFish clusters in this availability zone
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.ArtifactDatacenterInfos">
+            <summary>
+            Enumerate all Azure datacenters already in service in this availability zone
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.AzureDatacentersInUse">
+            <summary>
+            Enumerate all Azure datacenters already in service in this availability zone
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.RegionInfo">
+            <summary>
+            corresponding region info
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.ArtifactDatacentersInUse">
+            <summary>
+            list of artifact datacenters currently in use in this availability zone
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZone.FindDatacenterSiblings(System.String,System.Boolean,Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant)">
+            <summary>
+            Find the siblings of the specified DC in this zone
+            </summary>
+            <param name="dcName">Name of the DC to be excluded</param>
+            <param name="selfIncluded">whether to include the given DC name in the enumeration</param>
+            <param name="tenant">tenant accepted in a datacenter to be included in the enumeration</param>
+            <returns>An enumeration of names of sibling datacenters in this zone</returns>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones">
+            <summary>
+            Represent a Region element defined in AZs.xml
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.ID">
+            <summary>
+            Name of this region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.ClustersFailingIsolationGuarantee">
+            <summary>
+            Clusters failing isolation guarantee required to support availability zones in this region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.DatacentersFailingIsolationGuarantee">
+            <summary>
+            Datacenters failing isolation guarantee required to support availability zones in this region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.Zones">
+            <summary>
+            Availability zones in this region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.ExceptionsInRegion">
+            <summary>
+            Availability zones in this region
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.Region">
+            <summary>
+            Corresponding region info
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.GetClustersFailingGuarantee">
+            <summary>
+            Enumerates info about clusters failing isolation guarantee in this region
+            </summary>
+            <returns>an enumeration of clusters failing isolation guarantee in this region</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.GetDatacentersFailingGuarantee">
+            <summary>
+            Enumerates info about datacenters failing isolation guarantee in this region
+            </summary>
+            <returns>an enumeration of datacenters failing isolation guarantee in this region</returns>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWithAvailabilityZones.MapOfDatacentersFailingGuarantee">
+            <summary>
+            A map from names of datacenters failing isolation guarantee to info about such datacenters
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones">
+            <summary>
+            Object model for AZs.xml
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.ValidZoneStates">
+            <summary>
+            Semicolon (';') separated list of valid values can be assigned to the state property
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.ZoneLiveStates">
+            <summary>
+            Semicolon (';') separated list of valid zone states that indicate a zone is live
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.ValidAZExceptions">
+            <summary>
+            Semicolon (';') separated list of valid AZ exceptions
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.Regions">
+            <summary>
+            The list of geo regions that support availability zones
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GuidMap">
+            <summary>
+            Mapping from entity GUIDs to entity objects
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.azsXmlPath">
+            <summary>
+            Where to find a copy of AZs.xml used to populate this data structure
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.regionsXmlPath">
+            <summary>
+            Where to find a copy of Regions.xml used to populate this data structure
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.DatacenterRegions">
+            <summary>
+            region info from regions.xml
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.datacenterMap">
+            <summary>
+            a mapping from names of logical datacenters to availability zones
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.clusterMap">
+            <summary>
+            a mapping to help find zone info about clusters
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.#ctor">
+            <summary>
+            constructor
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.Load(Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper)">
+            <summary>
+            Create an instance
+            </summary>
+            <param name="dcmtDepot">where to find AZs.xml</param>
+            <returns>An instance</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.Load(Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper,Microsoft.Azure.Topology.DcmtLib.CloudGeographies)">
+            <summary>
+            Create an instance
+            </summary>
+            <param name="dcmtDepot">where to find AZs.xml</param>
+            <param name="geoInfo">info about geographies in the same cloud environment</param>
+            <returns>An instance</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.IsZoneInfoAvailable">
+            <summary>
+            Whether there is any useful information about availability zones
+            </summary>
+            <returns>true if AZs.xml exists</returns>
+            <remarks>This is only available before we have support for availability zones everywhere
+            and will be removed afterwards</remarks>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.Load(Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper,System.String,Microsoft.Azure.Topology.DcmtLib.CloudGeographies,System.Boolean)">
+            <summary>
+            Create an instance
+            </summary>
+            <param name="dcmtDepot">where to find AZs.xml</param>
+            <param name="backupRegionsXmlPath">where to find a copy of Regions.xml if there isn't one alongside AZs.xml</param>
+            <param name="geoInfo">info about geographies in the same cloud environment</param>
+            <param name="runNewChecks">whether to run new checks against GUIDs and short IDs</param>
+            <returns>An instance</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.FindSiblingDatacentersInSameZone(System.String,System.Boolean,Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant)">
+            <summary>
+            Find the siblings of the specified DC in the same availability zone
+            </summary>
+            <param name="datacenterName">Name of the DC in question</param>
+            <param name="selfIncluded">whether to include the given DC name in the enumberation</param>
+            <param name="tenant">tenant accepted in a datacenter to be included in the enumeration</param>
+            <returns>An enumeration of siblings of the specified DC</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.FindSiblingDatacentersInSameRegion(System.String,System.Boolean,Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant)">
+            <summary>
+            Find the siblings of the specified DC in the same geo region
+            </summary>
+            <param name="datacenterName">Name of the DC in question</param>
+            <param name="selfIncluded">whether to include the given DC name in the enumberation</param>
+            <param name="tenant">tenant accepted in a datacenter to be included in the enumeration</param>
+            <returns>An enumeration of siblings of the specified DC</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.FindSiblingZonesInSameRegion(System.String,System.Boolean)">
+            <summary>
+            Find the siblings of the specified zone in the same geo region
+            </summary>
+            <param name="zoneName">Name of the zone in question</param>
+            <param name="selfIncluded">whether to include the given DC name in the enumberation</param>
+            <returns>A list of siblings of the specified zone</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.ZonesSupportedInRegion(System.String)">
+            <summary>
+            Check whether a region supports availability zones
+            </summary>
+            <param name="regionName">region name</param>
+            <returns>ture if the specified region supports availability zones</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetAllZonesInRegion(System.String)">
+            <summary>
+            Retrieve all zones in a region with the given name
+            </summary>
+            <param name="regionName">region name</param>
+            <returns>An enumeration of zones in the specified region</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetAvailabilityZoneByIndex(System.String,System.Int32)">
+            <summary>
+            Get info about a zone by index in a region with the given name
+            </summary>
+            <param name="regionName">region name</param>
+            <param name="zoneIndex">index of the zone in the region</param>
+            <returns>info about a zone in the specified region</returns>
+            <remarks>The current convention is that the first zone (with an index of 0)
+            in a region takes the name of [RegionName]-AZ01, the second (with an index
+            of 1) [RegionName]-AZ02, and so on.</remarks>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetDatacenterRegionByClusterName(System.String)">
+            <summary>
+            Find the region that the given cluster locates in
+            </summary>
+            <param name="clusterName">Name of the cluster in question</param>
+            <returns>the DatacenterRegion where the cluster with the given name resides</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetDatacenterRegionByDatacenterName(System.String)">
+            <summary>
+            Find the region that the given DC locates in
+            </summary>
+            <param name="datacenterName">Name of the DC in question</param>
+            <returns>the DatacenterRegion where the datacenter with the given name resides</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetDatacenterRegionByZoneName(System.String)">
+            <summary>
+            Find the region that the given zone locates in
+            </summary>
+            <param name="zoneName">Name of the zone in question</param>
+            <returns>the DatacenterRegion where the zone with the given name resides</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetDatacenterRegionByName(System.String)">
+            <summary>
+            Find the region with the given name
+            </summary>
+            <param name="regionName">Name of the region in question</param>
+            <returns>the DatacenterRegion with the given name</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetLogicalRegionsOfPhysicalRegion(System.String)">
+            <summary>
+            Find all logical regions of the given physical region
+            </summary>
+            <param name="regionName">Name of the physical region</param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetAllDatacenterRegions">
+            <summary>
+            Retrieve region info from Regions.xml
+            </summary>
+            <returns>a DatacenterRegions instance</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetAvailabilityZoneByGuid(System.Guid)">
+            <summary>
+            Find the DatacenterRegion with the given name
+            </summary>
+            <param name="guid">GUID of the region</param>
+            <returns>object representing the region or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetAvailabilityZoneByName(System.String)">
+            <summary>
+            Retrieve info about the availability zone with the given name
+            </summary>
+            <param name="zoneName">Name of the availability zone</param>
+            <returns>relevant AZ info or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetAvailabilityZoneByDatacenterName(System.String)">
+            <summary>
+            Retrieve info about the availability zone where the logical datacenter with the given name is located
+            </summary>
+            <param name="datacenterName">Name of the reference datacenter</param>
+            <returns>relevant AZ info or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetAvailabilityZoneByClusterName(System.String)">
+            <summary>
+            Retrieve info about the availability zone where the cluster with the given name is located
+            </summary>
+            <param name="clusterName">Name of the reference cluster</param>
+            <returns>relevant AZ info or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.GetArtifactDatacenterNameByClusterName(System.String)">
+            <summary>
+            Retrieve the name of the artifact datacenter where the cluster with the given name is located
+            </summary>
+            <param name="clusterName">Name of the reference cluster</param>
+            <returns>name of the artifact datacenter or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.AddAvailabilityZone(System.String,System.String,System.String,System.String,Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper)">
+            <summary>
+            Create a new AZs.xml from this instance with a new AZ added to the specified zone
+            </summary>
+            <param name="availabilityZoneName">Name of the new AZ to be added</param>
+            <param name="guid">Guid of the new AZ to be added</param>
+            <param name="artifactDatacenters">ArtifactDatacenters of the new AZ to be added</param>
+            <param name="regionName">Name of the region where the new AZ resides</param>
+            <param name="dcmtOut">Where to save the new AZs.xml</param>
+            <returns>A new instance of AvailabilityZones with the given AZ included</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.AddCluster(System.String,System.String,System.String,System.String,Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper)">
+            <summary>
+            Create a new AZs.xml from this instance with a new cluster added to the specified zone
+            </summary>
+            <param name="clusterName">Name of the new cluster to be added</param>
+            <param name="datacenterName">Name of the artifact datacenter</param>
+            <param name="zoneName">Name of the availability zone where the new cluster resides</param>
+            <param name="regionName">Name of the region where the new cluster resides</param>
+            <param name="dcmtOut">Where to save the new AZs.xml</param>
+            <returns>A new instance of AvailabilityZones with the given cluster included</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.AddCluster(System.String,System.String,System.String,System.String,Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper,System.Boolean)">
+            <summary>
+            Create a new AZs.xml from this instance with a new cluster added to the specified zone
+            </summary>
+            <param name="clusterName">Name of the new cluster to be added</param>
+            <param name="datacenterName">Name of the artifact datacenter</param>
+            <param name="zoneName">Name of the availability zone where the new cluster resides</param>
+            <param name="regionName">Name of the region where the new cluster resides</param>
+            <param name="dcmtOut">Where to save the new AZs.xml</param>
+            <param name="isPFCluster">Whether this cluster is a PF cluster</param>
+            <returns>A new instance of AvailabilityZones with the given cluster included</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.DeleteClusters(System.Collections.Generic.IEnumerable{System.String},Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper)">
+            <summary>
+            Create a new AZs.xml from this instance with given clusters deleted.
+            </summary>
+            <param name="clusterNames">The list of cluster names to delete.</param>
+            <param name="dcmtOut">Where to save the new AZs.xml</param>
+            <returns>A new instance of AvailabilityZones with the given clusters excluded</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.New(System.String,System.String,System.String,System.String,System.Boolean)">
+            <summary>
+            Create a new AvailabilityZones instance with one cluster
+            </summary>
+            <param name="clusterName">Name of the new cluster to be added</param>
+            <param name="datacenterName">Name of the artifact datacenter</param>
+            <param name="zoneName">Name of the availability zone where the new cluster resides</param>
+            <param name="regionName">Name of the region where the new cluster resides</param>
+            <param name="isPFCluster">Whether this cluster is a PF cluster</param>
+            <returns>A new instance of AvailabilityZones with the given cluster included</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.New(System.String,System.String,System.String,System.String)">
+            <summary>
+            Create a new AvailabilityZones instance with one zone
+            </summary>
+            <param name="datacenterName">Name of the artifact datacenter</param>
+            <param name="zoneName">Name of the availability zone</param>
+            <param name="regionName">Name of the region where the new zone resides</param>
+            <param name="guid">Guid of the zone</param>
+            <returns>A new instance of AvailabilityZones with the given zone included</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.CheckAndAddToList``1(System.Collections.Generic.List{``0},``0)">
+            <summary>
+            Check whether an object has been added to a list or not, add if not
+            </summary>
+            <param name="objList">the list of T objects</param>
+            <param name="obj">a T object to be added to the list</param>
+            <returns>false if the given object is already on the list, true otherwise</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.AvailabilityZones.ValidateZoneName(System.String,System.String)">
+            <summary>
+            Validate that AZ names are always prefixed by region names
+            </summary>
+            <param name="zoneName">Zone name to validate</param>
+            <param name="regionName">name of the region the zone in question belongs to</param>
+            <returns>true if the given AZ name is prefixed by the provided region name, false otherwiase</returns>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion">
+            <summary>
+            Represent a Datacenter element defined in Regions.xml
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.ID">
+            <summary>
+            Name of this DC, should be null or empty if the DC does not host Azure clusters
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.CommonName">
+            <summary>
+            Alternate name used in some contexts (e.g. DUB06 for DB6)
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.State">
+            <summary>
+            Current state of this datacenter.
+            </summary>
+            <remarks>Supported values: Cancelled, On Hold, Buildout, Production SLA, Decommissioning, Retired</remarks>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.PhysicalDatacenterID">
+            <summary>
+            ID of the physical datacenter
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.Colos">
+            <summary>
+            Semicolon (';') separated list of valid Colocations allocated to this logical datacenter
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.IsPFCC">
+            <summary>
+            Datacenter IsPFCC
+            New datacenters are PFFC/PilotFish by default (IsPFCC = null or false)
+            true : this datacenter is PFCC (Fabric)
+            false, or absent : this datacenter is PFFC (PilotFish)
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.Tenants">
+            <summary>
+            Semicolon-separated list of tenants of this datacenter (e.g. "Azure", "PilotFish",
+            "Azure;PilotFish").  If not specified, "Azure" is assumed for the time being.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.RegionInfo">
+            <summary>
+            Info about the region where this datacenter resides
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.MayHaveAzureClusters">
+            <summary>
+            Whether the datacenter may have any Azure clusters
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterInRegion.MayHavePFClusters">
+            <summary>
+            Whether the datacenter may have any PilotFish clusters
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant">
+            <summary>
+            Enum to indicate the intended tenant
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant.Azure">
+            <summary>
+            The datacenter hosts Azure clusters
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant.PilotFish">
+            <summary>
+            The datacenter hosts PilotFish clusters
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant.Exchange">
+            <summary>
+            The datacenter hosts Exchange clusters
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant.Office365">
+            <summary>
+            The datacenter hosts Office365 clusters
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant.Bing">
+            <summary>
+            The datacenter hosts Autopilot/Bing clusters
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.RegionWorkloads">
+            <summary>
+            Enum to indicate what workloads currently supported in a region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWorkloads.Azure">
+            <summary>
+            The region serves Azure
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWorkloads.PilotFish">
+            <summary>
+            The region serves PilotFish
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWorkloads.Exchange">
+            <summary>
+            The region serves Exchange
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWorkloads.Office365">
+            <summary>
+            The region serves Office365
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.RegionWorkloads.Bing">
+            <summary>
+            The region serves AutoPilot/Bing
+            </summary>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion">
+            <summary>
+            Represent a Region element defined in Regions.xml
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.ID">
+            <summary>
+            Name of this region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.Guid">
+            <summary>
+            GUID
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.Index">
+            <summary>
+            Numerical ID of this region; unique within its cloud environment
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.AvailabilityZoneSupport">
+            <summary>
+            Whether this region supports availability zones
+            </summary>
+            <remarks>Supported values: No Plan, Proposed, Approved, Cancelled</remarks>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.DefaultBillingPolicy">
+            <summary>
+            DefaultBillingPolicy of this region
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.DefaultOfferType">
+            <summary>
+            DefaultOfferType of this region
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.DnsServers">
+            <summary>
+            DNS servers in the region
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.FriendlyName">
+            <summary>
+            FriendlyName of this region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.IsLive">
+            <summary>
+            Is alive flag.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.ArmLocation">
+            <summary>
+            ID used by ARM
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.RdfeID">
+            <summary>
+            ID used by RDFE
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.IsRegionLive">
+            <summary>
+            Whether this region is live
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.State">
+            <summary>
+            Current state of this region.
+            </summary>
+            <remarks>Supported values: Approved, Cancelled, Buildout, Ring 0 Complete, Production SLA, Decommissioned, Retired</remarks>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.SupportedWorkloads">
+            <summary>
+            Semicolon-separated list of workloads supported in this region (e.g. Azure, Office365).
+            If not specified, "Azure" is assumed for the time being.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.IsNewDcPFCC">
+            <summary>
+            New datacenters should be built as legacy PFCC
+            true : new datacenters within this region should be PFCC (Fabric)
+            false, or absent : new datacenters should default to PFFC (PilotFish)
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.PairRegionIDs">
+            <summary>
+            list of pair region IDs
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.PhysicalRegion">
+            <summary>
+            Physical region name of a logical region
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.PhysicalNetwork">
+            <summary>
+            Physical network of this region
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.RnmDnsName">
+            <summary>
+            Rnm Dns name.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.ShortID">
+            <summary>
+            Short name of this region. Typically used as a datacenter prefix.
+            Values are defined by Global Ecosystem team.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.BuildoutArmFeatureFlag">
+            <summary>
+            The Arm feature flag
+            Values are defined by Global Ecosystem team with ARM.
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.CustomerArmFeatureFlag">
+            <summary>
+            The Arm feature flag
+            Values are defined by Global Ecosystem team with ARM.
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.DstsDns">
+            <summary>
+            dSTS DNS name
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.CrpServiceAccount">
+            <summary>
+            CRP service account
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.Type">
+            <summary>
+            Type of this region
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.Datacenters">
+            <summary>
+            The list of datacenters that this region has
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.AllRegions">
+            <summary>
+            The object representing Regions.xml
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.ARMRegionName">
+            <summary>
+            the name used by ARM
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.AzureDatacenters">
+            <summary>
+            Enumerate all Azure datacenters in this region
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegion.FindDatacenterSiblings(System.String,System.Boolean,Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant)">
+            <summary>
+            Find the siblings of the specified DC in this region
+            </summary>
+            <param name="dcName">Name of the DC to be excluded</param>
+            <param name="selfIncluded">whether to include the given DC name in the enumeration</param>
+            <param name="tenant">tenant accepted in a datacenter to be included in the enumeration</param>
+            <returns>An enumeration of names of sibling datacenters in this region</returns>
+        </member>
+        <member name="T:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions">
+            <summary>
+            Object model for Regions.xml
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.NextIndexToUse">
+            <summary>
+            The index to use for the next cloud region
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.ValidRegionStates">
+            <summary>
+            Semicolon (';') separated list of valid values can be assigned to the state property of a Region node
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.RegionLiveStates">
+            <summary>
+            Semicolon (';') separated list of valid region states that indicate a region is live
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.ValidDatacenterStates">
+            <summary>
+            Semicolon (';') separated list of valid values can be assigned to the state property of a Datacenter node
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.DatacenterLiveStates">
+            <summary>
+            Semicolon (';') separated list of valid datacenter states that indicate a datacenter is live
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.DatacenterAliases">
+            <summary>
+            Semicolon (';') separated list of valid datacenter aliases
+            (e.g. "BYA=BY22;CHA=CHI20" indicates that BYA is an alias for BY22 and CHA is one for CHI20)
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.ValidZoneSupportStates">
+            <summary>
+            Semicolon (';') separated list of valid values can be assigned to the AvailabilityZoneSupport property
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.Regions">
+            <summary>
+            The full list of geo regions
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GeoInfo">
+            <summary>
+            Geographies in this cloud environment
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.ZoneInfo">
+            <summary>
+            Availability zones in this cloud environment
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.DatacenterInfoMap">
+            <summary>
+            internal map from the name of a datacenter to info about the datacenter
+            </summary>
+        </member>
+        <member name="P:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GuidMap">
+            <summary>
+            Mapping from entity GUIDs to entity objects
+            </summary>
+        </member>
+        <member name="F:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.NameMap">
+            <summary>
+            Mapping from region IDs, short IDs and friendly names to DatacenterRegion objects
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.#ctor">
+            <summary>
+            constructor
+            </summary>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.Load(Microsoft.WindowsAzure.Topology.Utilities.DcmtDepotHelper,Microsoft.Azure.Topology.DcmtLib.CloudGeographies)">
+            <summary>
+            Create an instance
+            </summary>
+            <param name="dcmtDepot">where to find Regions.xml</param>
+            <param name="geoInfo">info about geographies in the same cloud environment</param>
+            <returns>An instance</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.Load(System.String)">
+            <summary>
+            Create an instance
+            </summary>
+            <param name="filePath">Path to regions.xml</param>
+            <returns>An instance</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.Load(System.String,Microsoft.Azure.Topology.DcmtLib.CloudGeographies,System.Boolean)">
+            <summary>
+            Create an instance
+            </summary>
+            <param name="filePath">where to find Regions.xml</param>
+            <param name="geos">info about geographies in the same cloud environment</param>
+            <param name="runNewChecks">run new region checks or not</param>
+            <returns>An instance</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetRegionByShortID(System.String)">
+            <summary>
+            Find the DatacenterRegion with the given short ID
+            </summary>
+            <param name="shortID">short ID of the region</param>
+            <returns>object representing the regon or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetRegionByFriendlyName(System.String)">
+            <summary>
+            Find the DatacenterRegion with the given short ID
+            </summary>
+            <param name="friendlyName">friendly name of the region</param>
+            <returns>object representing the regon or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetRegionByGuid(System.Guid)">
+            <summary>
+            Find the DatacenterRegion with the given name
+            </summary>
+            <param name="guid">GUID of the region</param>
+            <returns>object representing the region or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetRegionByIndex(System.Int32)">
+            <summary>
+            Find the DatacenterRegion with the given index
+            </summary>
+            <param name="index">GUID of the region</param>
+            <returns>object representing the region or null</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.FindAzureDatacenterSiblings(System.String,System.Boolean)">
+            <summary>
+            Find the siblings of the specified DC in the same geo region
+            </summary>
+            <param name="dcName">Name of the DC</param>
+            <param name="selfIncluded">whether to include the given DC name in the enumberation</param>
+            <returns>An enumeration of siblings of the specified DC</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.FindDatacenterSiblings(System.String,System.Boolean,Microsoft.WindowsAzure.Bootstrap.Common.DatacenterTenant)">
+            <summary>
+            Find the siblings of the specified DC in the same geo region
+            </summary>
+            <param name="dcName">Name of the DC</param>
+            <param name="selfIncluded">whether to include the given DC name in the enumberation</param>
+            <param name="tenant">tenant accepted in a datacenter to be included in the enumeration</param>
+            <returns>An enumeration of siblings of the specified DC</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetDatacenterRegionFromDatacenter(System.String)">
+            <summary>
+            Find the region that this DC locates in
+            </summary>
+            <param name="dcName">Name of the DC</param>
+            <returns>the DatacenterRegion where the datacenter with the given name resides</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetDatacenterInfo(System.String)">
+            <summary>
+            Get info about a datacenter with the given name
+            </summary>
+            <param name="dcName">Name of the DC</param>
+            <returns>inf about the datacenter</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetDatacenterRegionByName(System.String)">
+            <summary>
+            Find the region with the given name
+            </summary>
+            <param name="regionName">Name of the region</param>
+            <returns>the DatacenterRegion with the given name</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetLogicalRegionsOfPhysicalRegion(System.String)">
+            <summary>
+            Find all logical regions of the given physical region
+            </summary>
+            <param name="regionName">Name of the physical region</param>
+            <returns></returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.FindDatacenterRegion(System.String)">
+            <summary>
+            Find the region name that this DC locates in
+            </summary>
+            <param name="dcName">Name of the DC</param>
+            <returns>Region name</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.GetPffcDatacentersForRegion(System.String)">
+            <summary>
+            Return a list of datacenter names that are PF-FC enabled for a given region
+            </summary>
+            <param name="regionName">Name of the region</param>
+            <returns>IEnumerable(string) of datacenter names</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.IsNewDcPFCC(System.String)">
+            <summary>
+            Return if region is PFCC (fabric) enabled
+            </summary>
+            <param name="regionName">Name of the region</param>
+            <returns>boolean</returns>
+        </member>
+        <member name="M:Microsoft.WindowsAzure.Bootstrap.Common.DatacenterRegions.IsDatacenterPFCCEnabled(System.String)">
+            <summary>
+            Return if datacenter is PFCC (fabric) enabled.
+            </summary>
+            <param name="datacenterName">Name of the datacenter</param>
+            <returns>boolean</returns>
+        </member>
+    </members>
+</doc>

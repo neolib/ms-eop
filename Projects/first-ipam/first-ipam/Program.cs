@@ -45,11 +45,11 @@ namespace first_ipam
 
             WriteLine($"Using {sectionName}");
             var settings = ConfigurationManager.GetSection(sectionName) as NameValueCollection;
-            var ipamClientSettings = new IpamClientSettings(settings);
-            ipamClient = new IpamClient(ipamClientSettings);
-
             try
             {
+                var ipamClientSettings = new IpamClientSettings(settings);
+                ipamClient = new IpamClient(ipamClientSettings);
+
                 QueryArgs(args);
                 //TestUpdateDatacenterTags().Wait();
                 //DumpDatacenterRegionMap().Wait();
