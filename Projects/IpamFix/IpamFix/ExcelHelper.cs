@@ -34,9 +34,11 @@ namespace IpamFix
                             {
                                 record.Add(reader.GetString(i));
                             }
+
+                            records.Add(record);
                         }
 
-                        records[reader.Name] = records;
+                        sheets[reader.Name] = records;
                     } while (reader.NextResult());
 
                     return sheets;
@@ -50,7 +52,7 @@ namespace IpamFix
             {
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
-                    var list = new List<ExcelRecord>();
+                    var records = new List<ExcelRecord>();
 
                     do
                     {
@@ -82,13 +84,15 @@ namespace IpamFix
                                     else
                                         record[i.ToString()] = reader.GetString(i);
                                 }
+
+                                records.Add(record);
                             }
 
                             break;
                         }
                     } while (reader.NextResult());
 
-                    return list;
+                    return records;
                 }
             }
         }

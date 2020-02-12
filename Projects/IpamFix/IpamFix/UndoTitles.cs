@@ -5,10 +5,6 @@ using System.Linq;
 
 namespace IpamFix
 {
-    using ExcelDataReader;
-    using Microsoft.Azure.Ipam.Client;
-    using Microsoft.Azure.Ipam.Contracts;
-    using Common;
     using static Console;
     using static IpamHelper;
     using StringMap = Dictionary<string, string>;
@@ -25,7 +21,7 @@ namespace IpamFix
 
             var excelFileName = args[0];
             var cacheFileName = args[1];
-            var records = ExcelHelper.ReadSheet(excelFileName, "result", true);
+            var records = ExcelHelper.ReadSheet(excelFileName, null, true);
 
             if (!records.Any())
             {
@@ -33,10 +29,10 @@ namespace IpamFix
                 return;
             }
 
+            var cacheLines = File.Exists(cacheFileName) ? File.ReadAllLines(cacheFileName) : null;
+
             using (var cacheFileWriter = new StreamWriter(cacheFileName, true))
             {
-                var cacheLines = File.Exists(cacheFileName) ? File.ReadAllLines(cacheFileName) : null;
-
                 foreach (var record in records)
                 {
                     if (record["Undo"] == "Yes")

@@ -30,7 +30,7 @@ namespace IpamFix
         public static void LoadMaps()
         {
             DatacenterNameMap = LoadNameMap();
-            TagMap = LoadIpamMaps().Result;
+            //TagMap = LoadIpamMaps().Result;
         }
 
         public static async Task<TagMap> LoadIpamMaps()

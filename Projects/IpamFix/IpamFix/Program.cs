@@ -25,11 +25,11 @@ namespace IpamFix
             var w = Stopwatch.StartNew();
             WriteLine($"Start time: {DateTime.Now}");
 
-            var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
             Environment.ExitCode = (int)ExitCode.Chaos;
 
             try
             {
+                var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
                 IpamHelper.IpamClient = new IpamClient(ipamClientSettings);
                 IpamHelper.LoadMaps();
 
