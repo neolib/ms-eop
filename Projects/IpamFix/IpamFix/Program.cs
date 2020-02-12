@@ -30,10 +30,11 @@ namespace IpamFix
 
             try
             {
-                new Processor
-                {
-                    IpamClient = new IpamClient(ipamClientSettings)
-                }.Run(args);
+                IpamHelper.IpamClient = new IpamClient(ipamClientSettings);
+                IpamHelper.LoadMaps();
+
+                //new Processor().Run(args);
+                new UndoTitles().Run(args);
             }
             catch (Exception ex)
             {

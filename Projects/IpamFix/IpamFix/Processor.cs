@@ -9,9 +9,6 @@ using System.Xml.XPath;
 
 namespace IpamFix
 {
-    using ExcelDataReader;
-    using Microsoft.Azure.Ipam.Client;
-    using Microsoft.Azure.Ipam.Contracts;
     using Common;
     using static Console;
     using static IpamHelper;
@@ -324,74 +321,62 @@ namespace IpamFix
 
         private List<ValidationRecord> ReadRecords(string excelFileName)
         {
-            using (var stream = File.Open(excelFileName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            var sheetRecords = ExcelHelper.ReadSheet(excelFileName, "result", true);
+
+            if (sheetRecords.Any())
             {
-                using (var reader = ExcelReaderFactory.CreateReader(stream))
+                var record = sheetRecords[0];
+                var hasWrongNames = false;
+
+                foreach (var name in ExcelFieldNames)
                 {
-                    var list = new List<ValidationRecord>();
-                    do
+                    if (!record.ContainsKey(name))
                     {
-                        WriteLine($"***Reading sheet {reader.Name}...");
-
-                        // First row is header
-                        var fieldNames = new string[reader.FieldCount];
-                        if (reader.Read())
-                        {
-                            for (int i = 0; i < reader.FieldCount; i++)
-                            {
-                                fieldNames[i] = reader.GetString(i);
-                            }
-                        }
-
-                        var hasWrongNames = false;
-
-                        foreach (var name in ExcelFieldNames)
-                        {
-                            if (Array.IndexOf(fieldNames, name) < 0)
-                            {
-                                Error.WriteLine($"Excel result sheet does not contain expected field {name}");
-                                hasWrongNames = true;
-                            }
-                        }
-                        if (hasWrongNames) return null;
-
-                        string ReadString_(string name_) =>
-                            reader.GetString(Array.IndexOf(fieldNames, name_));
-
-                        // Read rest
-                        while (reader.Read())
-                        {
-                            var addressSpace = ReadString_(NameAddressSpace);
-
-                            if (string.IsNullOrEmpty(addressSpace)) continue;
-
-                            if (!addressSpaceIdMap.ContainsKey(addressSpace))
-                            {
-                                Error.WriteLine($"Address space map has no key {addressSpace}");
-                                return null;
-                            }
-
-                            list.Add(new ValidationRecord
-                            {
-                                Id = ReadString_(NameId),
-                                AddressSpace = addressSpace,
-                                Environment = ReadString_(NameEnvironment),
-                                IpString = ReadString_(NameIpQuery),
-                                Prefix = ReadString_(NamePrefix),
-                                Forest = ReadString_(NameForest).ToUpper(),
-                                EopDcName = ReadString_(NameEopDc).ToUpper(),
-                                IpamDcName = ReadString_(NameIpamDc),
-                                Title = ReadString_(NameTitle),
-                                Region = ReadString_(NameRegion),
-                                Status = ReadString_(NameStatus),
-                                Summary = ReadString_(NameSummary),
-                                Comment = ReadString_(NameComment),
-                            });
-                        }
-                    } while (reader.NextResult());
-                    return list;
+                        Error.WriteLine($"Sheet does not contain expected field {name}");
+                        hasWrongNames = true;
+                    }
                 }
+                if (hasWrongNames) return null;
+
+                var records = new List<ValidationRecord>();
+
+                for (var i = 1; i < sheetRecords.Count; i++)
+                {
+                    record = sheetRecords[i];
+                    var addressSpace = record[NameAddressSpace];
+
+                    if (string.IsNullOrEmpty(addressSpace)) continue;
+
+                    if (!AddressSpaceIdMap.ContainsKey(addressSpace))
+                    {
+                        WriteLine($"Got wrong address space name {addressSpace}");
+                        return null;
+                    }
+
+                    var validationRecord = new ValidationRecord
+                    {
+                        Id = record[NameId],
+                        AddressSpace = addressSpace,
+                        Environment = record[NameEnvironment],
+                        IpString = record[NameIpQuery],
+                        Prefix = record[NamePrefix],
+                        Forest = record[NameForest].ToUpper(),
+                        EopDcName = record[NameEopDc].ToUpper(),
+                        IpamDcName = record[NameIpamDc],
+                        Title = record[NameTitle],
+                        Region = record[NameRegion],
+                        Status = record[NameStatus],
+                        Summary = record[NameSummary],
+                        Comment = record[NameComment],
+                    };
+
+                    records.Add(validationRecord);
+                }
+
+                return records;
             }
+
+            return null;
         }
     }
 }

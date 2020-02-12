@@ -18,18 +18,27 @@ namespace IpamFix
     {
         public static IpamClient IpamClient { get; set; }
 
-        public static StringMap addressSpaceIdMap = new StringMap {
+        public static StringMap AddressSpaceIdMap = new StringMap {
             { "Default", SpecialAddressSpaces.DefaultAddressSpaceId },
             { "GalaCake", SpecialAddressSpaces.GalaCakeAddressSpaceId },
             { "EX", SpecialAddressSpaces.EXAddressSpaceId },
             { "RX", SpecialAddressSpaces.RXAddressSpaceId },
             };
 
+        public static StringMap DatacenterNameMap { get; private set; }
+        public static TagMap TagMap { get; private set; }
+
+        public static void LoadMaps()
+        {
+            DatacenterNameMap = LoadNameMap();
+            TagMap = LoadIpamMaps().Result;
+        }
+
         public static async Task<TagMap> LoadIpamMaps()
         {
             var map = new TagMap();
 
-            foreach (var entry in addressSpaceIdMap)
+            foreach (var entry in AddressSpaceIdMap)
             {
                 var dcTag = await IpamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
                 map[entry.Key] = dcTag;
@@ -57,9 +66,9 @@ namespace IpamFix
             return nameMap;
         }
 
-        async Task<AllocationModel> QueryIpam(string addressSpace, string prefix, string prefixId)
+        public static async Task<AllocationModel> QueryIpam(string addressSpace, string prefix, string prefixId)
         {
-            var queryModel = AllocationQueryModel.Create(addressSpaceIdMap[addressSpace], prefix);
+            var queryModel = AllocationQueryModel.Create(AddressSpaceIdMap[addressSpace], prefix);
             var queryResult = await IpamClient.QueryAllocationsAsync(queryModel);
             foreach (var allocation in queryResult)
             {
@@ -82,7 +91,7 @@ namespace IpamFix
             return null;
         }
 
-        async Task<bool> UpdateTitle(string addressSpace, string prefix, string prefixId,
+        public static async Task<bool> UpdateTitle(string addressSpace, string prefix, string prefixId,
             string newTitle, string description = null)
         {
             var allocation = await QueryIpam(addressSpace, prefix, prefixId);
@@ -97,9 +106,9 @@ namespace IpamFix
             return false;
         }
 
-        async Task<string> UpdateDatacenter(string addressSpace, string prefix, string prefixId, string eopDcName)
+        public static async Task<string> UpdateDatacenter(string addressSpace, string prefix, string prefixId, string eopDcName)
         {
-            if (!datacenterNameMap.TryGetValue(eopDcName, out var newDcName))
+            if (!DatacenterNameMap.TryGetValue(eopDcName, out var newDcName))
             {
                 newDcName = eopDcName;
                 WriteLine($"EOP datacenter {eopDcName} has no azure mapping");
@@ -117,9 +126,9 @@ namespace IpamFix
             return null;
         }
 
-        async Task<string> UpdateRegion(string addressSpace, string prefix, string prefixId, string ipamDcName)
+        public static async Task<string> UpdateRegion(string addressSpace, string prefix, string prefixId, string ipamDcName)
         {
-            var regionMap = datacenterMaps[addressSpace].ImpliedTags[SpecialTags.Region];
+            var regionMap = TagMap[addressSpace].ImpliedTags[SpecialTags.Region];
             if (!regionMap.TryGetValue(ipamDcName, out var region))
             {
                 WriteLine($"Datacenter {ipamDcName} has no region mapping");
