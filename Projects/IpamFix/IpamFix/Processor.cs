@@ -14,6 +14,7 @@ namespace IpamFix
     using Microsoft.Azure.Ipam.Contracts;
     using Common;
     using static Console;
+    using static IpamHelper;
     using StringMap = Dictionary<string, string>;
 
     class Processor
@@ -64,44 +65,6 @@ namespace IpamFix
             FixWrongDC,
             FixEmptyRegion,
             FixWrongRegion,
-        }
-
-        internal IpamClient IpamClient { get; set; }
-
-        private StringMap addressSpaceIdMap = new StringMap {
-            { "Default", SpecialAddressSpaces.DefaultAddressSpaceId },
-            { "GalaCake", SpecialAddressSpaces.GalaCakeAddressSpaceId },
-            { "EX", SpecialAddressSpaces.EXAddressSpaceId },
-            { "RX", SpecialAddressSpaces.RXAddressSpaceId },
-            };
-
-        private StringMap datacenterNameMap = new StringMap();
-        private Dictionary<string, TagModel> datacenterMaps = new Dictionary<string, TagModel>();
-
-        private async Task LoadIpamMaps()
-        {
-            foreach (var entry in addressSpaceIdMap)
-            {
-                var dcTag = await this.IpamClient.GetTagAsync(entry.Value, SpecialTags.Datacenter);
-                datacenterMaps[entry.Key] = dcTag;
-            }
-        }
-
-        private void LoadNameMap()
-        {
-            var myType = this.GetType();
-            var rcName = myType.Namespace + ".Files.NameMap.xml";
-            using (var rcs = myType.Assembly.GetManifestResourceStream(rcName))
-            {
-                var mapDoc = XDocument.Load(rcs);
-
-                foreach (var node in mapDoc.Root.Element("DCNames").Elements())
-                {
-                    var eopName = node.Attribute("EOPName").Value;
-                    var azureName = node.Attribute("AzureName").Value;
-                    datacenterNameMap[eopName] = azureName;
-                }
-            }
         }
 
         internal void Run(string[] args)
@@ -155,9 +118,9 @@ namespace IpamFix
             }
 
             WriteLine("Loading IPAM maps...");
-            LoadIpamMaps().Wait();
+            var tagMap = LoadIpamMaps().Result;
             WriteLine("Loading name maps...");
-            LoadNameMap();
+            var dcNameMap = LoadNameMap();
 
             var ipXDoc = File.Exists(ipXmlFile) ? XDocument.Load(ipXmlFile) : null;
             var cacheList = File.Exists(cacheFileName) ? File.ReadAllLines(cacheFileName) : new string[0];
@@ -357,87 +320,6 @@ namespace IpamFix
             }
 
             Environment.ExitCode = (int)ExitCode.Success;
-        }
-
-        async Task<AllocationModel> QueryIpam(string addressSpace, string prefix, string prefixId)
-        {
-            var queryModel = AllocationQueryModel.Create(addressSpaceIdMap[addressSpace], prefix);
-            var queryResult = await IpamClient.QueryAllocationsAsync(queryModel);
-            foreach (var allocation in queryResult)
-            {
-                if (allocation.Id == prefixId) return allocation;
-            }
-
-            Error.WriteLine($"***Not found in IPAM: {addressSpace},{prefix},{prefixId}");
-            if (queryResult.Count > 0)
-            {
-                foreach (var allocation in queryResult)
-                {
-                    allocation.Tags.TryGetValue(SpecialTags.Region, out var allocRegion);
-                    allocation.Tags.TryGetValue(SpecialTags.PhysicalNetwork, out var network);
-                    allocation.Tags.TryGetValue(SpecialTags.PropertyGroup, out var propertyGroup);
-
-                    Error.WriteLine("  Region: {0}, Physical Network: {1}, Property Group: {2}",
-                        allocRegion, network, propertyGroup);
-                }
-            }
-            return null;
-        }
-
-        async Task<bool> UpdateTitle(string addressSpace, string prefix, string prefixId,
-            string newTitle, string description = null)
-        {
-            var allocation = await QueryIpam(addressSpace, prefix, prefixId);
-            if (allocation != null)
-            {
-                allocation.ModifiedOn = DateTime.Now;
-                allocation.Tags[SpecialTags.Title] = newTitle;
-                if (description != null) allocation.Tags[SpecialTags.Description] = description;
-                await IpamClient.UpdateAllocationTagsV2Async(allocation);
-                return true;
-            }
-            return false;
-        }
-
-        async Task<string> UpdateDatacenter(string addressSpace, string prefix, string prefixId, string eopDcName)
-        {
-            if (!datacenterNameMap.TryGetValue(eopDcName, out var newDcName))
-            {
-                newDcName = eopDcName;
-                WriteLine($"EOP datacenter {eopDcName} has no azure mapping");
-            }
-
-            var allocation = await QueryIpam(addressSpace, prefix, prefixId);
-            if (allocation != null)
-            {
-                allocation.ModifiedOn = DateTime.Now;
-                allocation.Tags.Clear();
-                allocation.Tags[SpecialTags.Datacenter] = newDcName;
-                await IpamClient.PatchAllocationTagsV2Async(allocation);
-                return newDcName;
-            }
-            return null;
-        }
-
-        async Task<string> UpdateRegion(string addressSpace, string prefix, string prefixId, string ipamDcName)
-        {
-            var regionMap = datacenterMaps[addressSpace].ImpliedTags[SpecialTags.Region];
-            if (!regionMap.TryGetValue(ipamDcName, out var region))
-            {
-                WriteLine($"Datacenter {ipamDcName} has no region mapping");
-                if (ipamDcName == "PUS01") region = "Korea South 2";
-                else return null;
-            }
-
-            var allocation = await QueryIpam(addressSpace, prefix, prefixId);
-            if (allocation != null)
-            {
-                allocation.Tags.Clear();
-                allocation.Tags[SpecialTags.Region] = region;
-                await IpamClient.PatchAllocationTagsV2Async(allocation);
-                return region;
-            }
-            return null;
         }
 
         private List<ValidationRecord> ReadRecords(string excelFileName)
