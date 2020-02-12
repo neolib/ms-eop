@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace IpamFix
 {
@@ -18,13 +17,14 @@ namespace IpamFix
     {
         internal void Run(string[] args)
         {
-            if (args.Length == 0)
+            if (args.Length != 2)
             {
                 Error.WriteLine("Need Excel filename.");
                 return;
             }
 
             var excelFileName = args[0];
+            var cacheFileName = args[1];
             var records = ExcelHelper.ReadSheet(excelFileName, "result", true);
 
             if (!records.Any())
@@ -33,22 +33,35 @@ namespace IpamFix
                 return;
             }
 
-            foreach (var record in records)
+            using (var cacheFileWriter = new StreamWriter(cacheFileName, true))
             {
-                if (record["Undo"] == "Yes")
+                var cacheLines = File.Exists(cacheFileName) ? File.ReadAllLines(cacheFileName) : null;
+
+                foreach (var record in records)
                 {
-                    var addressSpace = record["Address Space"];
-                    var prefix = record["Prefix"];
-                    var prefixId = record["Prefix ID"];
-                    var oldTitle = record["Title"];
-                    var newTitle = record["New Title"];
+                    if (record["Undo"] == "Yes")
+                    {
+                        var addressSpace = record["Address Space"];
+                        var prefix = record["Prefix"];
+                        var prefixId = record["Prefix ID"];
+                        var oldTitle = record["Title"];
+                        var newTitle = record["New Title"];
+                        var msg = $"{addressSpace},{prefix},{prefixId},{oldTitle},{newTitle}";
 
-                    WriteLine($"Reverting title:");
-                    WriteLine(newTitle);
-                    WriteLine("to");
-                    WriteLine(oldTitle);
+                        if (cacheLines?.Contains(msg) == true)
+                        {
+                            Error.WriteLine($"Skipping {addressSpace} {prefix}");
+                        }
+                        else
+                        {
+                            WriteLine($"Reverting title:");
+                            WriteLine(newTitle);
+                            WriteLine(">>>");
+                            WriteLine(oldTitle);
 
-                    UpdateTitle(addressSpace, prefix, prefixId, oldTitle).Wait();
+                            UpdateTitle(addressSpace, prefix, prefixId, oldTitle).Wait();
+                        }
+                    }
                 }
             }
         }

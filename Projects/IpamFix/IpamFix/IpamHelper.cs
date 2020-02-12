@@ -9,7 +9,6 @@ namespace IpamFix
 {
     using Microsoft.Azure.Ipam.Client;
     using Microsoft.Azure.Ipam.Contracts;
-    using Common;
     using static Console;
     using StringMap = Dictionary<string, string>;
     using TagMap = Dictionary<string, Microsoft.Azure.Ipam.Contracts.TagModel>;
