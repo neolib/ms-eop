@@ -96,10 +96,20 @@ namespace IpamFix
             var allocation = await QueryIpam(addressSpace, prefix, prefixId);
             if (allocation != null)
             {
-                allocation.ModifiedOn = DateTime.Now;
-                allocation.Tags[SpecialTags.Title] = newTitle;
-                if (description != null) allocation.Tags[SpecialTags.Description] = description;
-                await IpamClient.UpdateAllocationTagsV2Async(allocation);
+                var nowTitle = allocation.Tags[SpecialTags.Title];
+
+                if (nowTitle == newTitle)
+                {
+                    Error.WriteLine($"{addressSpace} {prefix}: no need to update with same title {newTitle}");
+                }
+                else
+                {
+                    allocation.ModifiedOn = DateTime.Now;
+                    allocation.Tags[SpecialTags.Title] = newTitle;
+                    if (description != null) allocation.Tags[SpecialTags.Description] = description;
+
+                    await IpamClient.UpdateAllocationTagsV2Async(allocation);
+                }
                 return true;
             }
             return false;

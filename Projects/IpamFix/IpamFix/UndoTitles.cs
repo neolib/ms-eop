@@ -46,16 +46,18 @@ namespace IpamFix
 
                         if (cacheLines?.Contains(msg) == true)
                         {
-                            Error.WriteLine($"Skipping {addressSpace} {prefix}");
+                            Error.WriteLine($"Skipping {prefix} in {addressSpace}");
                         }
                         else
                         {
-                            WriteLine($"Reverting title:");
+                            WriteLine($"Reverting title of {prefix} in {addressSpace}:");
                             WriteLine(newTitle);
                             WriteLine(">>>");
                             WriteLine(oldTitle);
+                            WriteLine();
 
                             UpdateTitle(addressSpace, prefix, prefixId, oldTitle).Wait();
+                            cacheFileWriter.WriteLine(msg);
                         }
                     }
                 }
