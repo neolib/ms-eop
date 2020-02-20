@@ -29,7 +29,15 @@ namespace IpamFix
 
             try
             {
-                var ipamClientSettings = new IpamClientSettings(ConfigurationManager.AppSettings);
+                var settings = ConfigurationManager.AppSettings;
+
+                foreach (string key in settings)
+                {
+                    WriteLine($"{key}={settings[key]}");
+                }
+
+                var ipamClientSettings = new IpamClientSettings(settings);
+
                 IpamHelper.IpamClient = new IpamClient(ipamClientSettings);
                 IpamHelper.LoadMaps();
 

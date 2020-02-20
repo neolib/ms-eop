@@ -88,7 +88,7 @@ namespace F5IPConfigValidator
             { "Default", SpecialAddressSpaces.DefaultAddressSpaceId },
             { "GalaCake", SpecialAddressSpaces.GalaCakeAddressSpaceId },
             { "EX", SpecialAddressSpaces.EXAddressSpaceId },
-            { "RX", SpecialAddressSpaces.RXAddressSpaceId },
+            //{ "RX", SpecialAddressSpaces.RXAddressSpaceId },
             };
 
         private void LoadForestMap()
@@ -366,10 +366,10 @@ namespace F5IPConfigValidator
                 var eopDcName = ExtractDcName_(envName);
                 var forestName = GetForestName(envName);
 
-                // Need to normalize GTM environment name.
-                if (envName.StartsWithText("GTM-"))
+                if (envName.StartsWithText("GTM"))
                 {
-                    envName = $"{forestName}-{eopDcName}";
+                    Error.WriteLine($"Skipping {configName}");
+                    return;
                 }
 
                 if (eopDcName == null)
