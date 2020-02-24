@@ -1,16 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace KustoQuery
 {
-    using Kusto.Data;
     using Kusto.Data.Net.Client;
-    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
-    using System.IO;
-    using System.Reflection;
     using static Console;
 
     class Program
@@ -76,10 +71,9 @@ namespace KustoQuery
                 var needle = "| project";
                 var header = queryTemplate.Substring(queryTemplate.LastIndexOf(needle) + needle.Length);
 
-                header = header.Replace("\r\n", "");
-                while (header.Contains(' ')) header = header.Replace(" ", "");
-
+                header = Regex.Replace(header, @"\s+", string.Empty);
                 header = "Address Space," + header;
+
                 WriteLine(header);
                 Error.WriteLine(header);
 
