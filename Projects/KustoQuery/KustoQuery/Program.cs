@@ -8,18 +8,38 @@ namespace KustoQuery
 {
     using Kusto.Data;
     using Kusto.Data.Net.Client;
+    using Microsoft.WindowsAzure.Storage.Shared.Protocol;
     using System.IO;
+    using System.Reflection;
     using static Console;
 
     class Program
     {
+        static string[] IpamTableNames = new[] { "Default", "Galacake" };
+
         static void Main(string[] args)
         {
             var inputFile = args[0];
 
+            try
+            {
+                //QueryBGPLUpdates(inputFile);
+                QueryIpamReportOnBGPL(inputFile);
+            }
+            catch (Exception ex)
+            {
+                Error.WriteLine(ex.Message);
+            }
+
+            Error.WriteLine("Hit ENTER to exit");
+            ReadLine();
+        }
+
+        static void QueryBGPLUpdates(string inputFile)
+        {
             using (var sr = new StreamReader(inputFile))
             {
-                var query = "bgplUpdates | where Timestamp >= ago(90d)| where Nlri startswith \"{0}\" | count";
+                var query = "bgplUpdates | where Timestamp >= ago(90d)| where Nlri startswith '{0}' | count";
                 var client = KustoClientFactory.CreateCslQueryProvider("https://azurenda.kusto.windows.net/;Fed=true;Database=BGPL;");
 
                 while (!sr.EndOfStream)
@@ -28,13 +48,15 @@ namespace KustoQuery
                     var fields = line.Split(',');
                     var prefix = fields[0];
 
-                    Error.WriteLine(prefix);
+                    Error.Write(prefix);
                     var reader = client.ExecuteQuery(query.Replace("{0}", prefix));
 
                     reader.Read();
                     var exists = reader.GetInt64(0) != 0;
+                    var yesNo = exists ? "Yes" : "No";
 
-                    Write(exists ? "Yes" : "No");
+                    Error.WriteLine($" => {yesNo}");
+                    Write(yesNo);
                     foreach (var field in fields)
                     {
                         Write($",{field}");
@@ -42,30 +64,73 @@ namespace KustoQuery
                     WriteLine();
                 }
             }
+        }
 
-            /*for (int i = 0; i < reader.FieldCount; i++)
+        static void QueryIpamReportOnBGPL(string inputFile)
+        {
+            using (var sr = new StreamReader(inputFile))
             {
-                Write(reader.GetName(i));
-                Write("|");
-            }
-            WriteLine();
+                var queryTemplate = GetResourceString("KustoQuery.Files.KustoIpamReport.txt");
+                var client = KustoClientFactory.CreateCslQueryProvider("https://ipam.kusto.windows.net/;Fed=true;Database=IpamReport;");
 
-            while (reader.Read())
-            {
-                count++;
+                var needle = "| project";
+                var header = queryTemplate.Substring(queryTemplate.LastIndexOf(needle) + needle.Length);
 
-                for (int i = 0; i < reader.FieldCount; i++)
+                header = header.Replace("\r\n", "");
+                while (header.Contains(' ')) header = header.Replace(" ", "");
+
+                header = "Address Space," + header;
+                WriteLine(header);
+                Error.WriteLine(header);
+
+                while (!sr.EndOfStream)
                 {
-                    Write(reader.GetValue(i));
-                    Write("|");
-                }
-                WriteLine();
-            }
-            WriteLine($"{count} record(s) found");
-            */
+                    var line = sr.ReadLine();
+                    var fields = line.Split(',');
+                    var prefix = fields[0];
+                    var found = false;
 
-            Error.WriteLine("Hit ENTER to exit");
-            ReadLine();
+                    Error.Write(prefix);
+
+                    foreach (var tableName in IpamTableNames)
+                    {
+                        var query = string.Format(queryTemplate, tableName, prefix);
+                        var reader = client.ExecuteQuery(query);
+
+                        if (reader.Read())
+                        {
+                            found = true;
+
+                            Write($"{tableName},");
+                            Error.WriteLine($" => {tableName}");
+
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                Write(reader.GetValue(i));
+                                if (i < reader.FieldCount - 1) Write(",");
+                            }
+                            WriteLine();
+
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        WriteLine($"None,{prefix}");
+                        Error.WriteLine(" => Not found");
+                    }
+                }
+            }
+        }
+
+        static string GetResourceString(string rcName)
+        {
+            using (var rcs = Assembly.GetExecutingAssembly().GetManifestResourceStream(rcName))
+            using (var sr = new StreamReader(rcs))
+            {
+                return sr.ReadToEnd();
+            }
         }
     }
 }
