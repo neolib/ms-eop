@@ -29,19 +29,19 @@ namespace autobcc
         {
             var csprojFullPath = Path.GetFullPath(csprojPath);
 
-            InetRoot = Environment.GetEnvironmentVariable(Processor.InetRootEnvVar);
+            InetRoot = Environment.GetEnvironmentVariable(InetRootEnvVar);
 
             if (string.IsNullOrEmpty(InetRoot))
             {
                 InetRoot = InferInetRoot(csprojFullPath);
                 if (string.IsNullOrEmpty(InetRoot))
                 {
-                    Error.WriteLine($"Error: {Processor.InetRootEnvMacro} is not defined and could not be inferred from project path.");
+                    Error.WriteLine($"Error: {InetRootEnvMacro} is not defined and could not be inferred from project path.");
                     return (int)ExitCode.NoCoreXt;
                 }
                 else
                 {
-                    Error.WriteLine($"Warning: {Processor.InetRootEnvMacro} is not defined, will use inferred path \"{InetRoot}\".");
+                    Error.WriteLine($"Warning: {InetRootEnvMacro} is not defined, will use inferred path \"{InetRoot}\".");
                 }
             }
 
