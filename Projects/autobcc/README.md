@@ -5,13 +5,16 @@ projects and commands ready to be pasted and run in CoreXT environment.
 
 ## Commandline Arguments:
 
-autobcc [project.csproj] [/out output.txt]
+autobcc [project.csproj]
 
 If no input file specified, it will use the one found in current directory.
 
 ## Special Notes:
 
-The program appends to output.txt if specified; and it does not append duplicate
-dependent project files by examing the content of output.txt.
+You can use redirection operator to output to a batch file:
+
+autobcc >build.cmd
+
+and run build.cmd.
 
 -=|E.O.F|=-

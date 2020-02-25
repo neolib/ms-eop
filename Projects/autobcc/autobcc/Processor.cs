@@ -19,9 +19,12 @@ namespace autobcc
 
         public string InetRoot { get; private set; }
 
-        public string CacheContent { get; set; }
+        public TextWriter Output { get; private set; }
 
-        public TextWriter Output { get; set; }
+        public Processor(TextWriter output)
+        {
+            this.Output = output;
+        }
 
         public int Process(string csprojPath)
         {
@@ -49,8 +52,6 @@ namespace autobcc
 
             if (refProjList.Count > 0)
             {
-                var newCount = 0;
-                var skippedCount = 0;
                 var seperator = "REM " + new string('-', 80);
 
                 WriteOutput(seperator);
@@ -61,24 +62,12 @@ namespace autobcc
                 {
                     var dir = Path.GetDirectoryName(filepath).Replace(InetRoot, InetRootEnvMacro);
 
-                    if (CacheContent.ContainsText(dir))
-                    {
-                        skippedCount++;
-                        Error.WriteLine($"Hit cache: {dir}");
-                    }
-                    else
-                    {
-                        newCount++;
-                        WriteOutput($"cd /d \"{dir}\"");
-                        WriteOutput("getdeps /build:latest");
-                        WriteOutput("bcc");
-                    }
+                    WriteOutput($"cd /d \"{dir}\"");
+                    WriteOutput("getdeps /build:latest");
+                    WriteOutput("bcc");
                 }
 
-                if (newCount > 0) WriteOutput();
-                WriteOutput($"REM {newCount} found, {skippedCount} skipped");
-
-                Output?.Flush();
+                Output.Flush();
 
                 return 0;
             }
@@ -93,9 +82,7 @@ namespace autobcc
         {
             if (line == null) line = string.Empty;
 
-            // Also writes to standard output
-            if (Output != Out) WriteLine(line);
-            Output?.WriteLine(line);
+            Output.WriteLine(line);
         }
 
         private void ProcessCsproj(string csprojPath, IList<string> refProjList)
