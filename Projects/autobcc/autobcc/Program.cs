@@ -4,7 +4,6 @@ using System.Linq;
 
 namespace autobcc
 {
-    using Common;
     using static Console;
 
     enum ExitCode

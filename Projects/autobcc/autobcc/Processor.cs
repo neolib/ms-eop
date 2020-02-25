@@ -8,7 +8,6 @@ using System.Xml.XPath;
 
 namespace autobcc
 {
-    using Common;
     using static Console;
 
     class Processor
