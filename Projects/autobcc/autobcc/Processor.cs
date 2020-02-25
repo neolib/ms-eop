@@ -47,7 +47,15 @@ namespace autobcc
 
             var refProjList = new List<string>();
 
-            ProcessCsproj(csprojFullPath, refProjList);
+            try
+            {
+                ProcessCsproj(csprojFullPath, refProjList);
+            }
+            catch (Exception ex)
+            {
+                Error.WriteLine($"Error loading {csprojFullPath}:\n{ex.Message}");
+                return (int)ExitCode.Exception;
+            }
 
             if (refProjList.Count > 0)
             {
@@ -96,25 +104,21 @@ namespace autobcc
 
             if (File.Exists(csprojFullPath))
             {
-                XDocument xd;
-
-                try
-                {
-                    xd = XDocument.Load(csprojFullPath);
-                }
-                catch (Exception ex)
-                {
-                    Error.WriteLine($"Error loading {csprojFullPath}:\n{ex.Message}");
-                    return;
-                }
-
-                var csprojDir = Path.GetDirectoryName(csprojFullPath);
+                var xd = XDocument.Load(csprojFullPath);
                 var nsm = new XmlNamespaceManager(new NameTable());
 
                 nsm.AddNamespace("ns", DefaultNs);
 
+
+                // Do a very simple test if the file is valid.
+                if (xd.XPathSelectElement("/ns:Project", nsm) == null)
+                {
+                    throw new Exception($"Not a valid csproj file: {csprojFullPath}");
+                }
+
                 var xpath = "/ns:Project/ns:ItemGroup/ns:ProjectReference";
                 var projRefNodes = xd.XPathSelectElements(xpath, nsm);
+                var csprojDir = Path.GetDirectoryName(csprojFullPath);
 
                 foreach (var projRefNode in projRefNodes)
                 {
@@ -144,7 +148,7 @@ namespace autobcc
             {
                 var dir = path.Substring(0, index);
 
-                if (!folders.Any((folder_) => Directory.Exists(Path.Combine(dir, folder_))))
+                if (folders.Any((folder_) => !Directory.Exists(Path.Combine(dir, folder_))))
                 {
                     continue;
                 }
