@@ -59,21 +59,18 @@ namespace autobcc
 
             if (refProjList.Count > 0)
             {
-                var seperator = "REM " + new string('-', 80);
+                var cmdText = GetAutobccCmd();
 
-                WriteOutput(seperator);
-                WriteOutput($"REM Dependent list of {csprojFullPath.Replace(InetRoot, InetRootEnvMacro)}");
-                WriteOutput(seperator);
+                Out.WriteLine(cmdText.Replace("{project}", csprojFullPath.Replace(InetRoot, InetRootEnvMacro)));
 
                 foreach (var filepath in refProjList)
                 {
                     var dir = Path.GetDirectoryName(filepath).Replace(InetRoot, InetRootEnvMacro);
 
-                    WriteOutput($"cd /d \"{dir}\"");
-                    WriteOutput("getdeps /build:latest");
-                    WriteOutput("bcc");
+                    Output.WriteLine($"call :build \"{dir}\"");
                 }
 
+                Output.WriteLine("endlocal");
                 Output.Flush();
 
                 return 0;
@@ -85,11 +82,11 @@ namespace autobcc
             }
         }
 
-        private void WriteOutput(string line = null)
+        private string GetAutobccCmd()
         {
-            if (line == null) line = string.Empty;
-
-            Output.WriteLine(line);
+            var myType = this.GetType();
+            var rcs = myType.Assembly.GetManifestResourceStream(myType.Namespace + ".Files.autobcc.cmd");
+            using (var sr = new StreamReader(rcs)) return sr.ReadToEnd();
         }
 
         private void ProcessCsproj(string csprojPath, IList<string> refProjList)

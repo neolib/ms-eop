@@ -1,20 +1,15 @@
 ﻿@echo off
+REM autobcc script for {project}
 setlocal
 goto :start
 
 :build
 echo Building in %1
 cd /d %1
-if errorlevel 1 (call :no_dir %1
+if errorlevel 1 (goto :EOF
 ) else (
 getdeps /build:latest
-build -cC
-timeout 3)
-echo.
-goto :EOF
-
-:no_dir
-echo Direcotry not found!
+build -cC)
 goto :EOF
 
 :start
