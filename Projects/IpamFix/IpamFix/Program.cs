@@ -22,6 +22,10 @@ namespace IpamFix
     {
         static void Main(string[] args)
         {
+            var fvi = FileVersionInfo.GetVersionInfo(typeof(IpamClient).Assembly.Location);
+
+            WriteLine($"{fvi.FileDescription} {fvi.ProductVersion}");
+
             var w = Stopwatch.StartNew();
             WriteLine($"Start time: {DateTime.Now}");
 

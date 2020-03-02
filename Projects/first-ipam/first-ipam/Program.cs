@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Configuration;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Text;
 
 namespace first_ipam
 {
@@ -25,6 +25,10 @@ namespace first_ipam
 
         static void Main(string[] args)
         {
+            var fvi = FileVersionInfo.GetVersionInfo(typeof(IpamClient).Assembly.Location);
+
+            WriteLine($"{fvi.FileDescription} {fvi.ProductVersion}");
+
             new Program().Run(args);
         }
 
