@@ -103,14 +103,36 @@ namespace Testbed.UnitTests
         }
 
         [TestMethod]
-        public void Test()
+        public void TestXPathByAttribute()
         {
-            var xml = "<root><abc>text</abc><def><xyz>xyz</xyz></def></root>";
+            var xml = "<root><settings><add key='abc' value='123' /></settings></root>";
             var xd = XDocument.Parse(xml);
+            var node = xd.Root.XPathSelectElement("//add[@key='abc']");
 
-            Assert.IsNull(xd.Root.Element("xyz"));
-            Assert.IsNotNull(xd.Root.Element("abc"));
+            Assert.AreEqual("123", node.Attribute("value").Value);
         }
 
+        [TestMethod]
+        public void TestXPathNoAttributes()
+        {
+            var xml = "<root><settings><add key='abc' value='123' /><add /></settings></root>";
+            var xd = XDocument.Parse(xml);
+            var nodes = xd.Root.XPathSelectElements("//add[not(@*) or (string-length(@*) = 0)]");
+
+            Assert.AreEqual(1, nodes.Count());
+            Assert.AreEqual(0, nodes.First().Attributes().Count());
+        }
+
+        [TestMethod]
+        public void TestXPathNoAttribute()
+        {
+            var xml = "<root><settings><add key='abc' value='123' /><add key='empty' value='' /><add key='null' /></settings></root>";
+            var xd = XDocument.Parse(xml);
+            var nodes = xd.Root.XPathSelectElements("//add[not(@value) or (string-length(@value) = 0)]");
+
+            Assert.AreEqual(2, nodes.Count());
+            Assert.AreEqual(2, nodes.First().Attributes().Count());
+            Assert.AreEqual(1, nodes.ElementAt(1).Attributes().Count());
+        }
     }
 }
