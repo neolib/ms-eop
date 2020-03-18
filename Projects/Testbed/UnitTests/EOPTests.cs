@@ -91,56 +91,18 @@ namespace Testbed.UnitTests
         }
 
         [TestMethod]
-        public void TestCountIPs()
+        public void TestSearch()
         {
-            var a = new[] {
-                "10.13.14.0/27",
-                "10.13.14.32/27",
-                "10.13.14.64/27",
-                "10.13.150.224/27",
-                "10.13.151.0/27",
-                "10.233.232.192/27",
-                "10.97.81.0/24",
-                "20.128.10.0/23",
-                "21.3.100.0/24",
-                "21.3.101.0/24",
-                "21.3.12.0/23",
-                "21.3.129.0/24",
-                "21.3.136.0/23",
-                "21.3.148.0/24",
-                "21.3.149.0/24",
-                "21.3.17.0/24",
-                "21.3.172.0/23",
-                "21.3.177.0/24",
-                "23.103.138.144/28",
-                "23.103.156.128/28",
-                "23.103.156.160/28",
-                "23.103.157.144/28",
-                "23.103.157.224/27",
-                "25.153.54.0/23",
-                "25.155.30.0/23",
-                "25.155.62.0/23",
-                "40.107.208.0/24",
-                };
+            var prefixes = File.ReadAllLines(@"C:\My\dev\v\BGPL.txt");
+            WriteLine($"total {prefixes.Length} prefixes to check");
+            var text = File.ReadAllText(@"C:\My\dev\v\result.xml");
 
-            WriteLine($"total {a.Length} IPs");
-            var text = File.ReadAllText(@"C:\My\dev\v\result.csv");
-            var c = 0;
-
-            foreach (var s in a)
+            foreach (var prefix in prefixes)
             {
-                if (text.Contains(s))
-                {
-                    WriteLine($"found {s}");
-                }
-                else
-                {
-                    c++;
-                    WriteLine($"not found {s}");
-
-                }
+                var s = '"' + prefix + '"';
+                var found = text.Contains(s);
+                WriteLine($"{prefix},{found}");
             }
-            WriteLine($"not found {c}");
         }
     }
 }
