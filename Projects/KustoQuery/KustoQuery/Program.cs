@@ -19,7 +19,8 @@ namespace KustoQuery
             try
             {
                 //QueryBGPLUpdates(inputFile);
-                QueryIpamReportOnBGPL(inputFile);
+                //QueryIpamReportOnBGPL(inputFile);
+                QueryIpamReportForPrefix(inputFile);
             }
             catch (Exception ex)
             {
@@ -28,6 +29,64 @@ namespace KustoQuery
 
             Error.WriteLine("Hit ENTER to exit");
             ReadLine();
+        }
+
+        static void QueryIpamReportForPrefix(string inputFile)
+        {
+            using (var sr = new StreamReader(inputFile))
+            {
+                var queryTemplate = GetResourceString("KustoQuery.Files.KustoIpamReport.txt");
+                var client = KustoClientFactory.CreateCslQueryProvider("https://ipam.kusto.windows.net/;Fed=true;Database=IpamReport;");
+
+                var needle = "| project";
+                var header = queryTemplate.Substring(queryTemplate.LastIndexOf(needle) + needle.Length);
+
+                header = Regex.Replace(header, @"\s+", string.Empty);
+                header = "Address Space," + header;
+
+                WriteLine(header);
+                Error.WriteLine(header);
+
+                while (!sr.EndOfStream)
+                {
+                    var prefix = sr.ReadLine();
+
+                    if (string.IsNullOrWhiteSpace(prefix)) continue;
+
+                    Error.Write(prefix);
+
+                    var found = false;
+
+                    foreach (var tableName in IpamTableNames)
+                    {
+                        var query = string.Format(queryTemplate, tableName, prefix);
+                        var reader = client.ExecuteQuery(query);
+
+                        if (reader.Read())
+                        {
+                            found = true;
+
+                            Write($"{tableName},");
+                            Error.WriteLine($" => {tableName}");
+
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                Write(reader.GetValue(i));
+                                if (i < reader.FieldCount - 1) Write(",");
+                            }
+                            WriteLine();
+
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        WriteLine($"None,{prefix}");
+                        Error.WriteLine(" => Not found");
+                    }
+                }
+            }
         }
 
         static void QueryBGPLUpdates(string inputFile)
