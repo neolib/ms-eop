@@ -36,7 +36,7 @@ namespace F5Automation
             RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture);
 
         public static Regex VlanRegex = new Regex(
-            $@"^\s*(?<no>\d+)\s+(?<name>\w+)\s+(?<v4>{IPv4RangePattern})(\s+(?<v6>{IPv6RangePattern}))?\s*$",
+            $@"^\s*(?<no>\d+)\s+(?<name>\S+)\s+(?<v4>{IPv4RangePattern})(\s+(?<v6>{IPv6RangePattern}))?\s*$",
             RegexOptions.Multiline | RegexOptions.ExplicitCapture);
 
         public static Regex VlanRegex2 = new Regex(
