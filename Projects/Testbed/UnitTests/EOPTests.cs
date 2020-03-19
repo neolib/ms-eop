@@ -93,7 +93,7 @@ namespace Testbed.UnitTests
         [TestMethod]
         public void TestSearch()
         {
-            var prefixes = File.ReadAllLines(@"C:\My\dev\v\BGPL.txt");
+            var prefixes = File.ReadAllLines(@"C:\My\dev\v\BGPLCheck.txt");
             WriteLine($"total {prefixes.Length} prefixes to check");
             var text = File.ReadAllText(@"C:\My\dev\v\result.xml");
 
