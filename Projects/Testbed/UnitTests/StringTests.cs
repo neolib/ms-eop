@@ -87,6 +87,32 @@ namespace Testbed.UnitTests
             WriteLine(string.Join(Environment.NewLine, list));
         }
 
+        [TestMethod]
+        public void TestNameof()
+        {
+            var a = nameof(String);
+            var b = nameof(String);
+
+            WriteLine($"a == b: {a == b}");
+            WriteLine($"ReferenceEquals(a, b): {ReferenceEquals(a, b)}");
+        }
+
+        [TestMethod]
+        public void TestConstString()
+        {
+            /* String class equality operator (==) first checks if two instances are the same
+             * instance and then checks for null and finally compares contents of two strings.
+             *
+             * */
+            var a = "abc";
+            var b = "abc";
+            var c = new string(new char[] { 'a', 'b', 'c' });
+
+            WriteLine($"a == b: {a == b}");
+            WriteLine($"ReferenceEquals(a, b): {ReferenceEquals(a, b)}");
+            WriteLine($"a == c: {a == c}");
+            WriteLine($"ReferenceEquals(a, b): {ReferenceEquals(a, c)}");
+        }
     }
 
 }
