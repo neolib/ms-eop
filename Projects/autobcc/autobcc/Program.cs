@@ -23,17 +23,19 @@ namespace autobcc
 
         static void Main(string[] args)
         {
-            string csprojPath = args.FirstOrDefault();
+            string slnOrCsprojFile = args.FirstOrDefault();
 
-            if (csprojPath == null)
+            if (slnOrCsprojFile == null)
             {
-                var csprojFiles = Directory.GetFiles(".", "*.csproj");
+                var files = Directory.GetFiles(".", "*.csproj");
 
-                if (csprojFiles.Length == 1)
+                if (files.Length == 0) files = Directory.GetFiles(".", "*.sln");
+
+                if (files.Length == 1)
                 {
-                    csprojPath = csprojFiles[0];
+                    slnOrCsprojFile = files[0];
                 }
-                else if (csprojFiles.Length > 1)
+                else if (files.Length > 1)
                 {
                     Error.WriteLine("Multiple C# project files found in current directory.");
                     SetExitCode(ExitCode.BagBadArgs);
@@ -48,9 +50,9 @@ namespace autobcc
             }
             else
             {
-                if (!File.Exists(csprojPath))
+                if (!File.Exists(slnOrCsprojFile))
                 {
-                    Error.WriteLine($"File not found: {csprojPath}");
+                    Error.WriteLine($"File not found: {slnOrCsprojFile}");
                     SetExitCode(ExitCode.FileNotFound);
                     return;
                 }
@@ -58,7 +60,7 @@ namespace autobcc
 
             try
             {
-                new Processor(Out).Process(csprojPath);
+                new Processor(Out).Process(slnOrCsprojFile);
                 Environment.ExitCode = 0;
             }
             catch (Exception ex)

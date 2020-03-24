@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
@@ -25,15 +26,15 @@ namespace autobcc
             this.Output = output;
         }
 
-        public int Process(string csprojPath)
+        public int Process(string slnOrCsprojFile)
         {
-            var csprojFullPath = Path.GetFullPath(csprojPath);
+            var slnOrCsprojFilePath = Path.GetFullPath(slnOrCsprojFile);
 
             InetRoot = Environment.GetEnvironmentVariable(InetRootEnvVar);
 
             if (string.IsNullOrEmpty(InetRoot))
             {
-                InetRoot = InferInetRoot(csprojFullPath);
+                InetRoot = InferInetRoot(slnOrCsprojFilePath);
                 if (string.IsNullOrEmpty(InetRoot))
                 {
                     Error.WriteLine($"Error: {InetRootEnvMacro} is not defined and could not be inferred from project path.");
@@ -45,25 +46,36 @@ namespace autobcc
                 }
             }
 
-            var refProjList = new List<string>();
+            var projList = new List<string>();
 
-            try
+            if (slnOrCsprojFile.EndsWith(".sln", StringComparison.OrdinalIgnoreCase))
             {
-                ProcessCsproj(csprojFullPath, refProjList);
+                var slnTag = "Microsoft Visual Studio Solution File, Format Version";
+                var regex = new Regex(@"Project\(""{\S+}""\)\s*=\s*""\S+"",\s*""(?<prj>\S+)""");
+                var text = File.ReadAllText(slnOrCsprojFilePath);
+
+                if (!text.StartsWith(slnTag))
+                {
+                    throw new Exception($"Not a valid sln file: {slnOrCsprojFilePath}");
+                }
+
+                foreach (Match match in regex.Matches(text))
+                {
+                    ParseCsproj(match.Groups["prj"].Value, projList);
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Error.WriteLine($"Error loading {csprojFullPath}:\n{ex.Message}");
-                return (int)ExitCode.Exception;
+                ParseCsproj(slnOrCsprojFilePath, projList);
             }
 
-            if (refProjList.Count > 0)
+            if (projList.Count > 0)
             {
                 var cmdText = GetAutobccCmd();
 
-                Out.WriteLine(cmdText.Replace("{project}", csprojFullPath.Replace(InetRoot, InetRootEnvMacro)));
+                Out.WriteLine(cmdText.Replace("{project}", slnOrCsprojFilePath.Replace(InetRoot, InetRootEnvMacro)));
 
-                foreach (var filepath in refProjList)
+                foreach (var filepath in projList)
                 {
                     var dir = Path.GetDirectoryName(filepath).Replace(InetRoot, InetRootEnvMacro);
 
@@ -89,11 +101,11 @@ namespace autobcc
             using (var sr = new StreamReader(rcs)) return sr.ReadToEnd();
         }
 
-        private void ProcessCsproj(string csprojPath, IList<string> refProjList)
+        private void ParseCsproj(string csprojPath, IList<string> projList)
         {
             var csprojFullPath = Path.GetFullPath(csprojPath);
 
-            if (refProjList.Contains(csprojFullPath, StringComparer.CurrentCultureIgnoreCase))
+            if (projList.Contains(csprojFullPath, StringComparer.CurrentCultureIgnoreCase))
             {
                 // Skip duplicates...
                 return;
@@ -105,7 +117,6 @@ namespace autobcc
                 var nsm = new XmlNamespaceManager(new NameTable());
 
                 nsm.AddNamespace("ns", DefaultNs);
-
 
                 // Do a very simple test if the file is valid.
                 if (xd.XPathSelectElement("/ns:Project", nsm) == null)
@@ -121,10 +132,10 @@ namespace autobcc
                 {
                     var refCsrojPath = projRefNode.Attribute("Include").Value;
 
-                    ProcessCsproj(Path.Combine(csprojDir, refCsrojPath), refProjList);
+                    ParseCsproj(Path.Combine(csprojDir, refCsrojPath), projList);
                 }
 
-                refProjList.Add(csprojFullPath);
+                projList.Add(csprojFullPath);
             }
             else
             {
