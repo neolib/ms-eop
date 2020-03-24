@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{AAFFD7F6-B8C0-4B2A-AFFB-7619A28668F6}</ProjectGuid>
+    <ProjectGuid>{BD6147D2-A279-49AD-A7E5-A692C2B0DCD7}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Testbed</RootNamespace>
-    <AssemblyName>Testbed</AssemblyName>
+    <RootNamespace>ExtractDeviceMetadata</RootNamespace>
+    <AssemblyName>ExtractDeviceMetadata</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -33,12 +33,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ExcelDataReader, Version=3.6.0.0, Culture=neutral, PublicKeyToken=93517dbe6a4012fa, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelDataReader.3.6.0\lib\net45\ExcelDataReader.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -50,22 +46,11 @@
     <Compile Include="..\..\common\ExtensionMethods.cs">
       <Link>ExtensionMethods.cs</Link>
     </Compile>
-    <Compile Include="Program.cs" />
+    <Compile Include="Extractor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ReadExcelFile.cs" />
-    <Compile Include="ReadCsvFile.cs" />
-    <Compile Include="Sandbox.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Files\test.csv" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Applets\Applets.csproj">
-      <Project>{aa05b379-f43b-4f73-998d-d8468ec8decb}</Project>
-      <Name>Applets</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
