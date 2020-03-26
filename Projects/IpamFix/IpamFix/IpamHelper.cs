@@ -65,16 +65,16 @@ namespace IpamFix
             return nameMap;
         }
 
-        public static async Task<AllocationModel> QueryIpam(string addressSpace, string prefix, string prefixId)
+        public static async Task<AllocationModel> QueryIpam(string spaceName, string prefix, string prefixId)
         {
-            var queryModel = AllocationQueryModel.Create(AddressSpaceIdMap[addressSpace], prefix);
+            var queryModel = AllocationQueryModel.Create(AddressSpaceIdMap[spaceName], prefix);
             var queryResult = await IpamClient.QueryAllocationsAsync(queryModel);
             foreach (var allocation in queryResult)
             {
                 if (allocation.Id == prefixId) return allocation;
             }
 
-            Error.WriteLine($"***Not found in IPAM: {addressSpace},{prefix},{prefixId}");
+            Error.WriteLine($"***Not found in IPAM: {spaceName},{prefix},{prefixId}");
             if (queryResult.Count > 0)
             {
                 foreach (var allocation in queryResult)
@@ -90,17 +90,17 @@ namespace IpamFix
             return null;
         }
 
-        public static async Task<bool> UpdateTitle(string addressSpace, string prefix, string prefixId,
+        public static async Task<bool> UpdateTitle(string spaceName, string prefix, string prefixId,
             string newTitle, string description = null)
         {
-            var allocation = await QueryIpam(addressSpace, prefix, prefixId);
+            var allocation = await QueryIpam(spaceName, prefix, prefixId);
             if (allocation != null)
             {
                 var nowTitle = allocation.Tags[SpecialTags.Title];
 
                 if (nowTitle == newTitle)
                 {
-                    Error.WriteLine($"{addressSpace} {prefix}: no need to update with same title {newTitle}");
+                    Error.WriteLine($"{spaceName} {prefix}: no need to update with same title {newTitle}");
                 }
                 else
                 {
@@ -115,7 +115,7 @@ namespace IpamFix
             return false;
         }
 
-        public static async Task<string> UpdateDatacenter(string addressSpace, string prefix, string prefixId, string eopDcName)
+        public static async Task<string> UpdateDatacenter(string spaceName, string prefix, string prefixId, string eopDcName)
         {
             if (!DatacenterNameMap.TryGetValue(eopDcName, out var newDcName))
             {
@@ -123,7 +123,7 @@ namespace IpamFix
                 WriteLine($"EOP datacenter {eopDcName} has no azure mapping");
             }
 
-            var allocation = await QueryIpam(addressSpace, prefix, prefixId);
+            var allocation = await QueryIpam(spaceName, prefix, prefixId);
             if (allocation != null)
             {
                 allocation.ModifiedOn = DateTime.Now;
@@ -135,9 +135,9 @@ namespace IpamFix
             return null;
         }
 
-        public static async Task<string> UpdateRegion(string addressSpace, string prefix, string prefixId, string ipamDcName)
+        public static async Task<string> UpdateRegion(string spaceName, string prefix, string prefixId, string ipamDcName)
         {
-            var regionMap = TagMap[addressSpace].ImpliedTags[SpecialTags.Region];
+            var regionMap = TagMap[spaceName].ImpliedTags[SpecialTags.Region];
             if (!regionMap.TryGetValue(ipamDcName, out var region))
             {
                 WriteLine($"Datacenter {ipamDcName} has no region mapping");
@@ -145,7 +145,7 @@ namespace IpamFix
                 else return null;
             }
 
-            var allocation = await QueryIpam(addressSpace, prefix, prefixId);
+            var allocation = await QueryIpam(spaceName, prefix, prefixId);
             if (allocation != null)
             {
                 allocation.Tags.Clear();

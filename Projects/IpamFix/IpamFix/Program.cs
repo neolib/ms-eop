@@ -47,6 +47,7 @@ namespace IpamFix
 
                 //new Processor().Run(args);
                 //new UndoTitles().Run(args);
+                new Sandbox().Run(args);
             }
             catch (Exception ex)
             {
