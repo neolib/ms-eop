@@ -132,24 +132,34 @@ namespace Testbed.UnitTests
             if (!type.IsInterface) { return type.GetProperties(); }
 
             var props = new List<PropertyInfo>();
+            Func<PropertyInfo, bool> addPropertyInfo = (pi_) =>
+            {
+                var found = false;
+
+                foreach (var prop in props)
+                {
+                    if (prop.Name == pi_.Name)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) { props.Add(pi_); }
+
+                return found;
+            };
 
             foreach (var iType in type.GetInterfaces())
             {
                 foreach (var pi in iType.GetProperties())
                 {
-                    var found = false;
-
-                    foreach (var prop in props)
-                    {
-                        if (prop.Name == pi.Name)
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found) { props.Add(pi); }
+                    addPropertyInfo(pi);
                 }
+            }
+            foreach (var pi in type.GetProperties())
+            {
+                addPropertyInfo(pi);
             }
 
             return props;
