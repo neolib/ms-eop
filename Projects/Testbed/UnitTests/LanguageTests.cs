@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -39,9 +40,18 @@ namespace Testbed.UnitTests
             }
         }
 
-        interface IDummy
+        interface IBase
         {
             string Name { get; set; }
+        }
+        interface IBase2
+        {
+            string Name { get; set; }
+            string Name2 { get; set; }
+        }
+
+        interface IDummy : IBase, IBase2
+        {
             string Address { get; set; }
 
             int Add(int a, int b);
@@ -52,6 +62,7 @@ namespace Testbed.UnitTests
             public static int SeqNo { get; set; }
 
             public string Name { get; set; }
+            public string Name2 { get; set; }
             public string Address { get; set; }
 
             public int Add(int a, int b) => a + b;
@@ -64,13 +75,32 @@ namespace Testbed.UnitTests
         public void TestInvokeMethod()
         {
             var dummy = new Dummy();
-            var type = dummy.GetType();
+            var typeOfDummy = dummy.GetType();
+            var typeOfIDummy = typeof(IDummy);
 
-            foreach (var pi in type.GetProperties())
+            WriteLine("Public properties of IDummy");
+            foreach (var pi in typeOfIDummy.GetPublicProperties())
             {
                 WriteLine($"+{pi.PropertyType} {pi.Name}");
             }
-            foreach (var mi in type.GetMethods())
+
+            WriteLine();
+            WriteLine("Properties of IDummy:");
+            foreach (var pi in typeOfIDummy.GetProperties())
+            {
+                WriteLine($"+{pi.PropertyType} {pi.Name}");
+            }
+
+            WriteLine();
+            WriteLine("Properties of Dummy:");
+            foreach (var pi in typeOfDummy.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+            {
+                WriteLine($"+{pi.PropertyType} {pi.Name}");
+            }
+
+            WriteLine();
+            WriteLine("Methods:");
+            foreach (var mi in typeOfDummy.GetMethods())
             {
                 var @static = mi.IsStatic ? "static " : "";
                 var @public = mi.IsPublic ? "public" : "private";
@@ -87,10 +117,42 @@ namespace Testbed.UnitTests
             }
 
             var flags = BindingFlags.NonPublic | BindingFlags.Instance;
-            var methodInfo = type.GetMethod("DoNotCallMe", flags);
+            var methodInfo = typeOfDummy.GetMethod("DoNotCallMe", flags);
             Assert.IsNotNull(methodInfo);
             Assert.AreEqual(methodInfo.Name, methodInfo.Invoke(dummy, flags,
                 null, new object[] { null }, CultureInfo.CurrentCulture));
+        }
+
+    }
+
+    static class ExtensionMethods
+    {
+        public static IEnumerable<PropertyInfo> GetPublicProperties(this Type type)
+        {
+            if (!type.IsInterface) { return type.GetProperties(); }
+
+            var props = new List<PropertyInfo>();
+
+            foreach (var iType in type.GetInterfaces())
+            {
+                foreach (var pi in iType.GetProperties())
+                {
+                    var found = false;
+
+                    foreach (var prop in props)
+                    {
+                        if (prop.Name == pi.Name)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found) { props.Add(pi); }
+                }
+            }
+
+            return props;
         }
     }
 }
