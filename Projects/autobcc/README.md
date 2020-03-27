@@ -5,7 +5,7 @@ projects and commands ready to be pasted and run in CoreXT environment.
 
 ## Commandline Arguments:
 
-autobcc [project.csproj]
+autobcc [project.csproj|sln]
 
 If no input file specified, it will use the one found in current directory.
 
