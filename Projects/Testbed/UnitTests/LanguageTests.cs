@@ -1,9 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -59,7 +58,8 @@ namespace Testbed.UnitTests
 
         class Dummy : IDummy
         {
-            public static int SeqNo { get; set; }
+            public int field;
+            public static int SeqNo;
 
             public string Name { get; set; }
             public string Name2 { get; set; }
@@ -99,6 +99,13 @@ namespace Testbed.UnitTests
             }
 
             WriteLine();
+            WriteLine("Fields of Dummy:");
+            foreach (var fi in typeOfDummy.GetFields())
+            {
+                WriteLine($"+{fi.FieldType} {fi.Name} {fi.IsStatic}");
+            }
+
+            WriteLine();
             WriteLine("Methods:");
             foreach (var mi in typeOfDummy.GetMethods())
             {
@@ -123,13 +130,78 @@ namespace Testbed.UnitTests
                 null, new object[] { null }, CultureInfo.CurrentCulture));
         }
 
+        [TestMethod]
+        public void TestWalkProperties()
+        {
+            var d = new Dictionary<string, List<Dummy>>
+            {
+                {
+                    "aaa", new List<Dummy>
+                    {
+                        new Dummy{ }
+                    }
+                }
+            };
+
+            Walk(d, 0);
+
+            void Walk(object obj, int indent)
+            {
+                var indentation = indent > 0 ? new string('-', indent * 2) : string.Empty;
+
+                if (obj == null)
+                {
+                    WriteLine($"{indentation}<null>");
+                    return;
+                }
+
+                var type = obj.GetType();
+
+                Write($"{indentation}{type}");
+                if (type.IsPrimitive || obj is string)
+                {
+                    WriteLine($" {obj}");
+                    return;
+                }
+                WriteLine();
+
+                if (obj is IEnumerable)
+                {
+                    var it = ((IEnumerable)obj).GetEnumerator();
+                    while (it.MoveNext())
+                    {
+                        Walk(it.Current, indent + 1);
+                    }
+                }
+
+                foreach (var pi in type.GetPublicProperties())
+                {
+                    if (pi.Name == "Item") continue;
+
+                    WriteLine($"{indentation}{pi.Name} {pi.PropertyType}");
+
+                    Walk(pi.GetValue(obj), indent + 1);
+                }
+            }
+        }
+
+        [TestMethod]
+        public void TestGetPublicInstaceProperties()
+        {
+            foreach (var pi in IntPtr.Zero.GetType().GetPublicProperties())
+            {
+                WriteLine($"{pi.Name}");
+            }
+        }
     }
 
     static class ExtensionMethods
     {
         public static IEnumerable<PropertyInfo> GetPublicProperties(this Type type)
         {
-            if (!type.IsInterface) { return type.GetProperties(); }
+            const BindingFlags bindingFlags = BindingFlags.Instance | BindingFlags.Public;
+
+            if (!type.IsInterface) { return type.GetProperties(bindingFlags); }
 
             var props = new List<PropertyInfo>();
             Func<PropertyInfo, bool> addPropertyInfo = (pi_) =>
@@ -152,17 +224,19 @@ namespace Testbed.UnitTests
 
             foreach (var iType in type.GetInterfaces())
             {
-                foreach (var pi in iType.GetProperties())
+                foreach (var pi in iType.GetProperties(bindingFlags))
                 {
                     addPropertyInfo(pi);
                 }
             }
-            foreach (var pi in type.GetProperties())
+
+            foreach (var pi in type.GetProperties(bindingFlags))
             {
                 addPropertyInfo(pi);
             }
 
             return props;
         }
+
     }
 }
