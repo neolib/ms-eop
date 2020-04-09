@@ -49,6 +49,13 @@ namespace first_ipam
 
             WriteLine($"Using {sectionName}");
             var settings = ConfigurationManager.GetSection(sectionName) as NameValueCollection;
+
+            foreach (string key in settings)
+            {
+                WriteLine($"{key}={settings[key]}");
+            }
+            WriteLine();
+
             try
             {
                 var ipamClientSettings = new IpamClientSettings(settings);
