@@ -88,6 +88,7 @@ namespace IpamFix
                                 records.Add(record);
                             }
 
+                            // Got what we want, so break out.
                             break;
                         }
                     } while (reader.NextResult());

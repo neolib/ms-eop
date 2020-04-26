@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -20,8 +18,8 @@ namespace IpamFix
         public static StringMap AddressSpaceIdMap = new StringMap {
             { "Default", SpecialAddressSpaces.DefaultAddressSpaceId },
             { "GalaCake", SpecialAddressSpaces.GalaCakeAddressSpaceId },
-            { "EX", SpecialAddressSpaces.EXAddressSpaceId },
-            { "RX", SpecialAddressSpaces.RXAddressSpaceId },
+            //{ "EX", SpecialAddressSpaces.EXAddressSpaceId },
+            //{ "RX", SpecialAddressSpaces.RXAddressSpaceId },
             };
 
         public static StringMap DatacenterNameMap { get; private set; }
@@ -30,10 +28,10 @@ namespace IpamFix
         public static void LoadMaps()
         {
             DatacenterNameMap = LoadNameMap();
-            //TagMap = LoadIpamMaps().Result;
+            TagMap = LoadIpamMaps().Result;
         }
 
-        public static async Task<TagMap> LoadIpamMaps()
+        private static async Task<TagMap> LoadIpamMaps()
         {
             var map = new TagMap();
 
@@ -45,7 +43,7 @@ namespace IpamFix
             return map;
         }
 
-        public static StringMap LoadNameMap()
+        private static StringMap LoadNameMap()
         {
             var myType = typeof(IpamHelper);
             var rcName = myType.Namespace + ".Files.NameMap.xml";

@@ -43,11 +43,10 @@ namespace IpamFix
                 var ipamClientSettings = new IpamClientSettings(settings);
 
                 IpamHelper.IpamClient = new IpamClient(ipamClientSettings);
-                IpamHelper.LoadMaps();
 
-                //new Processor().Run(args);
+                new Processor().Run(args);
                 //new UndoTitles().Run(args);
-                new Sandbox().Run(args);
+                //new Sandbox().Run(args);
             }
             catch (Exception ex)
             {

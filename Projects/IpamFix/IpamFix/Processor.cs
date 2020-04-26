@@ -114,9 +114,7 @@ namespace IpamFix
             }
 
             WriteLine("Loading IPAM maps...");
-            var tagMap = LoadIpamMaps().Result;
-            WriteLine("Loading name maps...");
-            var dcNameMap = LoadNameMap();
+            LoadMaps();
 
             var ipXDoc = File.Exists(ipXmlFile) ? XDocument.Load(ipXmlFile) : null;
             var cacheList = File.Exists(cacheFileName) ? File.ReadAllLines(cacheFileName) : new string[0];
@@ -160,14 +158,16 @@ namespace IpamFix
                     {
                         if (cmd == Command.FixTitle)
                         {
-                            if (FixTitle_() == null) break;
+                            //if (FixTitle_() == null) break;
                         }
                     }
                     else if (record.Status == "EmptyDatacenter")
                     {
                         if (cmd == Command.FixEmptyDC)
                         {
-                            //if (FixWrongDatacenter_() == null) ; // break;
+                            if (FixDatacenter_() == null)
+                                //break
+                                ;
                         }
                     }
                     else if (record.Status == "MismatchedDcName")
@@ -176,7 +176,7 @@ namespace IpamFix
                         {
                             if (record.Comment == "Valid")
                             {
-                                //if (FixDatacenter_() == null) ; // break;
+                                if (FixDatacenter_() == null) break;
                             }
                         }
                     }
@@ -184,7 +184,7 @@ namespace IpamFix
                     {
                         if (cmd == Command.FixEmptyRegion && record.IpamDcName == "PUS01")
                         {
-                            //if (FixRegion_() == null) ; // break;
+                            //if (FixRegion_() == null) break;
                         }
                     }
 
@@ -284,7 +284,7 @@ namespace IpamFix
                         }
                         catch (Exception ex)
                         {
-                            Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex.Message}");
+                            Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
                             return null;
                         }
                     }
@@ -306,7 +306,7 @@ namespace IpamFix
                         }
                         catch (Exception ex)
                         {
-                            Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex.Message}");
+                            Error.WriteLine($"***{record.AddressSpace},{record.Prefix}: {ex}");
                             return null;
                         }
                     }
@@ -348,8 +348,8 @@ namespace IpamFix
 
                     if (!AddressSpaceIdMap.ContainsKey(addressSpace))
                     {
-                        WriteLine($"Got wrong address space name {addressSpace}");
-                        return null;
+                        Error.WriteLine($"Got wrong address space name {addressSpace}");
+                        //return null;
                     }
 
                     var validationRecord = new ValidationRecord

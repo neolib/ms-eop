@@ -127,10 +127,10 @@ namespace Microsoft.Office.Datacenter.Networking.EopWorkflows.UnitTests.F5Deploy
             var queryModel = new AllocationQueryModel
             {
                 AddressSpaceId = SpecialAddressSpaces.DefaultAddressSpaceId,
-                Prefix = "10.0.123.0/28",
+                Prefix = "40.95.58.0/23",
                 //IsIPv4 = true,
             };
-            queryModel.RequiredTags[SpecialTags.Datacenter] = "AM1";
+            //queryModel.RequiredTags[SpecialTags.Datacenter] = "AM1";
             //queryModel.RequiredTags[SpecialTags.PropertyGroup] = "FRB";
 
             var result = c.QueryAllocationsAsync(queryModel).Result;
@@ -149,13 +149,11 @@ namespace Microsoft.Office.Datacenter.Networking.EopWorkflows.UnitTests.F5Deploy
             var queryModel = new SmartQueryModel
             {
                 AddressSpaceId = SpecialAddressSpaces.DefaultAddressSpaceId,
-                ParentId = "90e019fe-9222-4626-a66b-bac21a85b646",
-                //MaxPrefixLength = 32,
+                ParentId = "ea59f881-49a2-4996-9ecb-73f703b3b78c",
+                MaxPrefixLength = 23,
                 IsIPv4 = true,
                 QueryPolicy = IpamQueryPolicies.FirstLevelOnly
             };
-            //queryModel.RequiredTags[SpecialTags.Datacenter] = "AM1";
-            //queryModel.RequiredTags[SpecialTags.RangeType] = "NETWORK";
             queryModel.RequiredTags[SpecialTags.PropertyGroup] = "FRB";
 
             var prefixes = c.QuerySmartAllocationAsync(queryModel).Result;
