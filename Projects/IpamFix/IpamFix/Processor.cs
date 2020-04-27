@@ -28,7 +28,8 @@ namespace IpamFix
         private const string NameStatus = "Status";
         private const string NameSummary = "Summary";
         private const string NameComment = "Comment";
-        private const string TitlePattern = @"(?<h>EOP:\s+)(?<f>\w+)(\s+)?-(\s+)?(?<d>\w+?)(?<t>(FSPROD)?\s+(-\s+)?IPv\d.+)";
+        private const string TitlePattern = @"(?<h>EOP:\s+)(?<r>\w+)\s*-\s*(?<df>\w+?)(?<t>(FSPROD)?\s+(-\s+)?IPv\d.+)";
+        private const string RegionPattern = @"^([a-z]+)\d*$";
 
         private string[] ExcelFieldNames = new[] {
             NameId, NameAddressSpace, NameEnvironment,
@@ -144,6 +145,7 @@ namespace IpamFix
                 }
 
                 var changedCount = 0;
+                var regionRegex = new Regex(RegionPattern, RegexOptions.IgnoreCase);
 
                 foreach (var record in records)
                 {
@@ -158,7 +160,9 @@ namespace IpamFix
                     {
                         if (cmd == Command.FixTitle)
                         {
-                            //if (FixTitle_() == null) break;
+                            if (FixTitle_() == null)
+                                //break
+                                ;
                         }
                     }
                     else if (record.Status == "EmptyDatacenter")
@@ -199,43 +203,24 @@ namespace IpamFix
                         string newTitle = null;
                         string description = null;
 
-                        if (record.Title.StartsWith("Load from BGPL"))
+                        if (record.Title.StartsWithText("Load From BGPL"))
                         {
                             var vlan = FindVlanName_(record.Prefix, record.Environment);
                             var ipVersion = record.Prefix.Contains(':') ? "IPv6" : "IPv4";
                             newTitle = $"EOP: {record.Forest}-{record.EopDcName} - {ipVersion}_{vlan}";
                             description = record.Title;
                         }
-                        else if (false)
+                        else
                         {
                             var match = titleRegex.Match(record.Title);
                             if (match.Success)
                             {
                                 var headGroup = match.Groups["h"];
-                                var forestGroup = match.Groups["f"];
-                                var dcGroup = match.Groups["d"];
+                                var regionGroup = match.Groups["r"];
+                                var dcGroup = match.Groups["df"];
                                 var tailGroup = match.Groups["t"];
 
-                                if (record.Summary.Contains("not contain forest name"))
-                                {
-                                    newTitle = titleRegex.Replace(record.Title, (match_) =>
-                                        $"{headGroup.Value}{record.Forest}-{dcGroup.Value}{tailGroup.Value}");
-                                }
-                                else if (record.Summary.Contains("not contain datacenter name"))
-                                {
-                                    if (string.Compare(forestGroup.Value, record.Forest, true) != 0)
-                                    {
-                                        // Title contains no forest name, need to replace forest part as well
-                                        newTitle = titleRegex.Replace(record.Title, (match_) =>
-                                            $"{headGroup.Value}{record.Forest}-{record.EopDcName}{tailGroup.Value}");
-                                    }
-                                    else
-                                    {
-                                        // Need only to replace datacenter part
-                                        newTitle = titleRegex.Replace(record.Title, (match_) =>
-                                            $"{headGroup.Value}{forestGroup.Value}-{record.EopDcName}{tailGroup.Value}");
-                                    }
-                                }
+                                newTitle = $"{headGroup}{record.Forest}-{record.EopDcName}{tailGroup}";
                             }
                             else
                             {
