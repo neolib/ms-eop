@@ -37,27 +37,11 @@ namespace IpamFix
             NameTitle, NameRegion, NameStatus, NameSummary, NameComment
             };
 
-        private class ValidationRecord
-        {
-            internal string Id;
-            internal string AddressSpace;
-            internal string Environment;
-            internal string IpString;
-            internal string Prefix;
-            internal string Forest;
-            internal string EopDcName;
-            internal string IpamDcName;
-            internal string Title;
-            internal string Region;
-            internal string Status;
-            internal string Summary;
-            internal string Comment;
-        }
-
         private enum Command
         {
             Unknown,
             FixTitle,
+            FixDubiousTitle,
             FixEmptyDC,
             FixWrongDC,
             FixEmptyRegion,
@@ -96,6 +80,7 @@ namespace IpamFix
             switch (cmd)
             {
                 case Command.FixTitle:
+                case Command.FixDubiousTitle:
                     headerText = $"{NameAddressSpace},{NameIpQuery},{NamePrefix},{NameForest},{NameEopDc},{NameIpamDc},{NameRegion},{NameTitle},New Title,{NameId}";
                     break;
                 case Command.FixEmptyDC:
@@ -156,37 +141,41 @@ namespace IpamFix
                         continue;
                     }
 
-                    if (record.Status == "InvalidTitle")
+                    if (!Enum.TryParse(record.Status, out ValidationStatus status))
                     {
-                        if (cmd == Command.FixTitle)
+                        Error.WriteLine($"Got invalid status: {record.Status}");
+                        continue;
+                    }
+
+                    if (status == ValidationStatus.InvalidTitle && cmd == Command.FixTitle)
+                    {
+                        var needNewTitle = record.Title.ContainsText("Load From BGPL");
+                        if (FixTitle_(needNewTitle) == null)
+                            //break
+                            ;
+                    }
+                    else if (status == ValidationStatus.DubiousTitle && cmd == Command.FixDubiousTitle)
+                    {
+                        if (FixTitle_(true) == null)
+                            //break
+                            ;
+                    }
+                    else if (status == ValidationStatus.EmptyDatacenter && cmd == Command.FixEmptyDC)
+                    {
+                        if (FixDatacenter_() == null)
+                            //break
+                            ;
+                    }
+                    else if (status == ValidationStatus.MismatchedDcName && cmd == Command.FixWrongDC)
+                    {
+                        if (record.Comment == "Valid")
                         {
-                            if (FixTitle_() == null)
-                                //break
-                                ;
+                            if (FixDatacenter_() == null) break;
                         }
                     }
-                    else if (record.Status == "EmptyDatacenter")
+                    else if (status == ValidationStatus.EmptyRegion && cmd == Command.FixEmptyRegion)
                     {
-                        if (cmd == Command.FixEmptyDC)
-                        {
-                            if (FixDatacenter_() == null)
-                                //break
-                                ;
-                        }
-                    }
-                    else if (record.Status == "MismatchedDcName")
-                    {
-                        if (cmd == Command.FixWrongDC)
-                        {
-                            if (record.Comment == "Valid")
-                            {
-                                if (FixDatacenter_() == null) break;
-                            }
-                        }
-                    }
-                    else if (record.Status == "EmptyRegion")
-                    {
-                        if (cmd == Command.FixEmptyRegion && record.IpamDcName == "PUS01")
+                        if (record.IpamDcName == "PUS01")
                         {
                             //if (FixRegion_() == null) break;
                         }
@@ -198,13 +187,15 @@ namespace IpamFix
                         return vlanNode?.Attribute("name").Value;
                     }
 
-                    bool? FixTitle_()
+                    bool? FixTitle_(bool needNewTitle)
                     {
                         string newTitle = null;
                         string description = null;
 
-                        if (record.Title.StartsWithText("Load From BGPL"))
+                        if (needNewTitle)
                         {
+                            // Give it a completely new title!
+
                             var vlan = FindVlanName_(record.Prefix, record.Environment);
                             var ipVersion = record.Prefix.Contains(':') ? "IPv6" : "IPv4";
                             newTitle = $"EOP: {record.Forest}-{record.EopDcName} - {ipVersion}_{vlan}";
