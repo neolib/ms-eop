@@ -300,12 +300,12 @@ namespace IpamFix
 
             if (sheetRecords.Any())
             {
-                var record = sheetRecords[0];
+                var firstRecord = sheetRecords[0];
                 var hasWrongNames = false;
 
                 foreach (var name in ExcelFieldNames)
                 {
-                    if (!record.ContainsKey(name))
+                    if (!firstRecord.ContainsKey(name))
                     {
                         Error.WriteLine($"Sheet does not contain expected field {name}");
                         hasWrongNames = true;
@@ -315,9 +315,8 @@ namespace IpamFix
 
                 var records = new List<ValidationRecord>();
 
-                for (var i = 1; i < sheetRecords.Count; i++)
+                foreach (var record in sheetRecords)
                 {
-                    record = sheetRecords[i];
                     var addressSpace = record[NameAddressSpace];
 
                     if (string.IsNullOrEmpty(addressSpace)) continue;
